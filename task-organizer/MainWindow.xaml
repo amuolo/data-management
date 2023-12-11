@@ -1,4 +1,4 @@
-﻿<Window x:Class="task_organizer.MainWindow"
+﻿<Window x:Class="TaskOrganizer.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -7,6 +7,12 @@
         mc:Ignorable="d"
         Title="Task Organizer" Height="450" Width="800">
     <Grid>
-
+        <Button Name="Wip1" Content="Wip1" HorizontalAlignment="Left" Margin="27,26,0,0" VerticalAlignment="Top" Width="56" Height="22" Click="Wip1Click"/>
+        <ListBox Name="MainContent" Margin="27,68,24,24"/>
+        <ComboBox Name="Wip2" HorizontalAlignment="Left" Margin="345,26,0,0" VerticalAlignment="Top" Width="190"></ComboBox>
+        <ComboBox Name="Wip3" HorizontalAlignment="Left" Margin="559,25,0,0" VerticalAlignment="Top" Width="190"></ComboBox>
+        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="100,28,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick"/>
+        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="189,28,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick"/>
+        <Button Name="OpenSecondWindow" Content="More" HorizontalAlignment="Left" Margin="276,28,0,0" VerticalAlignment="Top" Width="49" Click="OpenSecondWindowClick" Height="19"/>
     </Grid>
 </Window>
