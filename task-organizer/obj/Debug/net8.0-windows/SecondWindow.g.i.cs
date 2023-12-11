@@ -61,7 +61,7 @@ namespace TaskOrganizer {
                 return;
             }
             _contentLoaded = true;
-            System.Uri resourceLocater = new System.Uri("/task-organizer;component/secondwindow.xaml", System.UriKind.Relative);
+            System.Uri resourceLocater = new System.Uri("/TaskOrganizer;component/secondwindow.xaml", System.UriKind.Relative);
             
             #line 1 "..\..\..\SecondWindow.xaml"
             System.Windows.Application.LoadComponent(this, resourceLocater);

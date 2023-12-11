@@ -11,12 +11,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("task-organizer")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("TaskOrganizer")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+ece2e4645546800eb1d532af925376a7d0e9e0e2")]
-[assembly: System.Reflection.AssemblyProductAttribute("task-organizer")]
-[assembly: System.Reflection.AssemblyTitleAttribute("task-organizer")]
+[assembly: System.Reflection.AssemblyProductAttribute("TaskOrganizer")]
+[assembly: System.Reflection.AssemblyTitleAttribute("TaskOrganizer")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 [assembly: System.Runtime.Versioning.TargetPlatformAttribute("Windows7.0")]
 [assembly: System.Runtime.Versioning.SupportedOSPlatformAttribute("Windows7.0")]
