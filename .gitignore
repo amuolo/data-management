@@ -1,2 +1,11 @@
 .vs
 *.nuget.*
+*.AssemblyInfo.*
+*.AssemblyInfoInputs.*
+*.cache
+*.sourcelink.json
+*.editorconfig
+*.BuildWithSkipAnalyzers
+*.g.cs
+*.g.resources
+*.sourcelink.json

@@ -10,8 +10,6 @@ namespace task_organizer;
 
 public record DataManager
 {
-    public string? FileName { get; set; }
-
     public ImmutableList<string> Input { get; set; } = ImmutableList<string>.Empty;
 
     public ImmutableList<string> Refined { get; set; } = ImmutableList<string>.Empty;
