@@ -1,4 +1,5 @@
 .vs
+task-organizer/obj
 *.nuget.*
 *.AssemblyInfo.*
 *.AssemblyInfoInputs.*
