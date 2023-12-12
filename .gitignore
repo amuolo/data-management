@@ -2,10 +2,13 @@
 *.nuget.*
 *.AssemblyInfo.*
 *.AssemblyInfoInputs.*
+*.AssemblyAttributes.*
 *.cache
 *.sourcelink.json
 *.editorconfig
 *.BuildWithSkipAnalyzers
 *.g.cs
 *.g.resources
+*.g.i.cs
+*.i.lref
 *.sourcelink.json
