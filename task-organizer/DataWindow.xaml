@@ -7,6 +7,6 @@
         mc:Ignorable="d" 
         Title="Data Windos" Height="450" Width="800">
     <Grid>
-        <ListBox Name="MainArea" Margin="27,30,24,24"/>
+        <ListBox Name="DataArea" Margin="27,30,24,24"/>
     </Grid>
 </Window>

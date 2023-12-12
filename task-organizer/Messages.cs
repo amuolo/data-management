@@ -1,4 +1,4 @@
-﻿namespace task_organizer;
+﻿namespace TaskOrganizer;
 
 public record Messages
 {

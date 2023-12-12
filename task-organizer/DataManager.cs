@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Printing;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace task_organizer;
+﻿using System.Collections.Immutable;
+using System.Diagnostics;
+namespace TaskOrganizer;
 
 public record DataManager
 {
@@ -14,8 +8,13 @@ public record DataManager
 
     public ImmutableList<string> Refined { get; set; } = ImmutableList<string>.Empty;
 
-    internal IEnumerable<string> GetData()
+    internal string ProcessData()
     {
-        return Refined.ToArray();
+        var timer = new Stopwatch();
+        timer.Start();
+        // TODO: finish
+        Refined = Input;
+        timer.Stop();
+        return timer.ElapsedMilliseconds.ToString();
     }
 }
