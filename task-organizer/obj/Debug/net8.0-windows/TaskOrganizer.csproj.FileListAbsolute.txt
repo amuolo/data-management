@@ -4,12 +4,10 @@ C:\Users\amuolo\source\repos\task-organizer\task-organizer\bin\Debug\net8.0-wind
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\bin\Debug\net8.0-windows\TaskOrganizer.dll
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\bin\Debug\net8.0-windows\TaskOrganizer.pdb
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\MainWindow.g.cs
-C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\SecondWindow.g.cs
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\App.g.cs
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\TaskOrganizer_MarkupCompile.cache
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\TaskOrganizer_MarkupCompile.lref
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\MainWindow.baml
-C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\SecondWindow.baml
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\TaskOrganizer.g.resources
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\TaskOrganizer.GeneratedMSBuildEditorConfig.editorconfig
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\TaskOrganizer.AssemblyInfoInputs.cache
@@ -21,3 +19,5 @@ C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-wind
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\TaskOrganizer.pdb
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\TaskOrganizer.genruntimeconfig.cache
 C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\ref\TaskOrganizer.dll
+C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\DataWindow.g.cs
+C:\Users\amuolo\source\repos\task-organizer\task-organizer\obj\Debug\net8.0-windows\DataWindow.baml

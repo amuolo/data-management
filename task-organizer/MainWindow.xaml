@@ -7,12 +7,21 @@
         mc:Ignorable="d"
         Title="Task Organizer" Height="450" Width="800">
     <Grid>
-        <Button Name="Wip1" Content="Wip1" HorizontalAlignment="Left" Margin="27,26,0,0" VerticalAlignment="Top" Width="56" Height="22" Click="Wip1Click"/>
-        <ListBox Name="MainContent" Margin="27,68,24,24"/>
-        <ComboBox Name="Wip2" HorizontalAlignment="Left" Margin="345,26,0,0" VerticalAlignment="Top" Width="190"></ComboBox>
-        <ComboBox Name="Wip3" HorizontalAlignment="Left" Margin="559,25,0,0" VerticalAlignment="Top" Width="190"></ComboBox>
-        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="100,28,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick"/>
-        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="189,28,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick"/>
-        <Button Name="OpenSecondWindow" Content="More" HorizontalAlignment="Left" Margin="276,28,0,0" VerticalAlignment="Top" Width="49" Click="OpenSecondWindowClick" Height="19"/>
+        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="57,25,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick"/>
+        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="146,25,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick"/>
+        <Button Name="OpenDataWindow" Content="Check Data" HorizontalAlignment="Left" Margin="233,25,0,0" VerticalAlignment="Top" Width="72" Click="OpenDataWindowClick" Height="20"/>
+
+        <ListBox Name="MainArea" Margin="27,68,24,24"/>
+
+        <ComboBox Name="InputFilePicker" HorizontalAlignment="Left" Margin="528,24,0,0" VerticalAlignment="Top" Width="190">
+            <ComboBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal">
+                        <Rectangle Fill="{Binding Name}" Width="16" Height="16" Margin="0,2,5,2" />
+                        <TextBlock Text="{Binding Name}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ComboBox.ItemTemplate>
+        </ComboBox>
     </Grid>
 </Window>

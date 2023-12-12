@@ -5,9 +5,9 @@ namespace TaskOrganizer;
 /// <summary>
 /// Interaction logic for SecondWindow.xaml
 /// </summary>
-public partial class SecondWindow : Window
+public partial class DataWindow : Window
 {
-    public SecondWindow()
+    public DataWindow()
     {
         InitializeComponent();
     }
