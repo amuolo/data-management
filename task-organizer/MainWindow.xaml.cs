@@ -1,8 +1,6 @@
 ﻿using System.Diagnostics;
 using System.IO;
-using System.Runtime;
 using System.Windows;
-using System.Windows.Media;
 using task_organizer;
 
 namespace TaskOrganizer;
@@ -10,8 +8,8 @@ namespace TaskOrganizer;
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
- 
-public record MainWindowState(DataManager Data);
+
+public record MainWindowState(string Path, DataManager Data);
 
 public partial class MainWindow : Window
 {
@@ -21,14 +19,17 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         var dirInfo = new DirectoryInfo(".");
+        var path = dirInfo.FullName;
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
-        State = new(new DataManager());
+        State = new(path, new DataManager());
     }
+
+    private string? GetFileName() => ((FileInfo)InputFilePicker.SelectedItem)?.FullName.Replace(State.Path, "");
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName;
+        var fileName = GetFileName();
         Task.Factory.StartNew(() => ReadFromDisk())
                     .ContinueWith(completed => UpdateListBox($"Import from file {fileName} took : " + completed.Result + " ms", 0));
 
@@ -45,7 +46,7 @@ public partial class MainWindow : Window
 
     private void ExportClick(object sender, RoutedEventArgs e)
     {
-        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName;
+        var fileName = GetFileName();
         Task.Factory.StartNew(() => WriteToDisk())
                     .ContinueWith(completed => UpdateListBox($"Export to file {fileName} took : " + completed.Result + " ms", 0));
 
