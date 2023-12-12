@@ -38,7 +38,7 @@ public partial class MainWindow : Window
             var fileName = State.Data.FileName;
             if (fileName == null || fileName == "") MessageBox.Show(Messages.EmptyFileName);
             File.Delete(fileName);
-            Stopwatch timer = new Stopwatch();
+            var timer = new Stopwatch();
             timer.Start();
             File.WriteAllLines(fileName, State.Data.GetData());
             timer.Stop();

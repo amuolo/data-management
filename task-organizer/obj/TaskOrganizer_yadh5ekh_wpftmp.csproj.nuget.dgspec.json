@@ -1,15 +1,15 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\task-organizer.csproj": {}
+    "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\TaskOrganizer.csproj": {}
   },
   "projects": {
-    "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\task-organizer.csproj": {
+    "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\TaskOrganizer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\task-organizer.csproj",
-        "projectName": "task-organizer",
-        "projectPath": "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\task-organizer.csproj",
+        "projectUniqueName": "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\TaskOrganizer.csproj",
+        "projectName": "TaskOrganizer",
+        "projectPath": "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\TaskOrganizer.csproj",
         "packagesPath": "C:\\Users\\amuolo\\.nuget\\packages\\",
         "outputPath": "C:\\Users\\amuolo\\source\\repos\\task-organizer\\task-organizer\\obj\\",
         "projectStyle": "PackageReference",
