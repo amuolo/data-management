@@ -1,6 +1,9 @@
-﻿using System.Diagnostics;
+﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Threading;
 
 namespace TaskOrganizer;
 
@@ -8,7 +11,7 @@ namespace TaskOrganizer;
 /// Interaction logic for MainWindow.xaml
 /// </summary>
 
-public record MainWindowState(string Path, DataManager Data, DataWindow DataWindow);
+public record MainWindowState(string Path, DataDomain Data, DataWindow DataWindow);
 
 public partial class MainWindow : Window
 {
@@ -21,50 +24,30 @@ public partial class MainWindow : Window
         var path = dirInfo.FullName;
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
-        State = new(path, new DataManager(), new DataWindow());
+        State = new(path, new DataDomain(), new DataWindow());
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
 
-    private string? GetFileName() => ((FileInfo)InputFilePicker.SelectedItem)?.FullName.Replace(State.Path, "");
-
-    private void UpdateListBox(string msg, int index) => Dispatcher.BeginInvoke(() => MainArea.Items.Insert(index, msg));
+    private void Logger(string msg) => Dispatcher.BeginInvoke(() => MainArea.Items.Insert(0, msg));
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        var fileName = GetFileName();
-        Task.Factory.StartNew(() => ReadFromDisk())
-                    .ContinueWith(completed => UpdateListBox($"Import from file {fileName} took : " + completed.Result + " ms", 0))
-                    .ContinueWith(completed => State.Data.ProcessData())
-                    .ContinueWith(completed => UpdateListBox($"Processing new data took : " + completed.Result + " ms", 0))
-                    .ContinueWith(completed => State.DataWindow.Update(State.Data.Refined));
+        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName.Replace(State.Path, "");
 
-        string ReadFromDisk()
-        {
-            if (fileName == null || fileName == "") MessageBox.Show(Messages.EmptyFileName);
-            var timer = new Stopwatch();
-            timer.Start();
-            // TODO: finish
-            timer.Stop();
-            return timer.ElapsedMilliseconds.ToString();
-        }
+        Job.New().WithLogs(Logger)
+                 .WithStep($"Import from file {fileName}", () => State.Data.ReadFromDisk(fileName))
+                 .WithStep($"Processing new data", () => State.Data.ProcessData())
+                 .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetData()))
+                 .Start();
     }
 
     private void ExportClick(object sender, RoutedEventArgs e)
     {
-        var fileName = GetFileName();
-        Task.Factory.StartNew(() => WriteToDisk())
-                    .ContinueWith(completed => UpdateListBox($"Export to file {fileName} took : " + completed.Result + " ms", 0));
+        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName.Replace(State.Path, "");
 
-        string WriteToDisk()
-        {
-            if (fileName == null || fileName == "") MessageBox.Show(Messages.EmptyFileName);
-            File.Delete(fileName);
-            var timer = new Stopwatch();
-            timer.Start();
-            File.WriteAllLines(fileName, State.Data.Refined);
-            timer.Stop();
-            return timer.ElapsedMilliseconds.ToString();
-        }
+        Job.New().WithLogs(Logger)
+                 .WithStep($"Export to file {fileName}", () => State.Data.WriteToDisk(fileName))
+                 .Start();
     }
 }

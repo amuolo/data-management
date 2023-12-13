@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Windows;
+
 namespace TaskOrganizer;
 
 /// <summary>
@@ -18,10 +19,8 @@ public partial class DataWindow : Window
         State = new();
     }
 
-    public void Update(ImmutableList<string> data)
+    public void Update(List<string> data)
     {
-        data.ForEach(x => UpdateListBox(x, 0));
+        Dispatcher.BeginInvoke(() => data.ForEach(x => DataArea.Items.Insert(0, x)));
     }
-
-    private void UpdateListBox(string msg, int index) => Dispatcher.BeginInvoke(() => DataArea.Items.Insert(index, msg));
 }
