@@ -13,3 +13,5 @@ task-organizer/obj
 *.g.i.cs
 *.i.lref
 *.sourcelink.json
+*.baml
+*.lref
