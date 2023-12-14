@@ -5,13 +5,15 @@ namespace TaskOrganizer;
 
 public record Job()
 {
+    private bool isValid;
+
     private Action<string> Logger { get; set; } = delegate { };
 
     private ImmutableList<(string Name, Delegate? Func)> PostActions { get; set; } = ImmutableList<(string, Delegate?)>.Empty;
 
-    private ImmutableList<(string Name, Delegate? Func)> Steps { get; set; } = ImmutableList<(string, Delegate?)>.Empty;   
+    private ImmutableList<(string Name, Delegate? Func)> Steps { get; set; } = ImmutableList<(string, Delegate?)>.Empty;
 
-    public static Job New() => new Job();
+    public static Job New() => new();
 
     internal Job WithLogs(Action<string> logger) => this with { Logger = logger };
 
@@ -21,12 +23,16 @@ public record Job()
 
     internal Task Start()
     {
+        isValid = true;
+
         return Task.Run(async () =>
         {
             object? result = default;
 
             foreach (var step in Steps)
             {
+                if (!isValid) return;
+
                 await Execute(step.Name, step.Func, result);
 
                 foreach(var post in PostActions)
@@ -52,7 +58,8 @@ public record Job()
         }
         catch (Exception ex)
         {
-            Logger?.Invoke($"Exception caught when executing '{name}': {ex.Message}");
+            Logger?.Invoke($"Exception caught when executing '{name}': {ex.InnerException?.Message?? ex.Message}");
+            isValid = false;
         }
     }
 }

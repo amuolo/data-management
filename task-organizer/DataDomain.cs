@@ -1,6 +1,5 @@
-﻿using System.Collections.Immutable;
-using System.Diagnostics;
-using System.Windows.Media.TextFormatting;
+﻿using System.IO;
+
 namespace TaskOrganizer;
 
 public record DataDomain
@@ -20,9 +19,22 @@ public record DataDomain
         // TODO
     }
 
-    internal void ReadFromDisk(string? fileName)
+    internal void ReadFromDisk(FileInfo? file)
     {
-        // TODO
+        if(file == null) throw new Exception(Messages.EmptyFileName);
+
+        var text = File.ReadAllText(file.FullName);
+
+        switch (file.Extension)
+        {
+            case ".csv":
+                string[] delimiters = { "\n" };
+                Input = text.Split(delimiters, StringSplitOptions.None).ToList();
+                break;
+
+            default:
+                throw new Exception(Messages.ExtensionNotHandled);
+        }
     }
 
     internal void WriteToDisk(string? fileName)

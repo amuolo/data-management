@@ -33,10 +33,11 @@ public partial class MainWindow : Window
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName.Replace(State.Path, "");
+        var file = ((FileInfo)InputFilePicker.SelectedItem);
+        var fileName = file?.FullName?.Replace(State.Path, "");
 
         Job.New().WithLogs(Logger)
-                 .WithStep($"Import from file {fileName}", () => State.Data.ReadFromDisk(fileName))
+                 .WithStep($"Import from file {fileName}", () => State.Data.ReadFromDisk(file))
                  .WithStep($"Processing new data", () => State.Data.ProcessData())
                  .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetData()))
                  .Start();
