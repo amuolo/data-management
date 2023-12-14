@@ -1,8 +1,5 @@
-﻿using System;
-using System.Diagnostics;
-using System.IO;
+﻿using System.IO;
 using System.Windows;
-using System.Windows.Interop;
 using System.Windows.Threading;
 
 namespace TaskOrganizer;
@@ -45,10 +42,11 @@ public partial class MainWindow : Window
 
     private void ExportClick(object sender, RoutedEventArgs e)
     {
-        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName.Replace(State.Path, "");
+        var name = ExportFileName?.Text;
+        var fileName = State.Path + name?? "";
 
         Job.New().WithLogs(Logger)
-                 .WithStep($"Export to file {fileName}", () => State.Data.WriteToDisk(fileName))
+                 .WithStep($"Export to file {name}", () => State.Data.WriteToDisk(fileName))
                  .Start();
     }
 }

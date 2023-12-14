@@ -27,13 +27,9 @@ public record DataDomain
 
         switch (file.Extension)
         {
-            case ".csv":
-                string[] delimiters = { "\n" };
-                Input = text.Split(delimiters, StringSplitOptions.None).ToList();
-                break;
+            case ".csv":  Input = text.Split(new[] { "\n" }, StringSplitOptions.None).ToList();  break;
 
-            default:
-                throw new Exception(Messages.ExtensionNotHandled);
+            default:  throw new Exception(Messages.ExtensionNotHandled);
         }
     }
 

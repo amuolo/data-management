@@ -7,13 +7,15 @@
         mc:Ignorable="d"
         Title="Task Organizer" Height="450" Width="1000">
     <Grid>
-        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="57,25,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick"/>
-        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="146,25,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick"/>
-        <Button Name="OpenDataWindow" Content="Check Data" HorizontalAlignment="Left" Margin="233,25,0,0" VerticalAlignment="Top" Width="72" Click="OpenDataWindowClick" Height="20"/>
+        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="559,15,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick"/>
+        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="559,46,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick"/>
+        <Button Name="OpenDataWindow" Content="Check Data" HorizontalAlignment="Left" Margin="61,31,0,0" VerticalAlignment="Top" Width="72" Click="OpenDataWindowClick" Height="20"/>
 
-        <ListBox Name="MainArea" Margin="27,68,24,24"/>
+        <TextBox Name="ExportFileName" HorizontalAlignment="Left" Margin="654,47,0,0" TextWrapping="Wrap" AcceptsReturn="False" Text="" VerticalAlignment="Top" Width="190"/>
+        
+        <ListBox Name="MainArea" Margin="27,81,24,24"/>
 
-        <ComboBox Name="InputFilePicker" HorizontalAlignment="Left" Margin="747,25,0,0" VerticalAlignment="Top" Width="190" Height="20">
+        <ComboBox Name="InputFilePicker" HorizontalAlignment="Left" Margin="654,15,0,0" VerticalAlignment="Top" Width="190" Height="20">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
