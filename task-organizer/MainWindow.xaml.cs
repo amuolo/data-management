@@ -2,7 +2,7 @@
 using System.Windows;
 using System.Windows.Threading;
 
-namespace TaskOrganizer;
+namespace DataManagement;
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -43,7 +43,7 @@ public partial class MainWindow : Window
     private void ExportClick(object sender, RoutedEventArgs e)
     {
         var name = ExportFileName?.Text;
-        var fileName = State.Path + name?? "";
+        var fileName = State.Path + "\\" + name?? "";
 
         Job.New().WithLogs(Logger)
                  .WithStep($"Export to file {name}", () => State.Data.WriteToDisk(fileName))

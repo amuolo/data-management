@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace TaskOrganizer;
+namespace DataManagement;
 
 public record DataDomain
 {
@@ -35,6 +35,10 @@ public record DataDomain
 
     internal void WriteToDisk(string? fileName)
     {
-        // TODO
+        if (fileName == null) throw new Exception(Messages.EmptyFileName);
+
+        var text = string.Join("\n", Refined);
+
+        File.WriteAllText(fileName, text);
     }
 }

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Windows;
 
-namespace TaskOrganizer;
+namespace DataManagement;
 
 /// <summary>
 /// Interaction logic for SecondWindow.xaml

@@ -1,4 +1,4 @@
-﻿namespace TaskOrganizer;
+﻿namespace DataManagement;
 
 public record Messages
 {
