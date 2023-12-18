@@ -35,7 +35,7 @@ public partial class MainWindow : Window
         var file = ((FileInfo)InputFilePicker.SelectedItem);
         var fileName = file?.FullName?.Replace(State.Path, "");
 
-        Job.New().WithLogs(Logger)
+        Job.New().WithOptions(o => o.WithLogs(Logger))
                  .WithStep($"Import from file {fileName}", () => State.Data.ReadFromDisk(file))
                  .WithStep($"Processing new data", () => State.Data.ProcessData())
                  .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetData()))
@@ -47,7 +47,7 @@ public partial class MainWindow : Window
         var name = ExportFileName?.Text;
         var fileName = State.Path + "\\" + name?? "";
 
-        Job.New().WithLogs(Logger)
+        Job.New().WithOptions(o => o.WithLogs(Logger))
                  .WithStep($"Export to file {name}", () => State.Data.WriteToDisk(fileName))
                  .Start();
     }
