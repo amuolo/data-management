@@ -1,6 +1,6 @@
 .vs
-DataManagement\Debug
-DataManagement\obj
+bin
+obj
 *.nuget.*
 *.AssemblyInfo.*
 *.AssemblyInfoInputs.*

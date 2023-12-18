@@ -1,7 +1,7 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics;
 
-namespace DataManagement;
+namespace JobAgent;
 
 public record Job()
 {
@@ -29,7 +29,7 @@ public record Job()
 
                 await Execute(step.Name, step.Func);
 
-                foreach(var post in PostActions)
+                foreach (var post in PostActions)
                     await Execute(post.Name, post.Func);
             }
         });
