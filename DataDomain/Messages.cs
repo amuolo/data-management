@@ -1,4 +1,4 @@
-﻿namespace DataManagement;
+﻿namespace DataDomain;
 
 public record Messages
 {

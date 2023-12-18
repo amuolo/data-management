@@ -1,4 +1,5 @@
-﻿using JobAgent;
+﻿using DataDomain;
+using JobAgent;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
@@ -9,7 +10,7 @@ namespace DataManagement;
 /// Interaction logic for MainWindow.xaml
 /// </summary>
 
-public record MainWindowState(string Path, DataDomain Data, DataWindow DataWindow);
+public record MainWindowState(string Path, DataOperator Data, DataWindow DataWindow);
 
 public partial class MainWindow : Window
 {
@@ -22,7 +23,7 @@ public partial class MainWindow : Window
         var path = dirInfo.FullName;
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
-        State = new(path, new DataDomain(), new DataWindow());
+        State = new(path, new DataOperator(), new DataWindow());
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();

@@ -10,6 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DataDomain\DataDomain.csproj" />
     <ProjectReference Include="..\JobAgent\JobAgent.csproj" />
   </ItemGroup>
 
