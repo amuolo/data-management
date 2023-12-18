@@ -4,6 +4,11 @@ namespace DataDomain;
 
 public static class DataOperator
 {
+    public static object? Load()
+    {
+        return JsonSerializer.Deserialize<object>(File.ReadAllText("storage"));
+    }
+
     public static void Save(object data)
     {
         File.WriteAllText("storage", JsonSerializer.Serialize(data));
