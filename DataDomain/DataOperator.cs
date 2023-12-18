@@ -1,23 +1,15 @@
-﻿namespace DataDomain;
+﻿using System.Text.Json;
 
-public record DataOperator
+namespace DataDomain;
+
+public static class DataOperator
 {
-    private List<string> Input { get; set; } = new();
-
-    private List<string> Refined { get; set; } = new();
-
-    public List<string> GetData()
+    public static void Save(object data)
     {
-        // TODO
-        return Refined;
+        File.WriteAllText("storage", JsonSerializer.Serialize(data));
     }
 
-    public void ProcessData()
-    {
-        // TODO
-    }
-
-    public void ReadFromDisk(FileInfo? file)
+    public static List<string> Import(FileInfo? file)
     {
         if (file == null) throw new Exception(Messages.EmptyFileName);
 
@@ -25,8 +17,7 @@ public record DataOperator
         {
             case ".csv": 
 
-                Input = File.ReadLines(file.FullName).SelectMany(str => str.Split(new[] { "\n" }, StringSplitOptions.None)).ToList(); 
-                break;
+                return File.ReadLines(file.FullName).SelectMany(str => str.Split(new[] { "\n" }, StringSplitOptions.None)).ToList(); 
 
             default: 
                 
@@ -34,11 +25,11 @@ public record DataOperator
         }
     }
 
-    public void WriteToDisk(string? fileName)
+    public static void Export(List<string> data, string? fileName)
     {
         if (fileName == null) throw new Exception(Messages.EmptyFileName);
 
-        var text = string.Join("\n", Refined);
+        var text = string.Join("\n", data);
 
         File.WriteAllText(fileName, text);
     }

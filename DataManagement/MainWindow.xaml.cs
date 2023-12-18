@@ -6,7 +6,7 @@ using System.Windows.Threading;
 
 namespace DataManagement;
 
-public record MainWindowState(string Path, DataOperator Data, DataWindow DataWindow);
+public record MainWindowState(string Path, DataModel Data, DataWindow DataWindow);
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -22,7 +22,7 @@ public partial class MainWindow : Window
         var path = dirInfo.FullName;
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
-        State = new(path, new DataOperator(), new DataWindow());
+        State = new(path, new DataModel(), new DataWindow());
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
@@ -36,9 +36,9 @@ public partial class MainWindow : Window
         var progressBar = new ProgressBar();
 
         Job.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
-                 .WithStep($"Import from file {fileName}", () => State.Data.ReadFromDisk(file))
-                 .WithStep($"Processing new data", () => State.Data.ProcessData())
-                 .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetData()))
+                 .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
+                 .WithStep($"Processing new data", () => State.Data.Process())
+                 .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetPrintable()))
                  .Start();
     }
 
@@ -49,7 +49,7 @@ public partial class MainWindow : Window
         var progressBar = new ProgressBar();
 
         Job.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
-                 .WithStep($"Export to file {name}", () => State.Data.WriteToDisk(fileName))
+                 .WithStep($"Export to file {name}", () => DataOperator.Export(State.Data.GetPrintable(), fileName))
                  .Start();
     }
 }
