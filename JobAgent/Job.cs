@@ -39,8 +39,6 @@ public record Job()
             catch (Exception ex)
             {
                 Configuration.Logger?.Invoke($"Exception caught when executing '{StepName}': {ex.InnerException?.Message?? ex.Message}");
-                if (Configuration.ShowProgress) Configuration.ProgressBarClose();
-                return;
             }
 
             if (Configuration.ShowProgress) Configuration.ProgressBarClose();
