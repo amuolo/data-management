@@ -5,7 +5,41 @@ namespace DataManagement;
 
 public record Job()
 {
+    /* Public API */
+
+    public static Job New() => new();
+
+    public object? GetResult() => Result;
+
+    public Job WithLogs(Action<string> logger) => this with { Logger = logger };
+
+    public Job WithPostActions<T>(string name, Action<T> action) => this with { PostActions = PostActions.Add((name, action)) };
+
+    public Job WithStep(string name, Delegate func) => this with { Steps = Steps.Add((name, func)) };
+
+    public Task Start()
+    {
+        isValid = true;
+
+        return Task.Run(async () =>
+        {
+            foreach (var step in Steps)
+            {
+                if (!isValid) return;
+
+                await Execute(step.Name, step.Func);
+
+                foreach(var post in PostActions)
+                    await Execute(post.Name, post.Func);
+            }
+        });
+    }
+
+    /* Private */
+
     private bool isValid;
+
+    private object? Result { get; set; }
 
     private Action<string> Logger { get; set; } = delegate { };
 
@@ -13,35 +47,7 @@ public record Job()
 
     private ImmutableList<(string Name, Delegate? Func)> Steps { get; set; } = ImmutableList<(string, Delegate?)>.Empty;
 
-    public static Job New() => new();
-
-    internal Job WithLogs(Action<string> logger) => this with { Logger = logger };
-
-    internal Job WithPostActions<T>(string name, Action<T> action) => this with { PostActions = PostActions.Add((name, action)) };
-
-    internal Job WithStep(string name, Delegate func) => this with { Steps = Steps.Add((name, func)) };
-
-    internal Task Start()
-    {
-        isValid = true;
-
-        return Task.Run(async () =>
-        {
-            object? result = default;
-
-            foreach (var step in Steps)
-            {
-                if (!isValid) return;
-
-                await Execute(step.Name, step.Func, result);
-
-                foreach(var post in PostActions)
-                    await Execute(post.Name, post.Func, result);
-            }
-        });
-    }
-
-    private async Task Execute(string name, Delegate? func, object? result)
+    private async Task Execute(string name, Delegate? func)
     {
         try
         {
@@ -50,8 +56,8 @@ public record Job()
             Stopwatch timer = new();
             timer.Start();
 
-            dynamic task = Task.Run(() => result == null ? func.DynamicInvoke() : func.DynamicInvoke(result));
-            result = await task;
+            dynamic task = Task.Run(() => Result == null ? func.DynamicInvoke() : func.DynamicInvoke(Result));
+            Result = await task;
 
             timer.Stop();
             Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");

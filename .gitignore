@@ -1,5 +1,6 @@
 .vs
-task-organizer/obj
+DataManagement\Debug
+DataManagement\obj
 *.nuget.*
 *.AssemblyInfo.*
 *.AssemblyInfoInputs.*
