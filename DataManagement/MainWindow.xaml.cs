@@ -6,12 +6,11 @@ using System.Windows.Threading;
 
 namespace DataManagement;
 
+public record MainWindowState(string Path, DataOperator Data, DataWindow DataWindow);
+
 /// <summary>
 /// Interaction logic for MainWindow.xaml
 /// </summary>
-
-public record MainWindowState(string Path, DataOperator Data, DataWindow DataWindow);
-
 public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
@@ -34,8 +33,9 @@ public partial class MainWindow : Window
     {
         var file = ((FileInfo)InputFilePicker.SelectedItem);
         var fileName = file?.FullName?.Replace(State.Path, "");
+        var progressBar = new ProgressBar();
 
-        Job.New().WithOptions(o => o.WithLogs(Logger))
+        Job.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
                  .WithStep($"Import from file {fileName}", () => State.Data.ReadFromDisk(file))
                  .WithStep($"Processing new data", () => State.Data.ProcessData())
                  .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetData()))
@@ -46,8 +46,9 @@ public partial class MainWindow : Window
     {
         var name = ExportFileName?.Text;
         var fileName = State.Path + "\\" + name?? "";
+        var progressBar = new ProgressBar();
 
-        Job.New().WithOptions(o => o.WithLogs(Logger))
+        Job.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
                  .WithStep($"Export to file {name}", () => State.Data.WriteToDisk(fileName))
                  .Start();
     }

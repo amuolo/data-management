@@ -1,5 +1,6 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Xml.Linq;
 
 namespace JobAgent;
 
@@ -21,46 +22,54 @@ public record Job()
     {
         return Task.Run(async () =>
         {
-            foreach (var step in Steps)
+            try
             {
-                if(!await Execute(step.Name, step.Func)) return;
+                if (Configuration.ShowProgress) Configuration.ProgressBarEnable?.DynamicInvoke(Steps.Count);
 
-                foreach (var post in PostActions)
-                    if(!await Execute(post.Name, post.Func)) return;
+                foreach (var step in Steps)
+                {
+                    await Execute(step.Name, step.Func);
+
+                    foreach (var post in PostActions)
+                        await Execute(post.Name, post.Func);
+
+                    if (Configuration.ShowProgress) Configuration.ProgressBarUpdate();
+                }
             }
+            catch (Exception ex)
+            {
+                Configuration.Logger?.Invoke($"Exception caught when executing '{StepName}': {ex.InnerException?.Message?? ex.Message}");
+                if (Configuration.ShowProgress) Configuration.ProgressBarClose();
+                return;
+            }
+
+            if (Configuration.ShowProgress) Configuration.ProgressBarClose();
         });
     }
 
     /* Private */
 
+    private string StepName { get; set; }
+
     private object? Result { get; set; }
 
     private JobConfiguration Configuration { get; set; } = new();
 
-    private ImmutableList<(string Name, Delegate? Func)> PostActions { get; set; } = ImmutableList<(string, Delegate?)>.Empty;
+    private ImmutableList<(string Name, Delegate Func)> PostActions { get; set; } = ImmutableList<(string, Delegate)>.Empty;
 
-    private ImmutableList<(string Name, Delegate? Func)> Steps { get; set; } = ImmutableList<(string, Delegate?)>.Empty;
+    private ImmutableList<(string Name, Delegate Func)> Steps { get; set; } = ImmutableList<(string, Delegate)>.Empty;
 
-    private async Task<bool> Execute(string name, Delegate? func)
+    private async Task<bool> Execute(string name, Delegate func)
     {
-        try
-        {
-            if (func == null) throw new Exception("Process function cannot be null.");
+        Stopwatch timer = new();
+        StepName = name;
+        timer.Start();
 
-            Stopwatch timer = new();
-            timer.Start();
+        dynamic task = Task.Run(() => Result == null ? func.DynamicInvoke() : func.DynamicInvoke(Result));
+        Result = await task;
 
-            dynamic task = Task.Run(() => Result == null ? func.DynamicInvoke() : func.DynamicInvoke(Result));
-            Result = await task;
-
-            timer.Stop();
-            Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Configuration.Logger?.Invoke($"Exception caught when executing '{name}': {ex.InnerException?.Message?? ex.Message}");
-            return false;
-        }
+        timer.Stop();
+        Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");
+        return true;
     }
 }
