@@ -21,13 +21,16 @@ public record DataOperator
     {
         if (file == null) throw new Exception(Messages.EmptyFileName);
 
-        var text = File.ReadAllText(file.FullName);
-
         switch (file.Extension)
         {
-            case ".csv": Input = text.Split(new[] { "\n" }, StringSplitOptions.None).ToList(); break;
+            case ".csv": 
 
-            default: throw new Exception(Messages.ExtensionNotHandled);
+                Input = File.ReadLines(file.FullName).SelectMany(str => str.Split(new[] { "\n" }, StringSplitOptions.None)).ToList(); 
+                break;
+
+            default: 
+                
+                throw new Exception(Messages.ExtensionNotHandled);
         }
     }
 
