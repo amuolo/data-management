@@ -6,7 +6,7 @@ public record JobConfiguration()
 
     public JobConfiguration WithLogs(Action<string> logger) => this with { Logger = logger };
 
-    public JobConfiguration WithProgressBar(Action<int> enable, Action update, Action close)
+    public JobConfiguration WithProgress(Action<int> enable, Action update, Action close)
         => this with 
         {
             ProgressBarEnable = enable, 
