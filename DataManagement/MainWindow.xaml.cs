@@ -36,11 +36,11 @@ public partial class MainWindow : Window
         var fileName = file?.FullName?.Replace(State.Path, "");
         var progressBar = new ProgressBar();
 
-        Job.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
-                 .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
-                 .WithStep($"Processing new data", () => State.Data.Process())
-                 .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetPrintable()))
-                 .Start();
+        JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
+                        .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
+                        .WithStep($"Processing new data", () => State.Data.Process())
+                        .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetPrintable()))
+                        .Start();
     }
 
     private void ExportClick(object sender, RoutedEventArgs e)
@@ -49,8 +49,8 @@ public partial class MainWindow : Window
         var fileName = State.Path + "\\" + name?? "";
         var progressBar = new ProgressBar();
 
-        Job.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
-                 .WithStep($"Export to file {name}", () => DataOperator.Export(State.Data.GetPrintable(), fileName))
-                 .Start();
+        JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgressBar(progressBar.Enable, progressBar.Update, progressBar.Disable))
+                        .WithStep($"Export to file {name}", () => DataOperator.Export(State.Data.GetPrintable(), fileName))
+                        .Start();
     }
 }
