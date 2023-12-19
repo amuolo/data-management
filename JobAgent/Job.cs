@@ -1,6 +1,5 @@
 ﻿using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Xml.Linq;
 
 namespace JobAgent;
 
@@ -47,7 +46,7 @@ public record Job()
 
     /* Private */
 
-    private string StepName { get; set; }
+    private string StepName { get; set; } = string.Empty;
 
     private object? Result { get; set; }
 

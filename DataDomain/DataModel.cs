@@ -14,14 +14,14 @@ public class DataModel
     {
         Data = list;
     }
-    
-    public void Process()
-    {
-        // TODO
-    }
 
     public List<string> GetPrintable()
     {
-        return Data as List<string>?? new List<string>();
+        return Data as List<string>?? [];
+    }
+
+    public void Process()
+    {
+        // TODO
     }
 }

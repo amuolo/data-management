@@ -1,4 +1,4 @@
-﻿namespace DataDomain;
+﻿namespace DataAgent;
 
 public record Messages
 {

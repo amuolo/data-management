@@ -1,6 +1,6 @@
 ﻿using System.Text.Json;
 
-namespace DataDomain;
+namespace DataAgent;
 
 public static class DataOperator
 {
@@ -20,12 +20,12 @@ public static class DataOperator
 
         switch (file.Extension)
         {
-            case ".csv": 
+            case ".csv":
 
-                return File.ReadLines(file.FullName).SelectMany(str => str.Split(new[] { "\n" }, StringSplitOptions.None)).ToList(); 
+                return File.ReadLines(file.FullName).SelectMany(str => str.Split(new[] { "\n" }, StringSplitOptions.None)).ToList();
 
-            default: 
-                
+            default:
+
                 throw new Exception(Messages.ExtensionNotHandled);
         }
     }
