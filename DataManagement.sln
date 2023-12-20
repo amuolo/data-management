@@ -5,11 +5,11 @@ VisualStudioVersion = 17.8.34330.188
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Application", "DataManagement\Application.csproj", "{2DD2660D-AD82-4FA3-A3CD-A9F489B45997}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JobAgent", "JobAgent\JobAgent.csproj", "{CD95A6BF-DD97-4136-A16A-1F914A0A2A97}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "JobFactory", "JobAgent\JobFactory.csproj", "{CD95A6BF-DD97-4136-A16A-1F914A0A2A97}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataDomain", "DataDomain\DataDomain.csproj", "{D618B974-AE8D-4BAB-A927-1CD489CF6836}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DataAgent", "DataAgent\DataAgent.csproj", "{7961F312-9F09-4C64-85CF-358CA18FA373}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAgent", "DataAgent\DataAgent.csproj", "{7961F312-9F09-4C64-85CF-358CA18FA373}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

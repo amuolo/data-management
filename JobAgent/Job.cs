@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using System.Reflection;
 
-namespace JobAgent;
+namespace Job;
 
 public static class JobFactory
 {

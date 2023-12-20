@@ -1,4 +1,4 @@
-﻿namespace JobAgent;
+﻿namespace Job;
 
 public record JobConfiguration()
 {

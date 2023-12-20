@@ -1,5 +1,5 @@
 ﻿using DataDomain;
-using JobAgent;
+using Job;
 using DataAgent;
 using System.IO;
 using System.Windows;

@@ -12,7 +12,7 @@
   <ItemGroup>
     <ProjectReference Include="..\DataAgent\DataAgent.csproj" />
     <ProjectReference Include="..\DataDomain\DataDomain.csproj" />
-    <ProjectReference Include="..\JobAgent\JobAgent.csproj" />
+    <ProjectReference Include="..\JobAgent\JobFactory.csproj" />
   </ItemGroup>
 
 </Project>
