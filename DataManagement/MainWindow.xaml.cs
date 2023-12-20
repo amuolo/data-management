@@ -19,11 +19,18 @@ public partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+
+        AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler((_, e) => Logger("Unhandled exception event"));
+
+        Application.Current.DispatcherUnhandledException += new DispatcherUnhandledExceptionEventHandler((_, e) => Logger("Dispatcher Unhandled Exception"));
+
+        TaskScheduler.UnobservedTaskException += new EventHandler<UnobservedTaskExceptionEventArgs>((_, e) => Logger("Unobserved Task Exception Event Args"));
+
         var dirInfo = new DirectoryInfo(".");
-        var path = dirInfo.FullName;
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
-        State = new(path, new DataModel(), new DataWindow());
+
+        State = new(dirInfo.FullName, new DataModel(), new DataWindow());
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
