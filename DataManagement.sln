@@ -11,6 +11,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataDomain", "DataDomain\Da
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DataAgent", "DataAgent\DataAgent.csproj", "{7961F312-9F09-4C64-85CF-358CA18FA373}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "Utils\Utils.csproj", "{01859BDD-F25B-4861-9400-65CF996A3B6D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -69,6 +71,18 @@ Global
 		{7961F312-9F09-4C64-85CF-358CA18FA373}.Release|arm64.Build.0 = Release|Any CPU
 		{7961F312-9F09-4C64-85CF-358CA18FA373}.Release|x86.ActiveCfg = Release|Any CPU
 		{7961F312-9F09-4C64-85CF-358CA18FA373}.Release|x86.Build.0 = Release|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Debug|arm64.ActiveCfg = Debug|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Debug|arm64.Build.0 = Debug|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Debug|x86.Build.0 = Debug|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Release|arm64.ActiveCfg = Release|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Release|arm64.Build.0 = Release|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Release|x86.ActiveCfg = Release|Any CPU
+		{01859BDD-F25B-4861-9400-65CF996A3B6D}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
