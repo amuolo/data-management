@@ -8,6 +8,8 @@ namespace DataDomain;
 
 public class DataModel
 {
+    public event EventHandler<EventArgs> DataChanged;
+
     public object Data { get; set; } = new object();
 
     public void Update(List<string> list)

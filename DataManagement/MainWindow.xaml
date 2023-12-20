@@ -2,16 +2,16 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Task Organizer" Height="450" Width="1000">
-    <Grid>
-        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="559,15,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick"/>
-        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="559,46,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick"/>
-        <Button Name="OpenDataWindow" Content="Check Data" HorizontalAlignment="Left" Margin="61,31,0,0" VerticalAlignment="Top" Width="72" Click="OpenDataWindowClick" Height="20"/>
+    <Grid Background="#FFD8E8FE">
+        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="559,15,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick" Background="#FFABDEFA" BorderBrush="#FFCAC9C9"/>
+        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="559,46,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick" Background="#FFABDEFA" BorderBrush="#FFCAC9C9"/>
+        <Button Name="OpenDataWindow" Content="Check Data" HorizontalAlignment="Left" Margin="61,31,0,0" VerticalAlignment="Top" Width="72" Click="OpenDataWindowClick" Background="#FFABDEFA" BorderBrush="#FFCAC9C9"/>
 
-        <TextBox Name="ExportFileName" HorizontalAlignment="Left" Margin="654,47,0,0" TextWrapping="Wrap" AcceptsReturn="False" Text="" VerticalAlignment="Top" Width="190"/>
+        <TextBox Name="ExportFileName" HorizontalAlignment="Left" Margin="654,47,0,0" TextWrapping="Wrap" AcceptsReturn="False" Text="" VerticalAlignment="Top" Width="190" BorderBrush="#FFCAC9C9" Height="19"/>
 
         <ListBox Name="MainArea" Margin="27,81,24,24"/>
 
-        <ComboBox Name="InputFilePicker" HorizontalAlignment="Left" Margin="654,15,0,0" VerticalAlignment="Top" Width="190" Height="20">
+        <ComboBox Name="InputFilePicker" HorizontalAlignment="Left" Margin="654,15,0,0" VerticalAlignment="Top" Width="190" Background="#FFABDEFA" BorderBrush="#FFCAC9C9" Height="20">
             <ComboBox.ItemTemplate>
                 <DataTemplate>
                     <StackPanel Orientation="Horizontal">
