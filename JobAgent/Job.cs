@@ -6,16 +6,16 @@ namespace JobAgent;
 
 public static class JobFactory
 {
-    public static JobBase<Task> New() => new();
+    public static Job New() => new();
 }
 
-public record JobBase<T> : Job<T> where T : Task
+public record Job : Job<Task>
 {
-    public JobBase<T> WithStep(string name, Action step) => this with { Steps = Steps.Add((name, step)) };
+    public Job WithStep(string name, Action step) => this with { Steps = Steps.Add((name, step)) };
 
-    public Job<TResult> WithStep<TResult>(string name, Func<TResult> step) => New<T, TResult>(this with { Steps = Steps.Add((name, step)) });
+    public Job<TResult> WithStep<TResult>(string name, Func<TResult> step) => New<Task, TResult>(this with { Steps = Steps.Add((name, step)) });
 
-    public JobBase<T> WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
+    public Job WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
 }
 
 public record Job<T>()
