@@ -26,9 +26,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler((_, e) => Logger("Unhandled exception event"));
-
         Application.Current.DispatcherUnhandledException += new DispatcherUnhandledExceptionEventHandler((_, e) => Logger("Dispatcher Unhandled Exception"));
-
         TaskScheduler.UnobservedTaskException += new EventHandler<UnobservedTaskExceptionEventArgs>((_, e) => Logger("Unobserved Task Exception Event Args"));
 
         var dirInfo = new DirectoryInfo(".");
@@ -36,12 +34,12 @@ public partial class MainWindow : Window
         InputFilePicker.ItemsSource = files;
 
         var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddHostedService<Agent<Model>>(); // TODO: finish
+        builder.Services.AddHostedService<Data>(); // TODO: finish
 
         State = new(dirInfo.FullName, new Model(), new DataWindow());
 
         HostInstance = builder.Build();
-        HostInstance.Run();
+        Task.Run(() => HostInstance.Run());
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();

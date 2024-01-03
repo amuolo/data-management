@@ -5,7 +5,7 @@ namespace DataAgent;
 
 public record DataChangedArgs();
 
-public class DataAgent : Agent<Model>
+public class Data : Agent<Model>
 {
     public event EventHandler<DataChangedArgs> DataChanged;
 
