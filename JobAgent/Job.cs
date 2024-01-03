@@ -19,7 +19,9 @@ public static class JobFactory
 {
     public static Job New() => new();
 
-    public static Job<T> New<T>(T initialState) => new Job<T>().Initialize(initialState);
+    public static Job<TState> New<TState>() where TState : new() => new Job<TState>().Initialize(new TState());
+
+    public static Job<TState> New<TState>(TState initialState) => new Job<TState>().Initialize(initialState);
 }
 
 public record Job : Job<Task>
@@ -31,47 +33,49 @@ public record Job : Job<Task>
     }
 
     public Job<TResult> WithStep<TResult>(string name, Func<TResult> step)
-    { 
-        Steps.Enqueue((name, step)); 
+    {
+        Steps.Enqueue((name, step));
         return New<Task, TResult>(this);
     }
 
     public override Job WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
 }
 
-public record Job<T>()
+public record Job<TState>()
 {
     /* Public API */
 
-    public T? State { get; set; }
+    public TState? State { get; set; }
 
-    public Job<T> Initialize(T? state) => this with { State = state };
+    public Job<TState> Initialize(TState? state) => this with { State = state };
 
-    public Job<T> WithPostActions(string name, Action<T> action) => this with { PostActions = PostActions.Add((name, action)) };
+    public Job<TState> WithPostActions(string name, Action<TState> action) => this with { PostActions = PostActions.Add((name, action)) };
 
-    public virtual Job<T> WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
+    public virtual Job<TState> WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
 
-    public Job<T> WithStep(string name, Action<T> step) 
-    { 
-        Steps.Enqueue((name, step)); 
+    public Job<TState> WithStep(string name, Action<TState> step) 
+    {
+        Steps.Enqueue((name, step));
         return this; 
     }
 
-    public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, TResult> step) where TPrevious : T 
+    public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, TResult> step) where TPrevious : TState
     { 
-        Steps.Enqueue((name, step)); 
-        return New<T, TResult>(this); 
+        Steps.Enqueue((name, step));
+        return New<TState, TResult>(this); 
     }
 
-    public Task<Job<T>> Start()
+    public Task<Job<TState>> Start(CancellationToken cancellationToken = new())
     {
         return Task.Run(async () =>
         {
             try
             {
+                await Semaphore.WaitAsync(cancellationToken);
+
                 if (Configuration.ShowProgress) Configuration.ProgressBarEnable?.DynamicInvoke(Steps.Count);
 
-                while (!Steps.IsEmpty)
+                while (!Steps.IsEmpty && !cancellationToken.IsCancellationRequested)
                 {
                     var ok = Steps.TryDequeue(out var step);
 
@@ -89,8 +93,11 @@ public record Job<T>()
             {
                 Configuration.Logger?.Invoke($"Exception caught when executing '{StepName}': {ex.InnerException?.Message?? ex.Message}");
             }
-
-            if (Configuration.ShowProgress) Configuration.ProgressBarClose();
+            finally
+            {
+                if (Configuration.ShowProgress) Configuration.ProgressBarClose();
+                Semaphore.Release();
+            }          
 
             return this;
         });
@@ -98,7 +105,7 @@ public record Job<T>()
 
     /* Private */
 
-    private readonly SemaphoreSlim semaphore = new(0);
+    protected SemaphoreSlim Semaphore => new(1, 1);
 
     protected string StepName { get; set; } = string.Empty;
 
@@ -115,7 +122,7 @@ public record Job<T>()
         timer.Start();
 
         var task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke());
-        State = (T?)await task;
+        State = (TState?)await task;
 
         timer.Stop();
         Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");
