@@ -17,6 +17,8 @@ namespace Job;
 public static class JobFactory
 {
     public static Job New() => new();
+
+    public static Job<T> New<T>(T initialState) => new Job<T>().Initialize(initialState);
 }
 
 public record Job : Job<Task>
@@ -32,7 +34,9 @@ public record Job<T>()
 {
     /* Public API */
 
-    public object? GetResult() => Result;
+    public T? State { get; set; }
+
+    public Job<T> Initialize(T? state) => this with { State = state };
 
     public Job<T> WithPostActions(string name, Action<T> action) => this with { PostActions = PostActions.Add((name, action)) };
 
@@ -73,8 +77,6 @@ public record Job<T>()
 
     protected string StepName { get; set; } = string.Empty;
 
-    protected T? Result { get; set; }
-
     protected JobConfiguration Configuration { get; set; } = new();
 
     protected ImmutableList<(string Name, Delegate Func)> PostActions { get; set; } = ImmutableList<(string, Delegate)>.Empty;
@@ -87,8 +89,8 @@ public record Job<T>()
         StepName = name;
         timer.Start();
 
-        var task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(Result) : func.DynamicInvoke());
-        Result = (T?)await task;
+        var task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke());
+        State = (T?)await task;
 
         timer.Stop();
         Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");
