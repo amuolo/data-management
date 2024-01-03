@@ -1,4 +1,5 @@
-﻿using System.Collections.Immutable;
+﻿using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Reflection;
 
@@ -23,11 +24,19 @@ public static class JobFactory
 
 public record Job : Job<Task>
 {
-    public Job WithStep(string name, Action step) => this with { Steps = Steps.Add((name, step)) };
+    public Job WithStep(string name, Action step)
+    {
+        Steps.Enqueue((name, step));
+        return this;
+    }
 
-    public Job<TResult> WithStep<TResult>(string name, Func<TResult> step) => New<Task, TResult>(this with { Steps = Steps.Add((name, step)) });
+    public Job<TResult> WithStep<TResult>(string name, Func<TResult> step)
+    { 
+        Steps.Enqueue((name, step)); 
+        return New<Task, TResult>(this);
+    }
 
-    public Job WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
+    public override Job WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
 }
 
 public record Job<T>()
@@ -40,9 +49,19 @@ public record Job<T>()
 
     public Job<T> WithPostActions(string name, Action<T> action) => this with { PostActions = PostActions.Add((name, action)) };
 
-    public Job<T> WithStep(string name, Action<T> step) => this with { Steps = Steps.Add((name, step)) };
+    public virtual Job<T> WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
 
-    public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, TResult> step) where TPrevious : T => New<T, TResult>(this) with { Steps = Steps.Add((name, step)) };
+    public Job<T> WithStep(string name, Action<T> step) 
+    { 
+        Steps.Enqueue((name, step)); 
+        return this; 
+    }
+
+    public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, TResult> step) where TPrevious : T 
+    { 
+        Steps.Enqueue((name, step)); 
+        return New<T, TResult>(this); 
+    }
 
     public Task<Job<T>> Start()
     {
@@ -52,8 +71,12 @@ public record Job<T>()
             {
                 if (Configuration.ShowProgress) Configuration.ProgressBarEnable?.DynamicInvoke(Steps.Count);
 
-                foreach (var step in Steps)
+                while (!Steps.IsEmpty)
                 {
+                    var ok = Steps.TryDequeue(out var step);
+
+                    if (!ok) throw new Exception("Issue with job dequeueing");
+
                     await Execute(step.Name, step.Func);
 
                     foreach (var post in PostActions)
@@ -75,13 +98,15 @@ public record Job<T>()
 
     /* Private */
 
+    private readonly SemaphoreSlim semaphore = new(0);
+
     protected string StepName { get; set; } = string.Empty;
 
     protected JobConfiguration Configuration { get; set; } = new();
 
     protected ImmutableList<(string Name, Delegate Func)> PostActions { get; set; } = ImmutableList<(string, Delegate)>.Empty;
 
-    protected ImmutableList<(string Name, Delegate Func)> Steps { get; set; } = ImmutableList<(string, Delegate)>.Empty;
+    protected ConcurrentQueue<(string Name, Delegate Func)> Steps { get; set; } = new();
 
     protected async Task<bool> Execute(string name, Delegate func)
     {
