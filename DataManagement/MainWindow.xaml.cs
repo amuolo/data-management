@@ -4,6 +4,9 @@ using DataAgent;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
+using Microsoft.Extensions.DependencyInjection;
+using Agency;
+using Microsoft.Extensions.Hosting;
 
 namespace DataManagement;
 
@@ -15,6 +18,8 @@ public record MainWindowState(string Path, Model Data, DataWindow DataWindow);
 public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
+
+    private IHost? HostInstance { get; set; }
 
     public MainWindow()
     {
@@ -30,7 +35,13 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
+        var builder = Host.CreateApplicationBuilder();
+        builder.Services.AddHostedService<Agent<Model>>(); // TODO: finish
+
         State = new(dirInfo.FullName, new Model(), new DataWindow());
+
+        HostInstance = builder.Build();
+        HostInstance.Run();
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();

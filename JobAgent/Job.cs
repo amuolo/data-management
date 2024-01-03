@@ -91,7 +91,7 @@ public record Job<TState>()
             }
             catch (Exception ex)
             {
-                Configuration.Logger?.Invoke($"Exception caught when executing '{StepName}': {ex.InnerException?.Message?? ex.Message}");
+                Configuration.Logger?.Invoke($"Exception caught when executing '{CurrentStep}': {ex.InnerException?.Message?? ex.Message}");
             }
             finally
             {
@@ -107,7 +107,7 @@ public record Job<TState>()
 
     protected SemaphoreSlim Semaphore => new(1, 1);
 
-    protected string StepName { get; set; } = string.Empty;
+    protected string CurrentStep { get; set; } = string.Empty;
 
     protected JobConfiguration Configuration { get; set; } = new();
 
@@ -118,7 +118,7 @@ public record Job<TState>()
     protected async Task<bool> Execute(string name, Delegate func)
     {
         Stopwatch timer = new();
-        StepName = name;
+        CurrentStep = name;
         timer.Start();
 
         var task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke());
@@ -133,7 +133,7 @@ public record Job<TState>()
         => new Job<TResult>() with
         {
             Configuration = job.Configuration,
-            StepName = job.StepName,
+            CurrentStep = job.CurrentStep,
             PostActions = job.PostActions,
             Steps = job.Steps
         };

@@ -1,11 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.Extensions.Hosting;
 
 namespace Agency;
 
-public class Manager
+public class Manager : BackgroundService
 {
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        while (!stoppingToken.IsCancellationRequested)
+        {
+            // TODO: finish
+            await Task.Delay(1000, stoppingToken); 
+        }
+    }
 }
