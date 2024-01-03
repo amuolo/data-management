@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\AgentContract\Agency.csproj" />
+    <ProjectReference Include="..\DataDomain\DataDomain.csproj" />
   </ItemGroup>
 
 </Project>
