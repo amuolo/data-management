@@ -7,7 +7,7 @@ using System.Windows.Threading;
 
 namespace DataManagement;
 
-public record MainWindowState(string Path, DataModel Data, DataWindow DataWindow);
+public record MainWindowState(string Path, Model Data, DataWindow DataWindow);
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -30,7 +30,7 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        State = new(dirInfo.FullName, new DataModel(), new DataWindow());
+        State = new(dirInfo.FullName, new Model(), new DataWindow());
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();

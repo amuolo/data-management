@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace DataDomain;
 
-namespace DataDomain;
-
-public class DataModel
+public class Model
 {
     public object Data { get; set; } = new object();
 

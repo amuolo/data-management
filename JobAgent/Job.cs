@@ -4,6 +4,16 @@ using System.Reflection;
 
 namespace Job;
 
+/// <summary>
+/// Tasks handler made handy via easy-to-use api and commodities such as logs and progress visualization
+/// Example usage:
+/// JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
+///                 .WithStep($"Import", () => State.Data.FirstStep())
+///                 .WithStep($"Processing", () => State.Data.SecondStep())
+///                 .WithStep($"Update Window", () => State.DataWindow.LastStep())
+///                 .Start();
+/// </summary>
+
 public static class JobFactory
 {
     public static Job New() => new();
@@ -30,7 +40,7 @@ public record Job<T>()
 
     public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, TResult> step) where TPrevious : T => New<T, TResult>(this) with { Steps = Steps.Add((name, step)) };
 
-    public Task Start()
+    public Task<Job<T>> Start()
     {
         return Task.Run(async () =>
         {
@@ -54,6 +64,8 @@ public record Job<T>()
             }
 
             if (Configuration.ShowProgress) Configuration.ProgressBarClose();
+
+            return this;
         });
     }
 
@@ -61,7 +73,7 @@ public record Job<T>()
 
     protected string StepName { get; set; } = string.Empty;
 
-    protected object? Result { get; set; }
+    protected T? Result { get; set; }
 
     protected JobConfiguration Configuration { get; set; } = new();
 
@@ -75,8 +87,8 @@ public record Job<T>()
         StepName = name;
         timer.Start();
 
-        dynamic task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(Result) : func.DynamicInvoke());
-        Result = await task;
+        var task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(Result) : func.DynamicInvoke());
+        Result = (T?)await task;
 
         timer.Stop();
         Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");
@@ -88,7 +100,6 @@ public record Job<T>()
         {
             Configuration = job.Configuration,
             StepName = job.StepName,
-            Result = job.Result,
             PostActions = job.PostActions,
             Steps = job.Steps
         };

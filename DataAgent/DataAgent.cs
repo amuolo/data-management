@@ -1,13 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using AgentContract;
 
 namespace DataAgent;
 
-public class DataAgent
+public record DataChangedArgs();
+
+public class DataAgent : Agent
 {
-    public event EventHandler<EventArgs> DataChanged;
+    public event EventHandler<DataChangedArgs> DataChanged;
 
 }

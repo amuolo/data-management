@@ -32,7 +32,7 @@ public static class DataOperator
 
     public static void Export(List<string> data, string? fileName)
     {
-        if (fileName == null) throw new Exception(Messages.EmptyFileName);
+        if (fileName == null || fileName == "" || fileName.EndsWith("\\")) throw new Exception(Messages.EmptyFileName);
 
         var text = string.Join("\n", data);
 
