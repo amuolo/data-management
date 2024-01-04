@@ -1,12 +1,32 @@
-﻿using Agency;
-using DataDomain;
+﻿using Microsoft.AspNetCore.SignalR;
 
 namespace DataAgent;
 
-public record DataChangedArgs();
-
-public class Data : Agent<Model>
+public interface IDataContract
 {
-    public event EventHandler<DataChangedArgs> DataChanged;
+    /* in */
+    Task ImportRequest(string fileName);
 
+    /* out */
+    Task DataChanged();
 }
+
+public class DataHub : Hub<IDataContract>
+{
+    /* in */
+    
+    public async Task HandleImportRequest(string fileName)
+    {
+        // TODO: finish
+        await Task.CompletedTask;
+    }
+
+    /* out */
+
+    public async Task DataChanged()
+    {
+        await Clients.All.DataChanged();
+    }
+}
+
+

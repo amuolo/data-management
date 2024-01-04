@@ -6,7 +6,8 @@ using System.Windows;
 using System.Windows.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using Agency;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Components;
 
 namespace DataManagement;
 
@@ -19,7 +20,7 @@ public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
 
-    private IHost? HostInstance { get; set; }
+    private WebApplication? App { get; set; }
 
     public MainWindow()
     {
@@ -33,13 +34,13 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        var builder = Host.CreateApplicationBuilder();
-        builder.Services.AddHostedService<Data>(); // TODO: finish
-
         State = new(dirInfo.FullName, new Model(), new DataWindow());
 
-        HostInstance = builder.Build();
-        Task.Run(() => HostInstance.Run());
+        var builder = Configurator.Create();
+        builder.Services.AddHostedService<Agent<Model, DataHub, IDataContract>>();
+        App = builder.Build();
+        App.MapHub<DataHub>("/signalr-messaging");
+        Task.Run(() => App.Run());
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
