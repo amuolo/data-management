@@ -11,25 +11,16 @@ public class Agent<TState, THub, IContract> : BackgroundService
     where THub : Hub<IContract>
     where IContract : class
 {
-    private NavigationManager NavigationManager { get; set; }
-
     private IHubContext<THub, IContract> HubContext { get; }
-
-    private Job<TState> Job { get; set; } = JobFactory.New<TState>();
-
-    private SemaphoreSlim Semaphore { get; set; } = new(1, 1);
-
-    public TState? State => Job.State;
 
     public Agent(IHubContext<THub, IContract> messagingHub)
     {
         HubContext = messagingHub;
-        NavigationManager = new Navigator("http://localhost:8000/application", "http://localhost:8000/application");
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var connection = new HubConnectionBuilder().WithUrl(NavigationManager.ToAbsoluteUri("/signalr-messaging")).Build();
+        var connection = Navigator.GetConnection();
 
         foreach (var method in typeof(IContract).GetMethods())
         {

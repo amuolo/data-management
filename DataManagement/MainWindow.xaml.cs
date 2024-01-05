@@ -4,9 +4,7 @@ using DataAgent;
 using System.IO;
 using System.Windows;
 using System.Windows.Threading;
-using Microsoft.Extensions.DependencyInjection;
 using Agency;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
 
 namespace DataManagement;
@@ -20,7 +18,7 @@ public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
 
-    private WebApplication? App { get; set; }
+    private Configuration Configuration { get; set; }
 
     public MainWindow()
     {
@@ -36,11 +34,7 @@ public partial class MainWindow : Window
 
         State = new(dirInfo.FullName, new Model(), new DataWindow());
 
-        var builder = Configurator.Create();
-        builder.Services.AddHostedService<Agent<Model, DataHub, IDataContract>>();
-        App = builder.Build();
-        App.MapHub<DataHub>("/signalr-messaging");
-        Task.Run(() => App.Run());
+        Configuration = Configuration.Create().AddAgent<Model, DataHub, IDataContract>().Run();
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();

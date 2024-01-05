@@ -4,11 +4,6 @@
     <_LastSelectedProfileId>C:\Users\amuolo\source\repos\DataManagement\DataManagement\Properties\PublishProfiles\FolderProfile.pubxml</_LastSelectedProfileId>
   </PropertyGroup>
   <ItemGroup>
-    <ApplicationDefinition Update="App.xaml">
-      <SubType>Designer</SubType>
-    </ApplicationDefinition>
-  </ItemGroup>
-  <ItemGroup>
     <Compile Update="DataWindow.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
