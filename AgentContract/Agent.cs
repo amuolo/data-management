@@ -37,10 +37,8 @@ public class Agent<TState, THub, IContract> : BackgroundService
             if (handle != null)
             {
                 var parameters = method.GetParameters().Select(x => x.ParameterType).ToArray();
-                var on = connection.GetType().GetMethod("On")?.MakeGenericMethod(typeof(string));
+                var on = connection.GetType().GetMethod("On", parameters);
                 on?.Invoke(connection, new object[] { method.Name, handle });
-
-                //connection.On<string>(method.Name, handle);
             }
         }
 
