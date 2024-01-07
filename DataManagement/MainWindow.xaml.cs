@@ -6,6 +6,10 @@ using System.Windows;
 using System.Windows.Threading;
 using Agency;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.SignalR.Client;
+using System.Net;
 
 namespace DataManagement;
 
@@ -18,7 +22,7 @@ public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
 
-    private Configuration Configuration { get; set; }
+    private Office<IContract> Office { get; set; }
 
     public MainWindow()
     {
@@ -34,7 +38,9 @@ public partial class MainWindow : Window
 
         State = new(dirInfo.FullName, new Model(), new DataWindow());
 
-        Configuration = Configuration.Create().AddAgent<Model, DataHub, IDataContract>().Run();
+        Office = Office<IContract>.Create().AddAgent<Model, DataHub, IDataContract>().Run();
+
+        Office.Post(dataAgent => dataAgent.ImportRequest("a"));
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();

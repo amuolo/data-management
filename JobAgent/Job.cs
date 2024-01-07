@@ -14,7 +14,6 @@ namespace Job;
 ///                 .WithStep($"Update Window", () => State.DataWindow.LastStep())
 ///                 .Start();
 /// </summary>
-
 public static class JobFactory
 {
     public static Job New() => new();

@@ -1,7 +1,4 @@
-﻿using Job;
-using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Client;
+﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Hosting;
 
 namespace Agency;
