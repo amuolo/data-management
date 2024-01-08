@@ -10,17 +10,17 @@ public class ManagerHub<IContract> : Hub<IContract> where IContract : class
 
 public class Manager<IContract> : BackgroundService where IContract : class
 {
-    ChannelReader<Action<IContract>> ChannelReader { get; }
-    ChannelWriter<Action<IContract>> ChannelWriter { get; }
+    Channel<Action<IContract>> Channel { get; }
+    ChannelReader<Action<IContract>> ChannelReader => Channel.Reader;
+    ChannelWriter<Action<IContract>> ChannelWriter => Channel.Writer;
 
     IHubContext<ManagerHub<IContract>, IContract> HubContext { get; }
 
     SemaphoreSlim Semaphore { get; } = new(1, 1);
 
-    public Manager(ChannelReader<Action<IContract>> channelReader, ChannelWriter<Action<IContract>> channelWriter, IHubContext<ManagerHub<IContract>, IContract> messagingHub)
+    public Manager(Channel<Action<IContract>> channel, IHubContext<ManagerHub<IContract>, IContract> messagingHub)
     {
-        ChannelReader = channelReader;
-        ChannelWriter = channelWriter;
+        Channel = channel;
         HubContext = messagingHub;
     }
 

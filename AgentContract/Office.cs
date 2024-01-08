@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System.Collections.Concurrent;
 using System.Collections.Immutable;
@@ -32,6 +34,12 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 
         builder.Services.AddSingleton(office.ChannelGlobal);
         builder.Services.AddHostedService<Manager<IContract>>();
+        
+        /* For reference
+        Host.CreateDefaultBuilder()
+            .ConfigureServices(services => services.AddSingleton(office.ChannelGlobal)
+                                                   .AddHostedService<Manager<IContract>>()
+                                                   .AddSignalR()).Build().Run(); */
 
         return office;
     }

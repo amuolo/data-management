@@ -13,7 +13,7 @@ using System.Net;
 
 namespace DataManagement;
 
-public record MainWindowState(string Path, Model Data, DataWindow DataWindow);
+public record MainWindowState(string Path, Office<IContract> Office, Model Data, DataWindow DataWindow);
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -21,8 +21,6 @@ public record MainWindowState(string Path, Model Data, DataWindow DataWindow);
 public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
-
-    private Office<IContract> Office { get; set; }
 
     public MainWindow()
     {
@@ -36,11 +34,12 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        State = new(dirInfo.FullName, new Model(), new DataWindow());
+        var office = Office<IContract>.Create().AddAgent<Model, DataHub, IDataContract>().Run();
 
-        Office = Office<IContract>.Create().AddAgent<Model, DataHub, IDataContract>().Run();
+        State = new(dirInfo.FullName, office, new Model(), new DataWindow());
 
-        Office.Post(dataAgent => dataAgent.ImportRequest("a"));
+        // TODO: temporary line to debug posting via webapp with SignalR
+        State.Office.Post(dataAgent => dataAgent.ImportRequest("a"));
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();

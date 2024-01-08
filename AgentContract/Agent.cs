@@ -31,24 +31,5 @@ public class Agent<TState, THub, IContract> : BackgroundService
         }
 
         await connection.StartAsync();
-
-        //using PeriodicTimer timer = new(TimeSpan.FromMilliseconds(500));
-        //while (!cancellationToken.IsCancellationRequested && await timer.WaitForNextTickAsync(cancellationToken))
-        //{
-        //    await foreach (var item in channelReader.ReadAllAsync(cancellationToken))
-        //    {
-        //        try
-        //        {
-        //            // TODO: finish
-        //            await Semaphore.WaitAsync(cancellationToken);
-        //            await Job.WithStep("a", state => Task.Delay(1000)).Start(cancellationToken);
-        //            Semaphore.Release();
-        //        }
-        //        catch (Exception e)
-        //        {
-        //            channelWriter.TryWrite(new Log(DateTime.Now, null, e.Message));
-        //        }
-        //    }
-        //}
     }
 }
