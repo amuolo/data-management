@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
 
 namespace Agency;
@@ -10,6 +12,8 @@ public class Agent<TState, THub, IContract> : BackgroundService
 {
     private IHubContext<THub, IContract> HubContext { get; }
 
+    [Inject] public NavigationManager Navigation { get; }
+
     public Agent(IHubContext<THub, IContract> messagingHub)
     {
         HubContext = messagingHub;
@@ -17,7 +21,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var connection = Navigator.GetConnection();
+        var connection = new HubConnectionBuilder().WithUrl(new Navigator().ToAbsoluteUri(Navigator.SignalRAddress)).Build();
 
         foreach (var method in typeof(IContract).GetMethods())
         {

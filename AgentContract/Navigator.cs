@@ -14,8 +14,5 @@ public class Navigator : NavigationManager
     public Navigator() { }
 
     protected override void EnsureInitialized() => Initialize(Address, Address);
-
-    public static HubConnection GetConnection()
-        => new HubConnectionBuilder().WithUrl(new Navigator().ToAbsoluteUri(SignalRAddress)).Build();
 }
 
