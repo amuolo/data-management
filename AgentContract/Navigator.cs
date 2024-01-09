@@ -5,7 +5,7 @@ namespace Agency;
 
 public class Navigator : NavigationManager
 {
-    public const string Address = "http://localhost:8000/application";
+    public readonly string Address = "http://localhost:8080/application";
 
     public const string SignalRAddress = "/signalr-messaging";
 

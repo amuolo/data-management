@@ -8,7 +8,7 @@ public interface IDataContract
 {
     /* in */
     Task Create(Model model);
-    Task ImportRequest(string fileName);
+    Task ImportRequest(string? fileName);
 
     /* out */
     Task DataChanged();
@@ -20,7 +20,7 @@ public class DataHub : Hub<IDataContract>
 
     public async Task HandleCreate(Model model) => await Task.Run(() => Jobs = JobFactory.New(model));
 
-    public async Task HandleImportRequest(string fileName)
+    public async Task HandleImportRequest(string? fileName)
     {
         // TODO: finish
         await Task.CompletedTask;

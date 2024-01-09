@@ -6,14 +6,10 @@ using System.Windows;
 using System.Windows.Threading;
 using Agency;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.SignalR;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.AspNetCore.SignalR.Client;
-using System.Net;
 
 namespace DataManagement;
 
-public record MainWindowState(string Path, Office<IContract> Office, Model Data, DataWindow DataWindow);
+public record MainWindowState(string Path, Model Data, DataWindow DataWindow);
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -22,24 +18,26 @@ public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
 
+    private Office<IContract> Office { get; }
+
     public MainWindow()
     {
         InitializeComponent();
 
-        AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler((_, e) => Logger("Unhandled exception event"));
-        Application.Current.DispatcherUnhandledException += new DispatcherUnhandledExceptionEventHandler((_, e) => Logger("Dispatcher Unhandled Exception"));
-        TaskScheduler.UnobservedTaskException += new EventHandler<UnobservedTaskExceptionEventArgs>((_, e) => Logger("Unobserved Task Exception Event Args"));
+        AppDomain.CurrentDomain.UnhandledException += new UnhandledExceptionEventHandler((s, e) => Logger($"Unhandled exception event"));
+        Application.Current.DispatcherUnhandledException += new DispatcherUnhandledExceptionEventHandler((s, e) => Logger($"Dispatcher Unhandled Exception"));
+        TaskScheduler.UnobservedTaskException += new EventHandler<UnobservedTaskExceptionEventArgs>((s, e) => Logger($"Unobserved Task Exception Event"));
 
         var dirInfo = new DirectoryInfo(".");
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        var office = Office<IContract>.Create().AddAgent<Model, DataHub, IDataContract>().Run();
+        Office = Office<IContract>.Create().AddAgent<Model, DataHub, IDataContract>().Run();
 
-        State = new(dirInfo.FullName, office, new Model(), new DataWindow());
+        State = new(dirInfo.FullName, new Model(), new DataWindow());
 
         // TODO: temporary line to debug posting via webapp with SignalR
-        State.Office.Post(dataAgent => dataAgent.ImportRequest("a"));
+        Office.Post(dataAgent => dataAgent.ImportRequest("a"));
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
@@ -51,6 +49,8 @@ public partial class MainWindow : Window
         var file = ((FileInfo)InputFilePicker.SelectedItem);
         var fileName = file?.FullName?.Replace(State.Path, "");
         var progressBar = new ProgressBar();
+
+        Office.Post(dataAgent => dataAgent.ImportRequest(fileName));
 
         JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
                         .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))

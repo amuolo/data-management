@@ -34,7 +34,7 @@ public class Manager<IContract> : BackgroundService where IContract : class
                 try
                 {
                     await Semaphore.WaitAsync(cancellationToken);
-                    item(HubContext.Clients.All);
+                    item.Invoke(HubContext.Clients.All);
                     Semaphore.Release();
                 }
                 catch (Exception e)
