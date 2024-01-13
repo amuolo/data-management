@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Utils", "Utils\Utils.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Agency", "AgentContract\Agency.csproj", "{B7502696-139A-4849-83B0-AFFC8C92553C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BlazorServer", "BlazorServer\BlazorServer.csproj", "{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +99,18 @@ Global
 		{B7502696-139A-4849-83B0-AFFC8C92553C}.Release|arm64.Build.0 = Release|Any CPU
 		{B7502696-139A-4849-83B0-AFFC8C92553C}.Release|x86.ActiveCfg = Release|Any CPU
 		{B7502696-139A-4849-83B0-AFFC8C92553C}.Release|x86.Build.0 = Release|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Debug|arm64.ActiveCfg = Debug|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Debug|arm64.Build.0 = Debug|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Debug|x86.Build.0 = Debug|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Release|arm64.ActiveCfg = Release|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Release|arm64.Build.0 = Release|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Release|x86.ActiveCfg = Release|Any CPU
+		{BCDDCCFF-03F0-402C-AC73-CD8A4BFE4532}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

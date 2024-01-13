@@ -1,0 +1,44 @@
+﻿@page "/"
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@implements IAsyncDisposable
+
+<div class="form-group">
+    <label>
+        User: <input @bind="userInput" />
+    </label>
+</div>
+
+<div class="form-group">
+    <label>
+        User: <input @bind="messageInput" />
+    </label>
+</div>
+
+<!-- 
+    <button @onclick="Send" disabled="@(IsConnected == false)">Send</button>
+-->
+
+@code {
+    private HubConnection? hubConnection;
+    private List<string> messages = new();
+    private string? userInput;
+    private string? messageInput;
+
+    protected override async Task OnInitializedAsync()
+    {
+        hubConnection = new HubConnectionBuilder().WithUrl(Navigation.ToAbsoluteUri("/signalr"))
+                                                  .WithAutomaticReconnect()
+                                                  .Build();
+
+        //hubConnection.On
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+
+    }
+}
+
+
+

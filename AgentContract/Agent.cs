@@ -5,23 +5,24 @@ using Microsoft.Extensions.Hosting;
 
 namespace Agency;
 
-public class Agent<TState, THub, IContract> : BackgroundService 
+public class Agent<TState, THub, IContract> : BackgroundService
     where TState : new()
     where THub : Hub<IContract>
     where IContract : class
 {
     private IHubContext<THub, IContract> HubContext { get; }
 
-    [Inject] public NavigationManager Navigation { get; }
+    private NavigationManager Navigation { get; }
 
-    public Agent(IHubContext<THub, IContract> messagingHub)
+    public Agent(IHubContext<THub, IContract> messagingHub, NavigationManager navigationManager)
     {
         HubContext = messagingHub;
+        Navigation = navigationManager;
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        var connection = new HubConnectionBuilder().WithUrl(new Navigator().ToAbsoluteUri(Navigator.SignalRAddress)).Build();
+        var connection = new HubConnectionBuilder().WithUrl(Navigator.Address).WithAutomaticReconnect().Build(); // Navigation.ToAbsoluteUri(Navigator.SignalRAddress)).Build();
 
         foreach (var method in typeof(IContract).GetMethods())
         {

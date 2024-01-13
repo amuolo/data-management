@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -27,14 +28,18 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         builder.Logging.ClearProviders().AddConsole();
 
         builder.Services.AddRazorPages();
+        builder.Services.AddRazorComponents();
         builder.Services.AddServerSideBlazor();
         builder.Services.AddControllers();
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddSignalR();
 
+        builder.Services.AddResponseCompression(opts =>
+            opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
+
         builder.Services.AddSingleton(office.ChannelGlobal);
         builder.Services.AddHostedService<Manager<IContract>>();
-        
+      
         /* For reference
         Host.CreateDefaultBuilder()
             .ConfigureServices(services => services.AddSingleton(office.ChannelGlobal)
@@ -58,10 +63,18 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
     {
         App = Builder.Build();
 
+        if(!App.Environment.IsDevelopment())
+        {
+            App.UseExceptionHandler("/Error");
+            App.UseHsts();
+        }
+
         App.UseRouting();
         App.UseHttpsRedirection();
         App.UseStaticFiles();
         App.UseWebSockets();
+        App.MapBlazorHub();
+        App.MapFallbackToPage("/_Host");
 
         App.MapHub<ManagerHub<IContract>>(Navigator.SignalRAddress);
 

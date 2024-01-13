@@ -6,6 +6,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Agency;
 using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace DataManagement;
 
