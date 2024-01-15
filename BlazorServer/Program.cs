@@ -1,3 +1,4 @@
+using BlazorServer;
 using BlazorServer.Components;
 using BlazorServer.Hubs;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -10,7 +11,6 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
-
 
 builder.Services.AddResponseCompression(opts =>
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));

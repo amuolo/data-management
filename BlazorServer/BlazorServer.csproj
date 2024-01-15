@@ -7,6 +7,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Components\_Imports" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="_Imports.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.1" />
   </ItemGroup>
 

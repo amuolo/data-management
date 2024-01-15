@@ -15,9 +15,14 @@
     </label>
 </div>
 
-<!-- 
-    <button @onclick="Send" disabled="@(IsConnected == false)">Send</button>
--->
+<button @onclick="Send" disabled="@(IsConnected == false)">Send</button>
+
+<ul>
+    @foreach (string message in messages)
+    {
+        <li>@message</li>
+    }
+</ul>
 
 @code {
     private HubConnection? hubConnection;
@@ -31,12 +36,28 @@
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
-        //hubConnection.On
+        hubConnection.On<string, string>("ReceiveMessage", (user, message) =>
+        {
+            var formattedMessage = $"{user}: {message}";
+            messages.Add(formattedMessage);
+            InvokeAsync(StateHasChanged);
+        });
+
+        await hubConnection.StartAsync();
     }
+
+    private async Task Send()
+    {
+        if (hubConnection is not null)
+            await hubConnection.SendAsync("SendMessage", userInput, messageInput);
+    }
+
+    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
     public async ValueTask DisposeAsync()
     {
-
+        if (hubConnection is not null)
+            await hubConnection.DisposeAsync();
     }
 }
 
