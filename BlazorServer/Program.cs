@@ -1,16 +1,17 @@
 using BlazorServer;
-using BlazorServer.Components;
 using BlazorServer.Hubs;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.AspNetCore.ResponseCompression;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
 builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
 
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
+
+builder.Services.Configure<RazorPagesOptions>(options => options.RootDirectory = "/Components/Pages");
 
 builder.Services.AddResponseCompression(opts =>
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
