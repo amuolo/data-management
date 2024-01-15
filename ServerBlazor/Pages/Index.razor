@@ -1,6 +1,6 @@
 ﻿@page "/"
 @using Microsoft.AspNetCore.SignalR.Client
-@inject NavigationManager Navigation
+@inject NavigationManager NavManager
 @implements IAsyncDisposable
 
 <div class="form-group">
@@ -11,11 +11,13 @@
 
 <div class="form-group">
     <label>
-        User: <input @bind="messageInput" />
+        Message: <input @bind="messageInput" />
     </label>
 </div>
 
 <button @onclick="Send" disabled="@(IsConnected == false)">Send</button>
+
+<hr />
 
 <ul>
     @foreach (string message in messages)
@@ -32,7 +34,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(Navigation.ToAbsoluteUri("/signalr"))
+        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri("/signalR"))
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
@@ -60,6 +62,3 @@
             await hubConnection.DisposeAsync();
     }
 }
-
-
-

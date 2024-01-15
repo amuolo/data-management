@@ -4,9 +4,9 @@ namespace Agency;
 
 public class Navigator : NavigationManager
 {
-    public readonly static string Address = "https://localhost:7071/signalr";
+    public readonly static string Address = "https://localhost:7071/signalR";
 
-    public const string SignalRAddress = "/signalr";
+    public const string SignalRAddress = "/signalR";
 
     public Navigator(string baseUri, string uri) => Initialize(baseUri, uri);
 

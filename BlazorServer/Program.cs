@@ -11,7 +11,7 @@ builder.Services.AddRazorComponents()
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 
-builder.Services.Configure<RazorPagesOptions>(options => options.RootDirectory = "/Components/Pages");
+builder.Services.Configure<RazorPagesOptions>(options => options.RootDirectory = "/Pages");
 
 builder.Services.AddResponseCompression(opts =>
     opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
@@ -27,15 +27,12 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseStaticFiles();
 app.UseRouting();
 app.UseAntiforgery();
 app.MapBlazorHub();
 
 app.MapHub<ServerHub>("/signalr");
-
-app.MapFallbackToPage("/_Host");
 
 app.MapRazorComponents<App>()
    .AddInteractiveServerRenderMode();
