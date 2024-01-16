@@ -35,12 +35,15 @@ public class Manager<IContract> : BackgroundService where IContract : class
                 {
                     await Semaphore.WaitAsync(cancellationToken);
                     item.Invoke(HubContext.Clients.All);
-                    Semaphore.Release();
                 }
                 catch (Exception e)
                 {
                     // TODO: finish
                     //channelWriter.TryWrite(new Log(DateTime.Now, null, e.Message));
+                }
+                finally
+                {
+                    Semaphore.Release();
                 }
             }
         }

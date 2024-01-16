@@ -6,12 +6,14 @@
         mc:Ignorable="d"
         Title="Data Management" Height="450" Width="1000">
     <Grid Background="#FFD8E8FE">
-        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="559,15,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick" Height="21" Background="#FFA4D5F1" BorderBrush="#FF9F9D9D"/>
-        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="559,46,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick" Height="21" Background="#FFA4D5F1" BorderBrush="#FF9F9D9D"/>
-        <Button Name="OpenDataWindow" Content="Check Data" HorizontalAlignment="Left" Margin="61,31,0,0" VerticalAlignment="Top" Width="72" Click="OpenDataWindowClick" Height="21" Background="#FFA4D5F1" BorderBrush="#FF9F9D9D"/>
+        <Button Name="Connect" Content="Connect" HorizontalAlignment="Left" Margin="300,15,0,0" VerticalAlignment="Top" Width="69" Click="ConnectClick" Height="21" Background="#FFA4D5F1" BorderBrush="#FF9F9D9D"/>
+        <Button Name="Import" Content="Import" HorizontalAlignment="Left" Margin="563,15,0,0" VerticalAlignment="Top" Width="69" Click="ImportClick" Height="21" Background="#FFA4D5F1" BorderBrush="#FF9F9D9D"/>
+        <Button Name="Export" Content="Export" HorizontalAlignment="Left" Margin="563,46,0,0" VerticalAlignment="Top" Width="69" Click="ExportClick" Height="21" Background="#FFA4D5F1" BorderBrush="#FF9F9D9D"/>
+        <Button Name="OpenDataWindow" Content="Check Data" HorizontalAlignment="Left" Margin="48,15,0,0" VerticalAlignment="Top" Width="72" Click="OpenDataWindowClick" Height="21" Background="#FFA4D5F1" BorderBrush="#FF9F9D9D"/>
 
         <TextBox Name="ExportFileName" HorizontalAlignment="Left" Margin="654,47,0,0" TextWrapping="Wrap" AcceptsReturn="False" Text="" VerticalAlignment="Top" Width="190" Height="21" BorderBrush="#FF9F9D9D"/>
 
+        <ListBox Name="Connection" Margin="393,15,469,398"/>
         <ListBox Name="MainArea" Margin="27,81,24,24"/>
 
         <ComboBox Name="InputFilePicker" HorizontalAlignment="Left" Margin="654,15,0,0" VerticalAlignment="Top" Width="190" Height="21" Background="#FFABDEFA" BorderBrush="#FFCAC9C9">

@@ -40,19 +40,13 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         builder.Services.AddSingleton(office.ChannelGlobal);
         builder.Services.AddHostedService<Manager<IContract>>();
       
-        /* For reference
-        Host.CreateDefaultBuilder()
-            .ConfigureServices(services => services.AddSingleton(office.ChannelGlobal)
-                                                   .AddHostedService<Manager<IContract>>()
-                                                   .AddSignalR()).Build().Run(); */
-
         return office;
     }
 
     public Office<IContract> AddAgent<TState, THub, IHubContract>()
             where TState : new()
             where THub : Hub<IHubContract>
-            where IHubContract : class
+            where IHubContract : class, IAgencyContract
     {
         Builder.Services.AddHostedService<Agent<TState, THub, IHubContract>>();
         Hubs.Add(typeof(THub));
@@ -72,14 +66,13 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         App.UseRouting();
         App.UseHttpsRedirection();
         App.UseStaticFiles();
-        App.UseWebSockets();
+        //App.UseWebSockets();
         App.MapBlazorHub();
-        App.MapFallbackToPage("/_Host");
 
-        App.MapHub<ManagerHub<IContract>>(Navigator.SignalRAddress);
+        App.MapHub<ManagerHub<IContract>>(SignalR.Address);
 
         foreach (var type in Hubs) 
-            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { Navigator.SignalRAddress });
+            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { SignalR.Address });
 
         App.RunAsync();
 

@@ -29,9 +29,10 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
-
 app.MapBlazorHub();
+
 app.MapHub<ServerHub>("/signalR");
+
 app.MapFallbackToPage("/_Host");
 
 app.Run();

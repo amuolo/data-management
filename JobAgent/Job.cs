@@ -78,7 +78,7 @@ public record Job<TState>()
                 {
                     var ok = Steps.TryDequeue(out var step);
 
-                    if (!ok) throw new Exception("Issue with job dequeueing");
+                    if (!ok) throw new Exception("Issue with job dequeuing");
 
                     await Execute(step.Name, step.Func);
 
@@ -96,7 +96,7 @@ public record Job<TState>()
             {
                 if (Configuration.ShowProgress) Configuration.ProgressBarClose();
                 Semaphore.Release();
-            }          
+            }
 
             return this;
         });
@@ -104,7 +104,7 @@ public record Job<TState>()
 
     /* Private */
 
-    protected SemaphoreSlim Semaphore => new(1, 1);
+    SemaphoreSlim Semaphore { get; } = new(1, 1);
 
     protected string CurrentStep { get; set; } = string.Empty;
 

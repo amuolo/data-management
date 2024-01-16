@@ -10,6 +10,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace DataManagement;
 
+public interface IContract : IDataContract {}
+
 public record MainWindowState(string Path, Model Data, DataWindow DataWindow);
 
 /// <summary>
@@ -69,5 +71,10 @@ public partial class MainWindow : Window
         JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
                         .WithStep($"Export to file {name}", () => DataOperator.Export(State.Data.GetPrintable(), fileName))
                         .Start();
+    }
+
+    private void ConnectClick(object sender, RoutedEventArgs e)
+    {
+
     }
 }
