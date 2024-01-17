@@ -7,20 +7,22 @@ namespace Agency;
 
 public class Agent<TState, THub, IContract> : BackgroundService
     where TState : new()
-    where THub : Hub<IContract>
+    where THub : MessageHub<IContract>, new()
     where IContract : class
 {
     private IHubContext<THub, IContract> HubContext { get; }
     private HubConnection Connection { get; set; }
+    private THub MessageHub { get; set; }
     private bool IsInitialized { get; set; }
 
-    private Job<(object? Package, TState State, IHubContext<THub, IContract> Hub)> Job { get; set; } 
+    private Job<(object? Package, TState State)> Job { get; set; } 
 
     public Agent(IHubContext<THub, IContract> hub)
     {
         HubContext = hub;
+        MessageHub = new();
         // TODO: use options to pass the logger and the progresses
-        Job = JobFactory.New<(object? Package, TState State, IHubContext<THub, IContract> Hub)>(initialState: (null, new(), hub));
+        Job = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -39,7 +41,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     if (create is not null)                      
                         await Job.WithStep(Contract.Create, async state =>
                         {
-                            var init = create.Invoke(null, [state.State, state.Hub]);
+                            var init = create.Invoke(MessageHub, [state.State]);
                             if (init is not null) await (Task<TState>)init;
                         })
                         .Start();
@@ -47,7 +49,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     IsInitialized = true;
                 }
                 await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, $"processing {message}", null);
-                await Job.WithStep($"{message}", s => method.Invoke(null, [s.Package, s.State, s.Hub])).Start();
+                await Job.WithStep($"{message}", s => method.Invoke(MessageHub, [s.Package, s.State])).Start();
             }
         });
         

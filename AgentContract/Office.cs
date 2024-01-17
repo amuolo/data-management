@@ -1,13 +1,10 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using System.Collections.Immutable;
 using System.Linq.Expressions;
-using System.Reflection;
 
 namespace Agency;
 
@@ -16,15 +13,13 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 {
     private List<Type> Hubs { get; } = [];
 
-    private HubConnection Connection { get; } = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
-
-    bool IsConnected => Connection?.State == HubConnectionState.Connected;
+    private MessageHub<IContract> MessageHub { get; set; }
 
     public static Office<IContract> Create()
     {
         var builder = WebApplication.CreateBuilder();
 
-        var office = new Office<IContract>(builder, default);
+        var office = new Office<IContract>(builder, default) { MessageHub = new MessageHub<IContract>() };
 
         builder.Logging.ClearProviders().AddConsole();
 
@@ -41,7 +36,7 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 
     public Office<IContract> AddAgent<TState, THub, IHubContract>()
             where TState : new()
-            where THub : Hub<IHubContract>
+            where THub : MessageHub<IHubContract>, new()
             where IHubContract : class
     {
         Builder.Services.AddHostedService<Agent<TState, THub, IHubContract>>();
@@ -69,19 +64,9 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 
         App.RunAsync();  // TODO: consider adding an explicit url
 
-        Connection.StartAsync();
-
         return this;
     }
 
     public void Post(Expression<Func<IContract, Delegate>> expression, object? package)
-    {
-        Task.Run(async () =>
-        {
-            var methods = typeof(IContract).GetInterfaces().SelectMany(i => i.GetMethods()).ToArray();
-            var method = methods.FirstOrDefault(m => expression.ToString().Contains(m.Name));
-            if (method is not null && IsConnected)
-                await Connection.SendAsync("SendMessage", GetType().Name, method.Name, package);
-        });
-    }
+        => MessageHub.Post(expression, package);
 }

@@ -13,21 +13,21 @@ public interface IDataContract
     Task DataChanged();
 }
 
-public class DataHub : Hub<IDataContract>
+public class DataHub : MessageHub<IDataContract>
 {
-    public static async Task<Model> Create(Model model, IHubContext<DataHub, IDataContract> hub)
+    public async Task<Model> Create(Model model, IHubContext<DataHub, IDataContract> hub)
     {
         // TODO: finish
         await Task.CompletedTask;
         return new();
     }
 
-    public static async Task HandleImportRequest(string? fileName, Model model, IHubContext<DataHub, IDataContract> hub)
+    public async Task HandleImportRequest(string? fileName, Model model, IHubContext<DataHub, IDataContract> hub)
     {
         // TODO: finish
         await Task.CompletedTask;
 
-        await hub.Clients.All.DataChanged();
+        Post(agent => agent.DataChanged);
     }
 }
 
