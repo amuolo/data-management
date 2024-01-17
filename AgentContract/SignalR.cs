@@ -4,5 +4,7 @@ public class SignalR
 {
     public const string Address = "/signalR";
 
-    public const string Url = "https://localhost:7158" + Address;
+    public const string BaseUrl = "https://localhost:7158";
+
+    public const string Url = BaseUrl + Address;
 }

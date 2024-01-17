@@ -4,8 +4,8 @@ namespace ServerBlazor.Hubs;
 
 public class ServerHub : Hub
 {
-    public Task SendMessage(string user, string message)
+    public Task SendMessage(string sender, string message, object? package = null)
     {
-        return Clients.All.SendAsync("ReceiveMessage", user, message);
+        return Clients.All.SendAsync("ReceiveMessage", sender, message, package);
     }
 }

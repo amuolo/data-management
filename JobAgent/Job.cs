@@ -121,7 +121,7 @@ public record Job<TState>()
         timer.Start();
 
         var task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke());
-        State = (TState?)await task;
+        if(func.GetMethodInfo().ReturnType != typeof(void)) State = (TState?)await task;
 
         timer.Stop();
         Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");

@@ -1,11 +1,10 @@
 ﻿using Agency;
 using DataDomain;
-using Job;
 using Microsoft.AspNetCore.SignalR;
 
 namespace DataAgent;
 
-public interface IDataContract : IAgencyContract
+public interface IDataContract
 {
     /* in */
     Task ImportRequest(string? fileName);
@@ -16,19 +15,19 @@ public interface IDataContract : IAgencyContract
 
 public class DataHub : Hub<IDataContract>
 {
-    private Job<Model> Jobs { get; set; } = JobFactory.New<Model>();
-
-    public async Task HandleCreate(Model model)
+    public static async Task<Model> Create(Model model, IHubContext<DataHub, IDataContract> hub)
     {
-        await Task.Run(() => Jobs = JobFactory.New(model));
+        // TODO: finish
+        await Task.CompletedTask;
+        return new();
     }
 
-    public async Task HandleImportRequest(string? fileName)  // TODO: add Model as a parameter
+    public static async Task HandleImportRequest(string? fileName, Model model, IHubContext<DataHub, IDataContract> hub)
     {
         // TODO: finish
         await Task.CompletedTask;
 
-        await Clients.All.DataChanged();
+        await hub.Clients.All.DataChanged();
     }
 }
 

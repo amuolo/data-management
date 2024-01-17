@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Job;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
 
@@ -7,50 +8,53 @@ namespace Agency;
 public class Agent<TState, THub, IContract> : BackgroundService
     where TState : new()
     where THub : Hub<IContract>
-    where IContract : class, IAgencyContract
+    where IContract : class
 {
     private IHubContext<THub, IContract> HubContext { get; }
+    private HubConnection Connection { get; set; }
+    private bool IsInitialized { get; set; }
 
-    private HubConnection Connection { get; set;  }
+    private Job<(object? Package, TState State, IHubContext<THub, IContract> Hub)> Job { get; set; } 
 
-    public Agent(IHubContext<THub, IContract> messagingHub)
+    public Agent(IHubContext<THub, IContract> hub)
     {
-        HubContext = messagingHub;
+        HubContext = hub;
+        // TODO: use options to pass the logger and the progresses
+        Job = JobFactory.New<(object? Package, TState State, IHubContext<THub, IContract> Hub)>(initialState: (null, new(), hub));
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         Connection = new HubConnectionBuilder().WithUrl(SignalR.Url).WithAutomaticReconnect().Build();
-
-        foreach (var method in typeof(IContract).GetMethods())
+        
+        Connection.On<string, string, object?>("ReceiveMessage", async (sender, message, package) =>
         {
-            var handle = typeof(THub).GetMethod("Handle" + method.Name);
-            if (handle != null)
+            var method = typeof(THub).GetMethod("Handle" + message);
+            if (method is not null)
             {
-                var parameters = method.GetParameters().Select(x => x.ParameterType).ToArray();
-                var on = Connection.GetType().GetMethod("On", parameters);
-                on?.Invoke(Connection, new object[] { method.Name, handle });
+                if(!IsInitialized)
+                {
+                    await Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Creating myself", null);
+                    var create = typeof(THub).GetMethod("Create");
+                    if (create is not null)                      
+                        await Job.WithStep($"Create", async state =>
+                        {
+                            var init = create.Invoke(null, [state.State, state.Hub]);
+                            if (init is not null) await (Task<TState>)init;
+                        })
+                        .Start();
+
+                    IsInitialized = true;
+                }
+                await Connection.InvokeAsync("SendMessage", typeof(THub).Name, $"processing {message}", null);
+                await Job.WithStep($"{message}", s => method.Invoke(null, [s.Package, s.State, s.Hub])).Start();
             }
-        }
-
-        Connection.Reconnecting += (sender) =>
-        {
-            HubContext.Clients.All.Send("Attempting to reconnect...");
-            return Task.CompletedTask;
-        };
-
-        Connection.Reconnected += (sender) =>
-        {
-            HubContext.Clients.All.Send("Reconnected to the server");
-            return Task.CompletedTask;
-        };
-
-        Connection.Closed += (sender) =>
-        {
-            HubContext.Clients.All.Send("Connection Closed");
-            return Task.CompletedTask;
-        };
-
-        await Connection.StartAsync();
+        });
+        
+        Connection.Reconnecting += (sender) => Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Attempting to reconnect...", null);
+        Connection.Reconnected += (sender) => Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Reconnected to the server", null);
+        Connection.Closed += (sender) => Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Connection Closed", null);
+        
+        await Connection.StartAsync(cancellationToken);        
     }
 }

@@ -6,7 +6,7 @@ using System.Windows;
 using System.Windows.Threading;
 using Agency;
 using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.AspNetCore.SignalR.Client;
 
 namespace DataManagement;
 
@@ -38,9 +38,6 @@ public partial class MainWindow : Window
         Office = Office<IContract>.Create().AddAgent<Model, DataHub, IDataContract>().Run();
 
         State = new(dirInfo.FullName, new Model(), new DataWindow());
-
-        // TODO: temporary line to debug posting via webapp with SignalR
-        Office.Post(dataAgent => dataAgent.ImportRequest("a"));
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
@@ -53,7 +50,7 @@ public partial class MainWindow : Window
         var fileName = file?.FullName?.Replace(State.Path, "");
         var progressBar = new ProgressBar();
 
-        Office.Post(dataAgent => dataAgent.ImportRequest(fileName));
+        Office.Post(agent => agent.ImportRequest, fileName);
 
         JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
                         .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
