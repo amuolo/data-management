@@ -25,19 +25,19 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        Connection = new HubConnectionBuilder().WithUrl(SignalR.Url).WithAutomaticReconnect().Build();
+        Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
         
-        Connection.On<string, string, object?>("ReceiveMessage", async (sender, message, package) =>
+        Connection.On<string, string, object?>(Contract.ReceiveMessage, async (sender, message, package) =>
         {
             var method = typeof(THub).GetMethod("Handle" + message);
             if (method is not null)
             {
                 if(!IsInitialized)
                 {
-                    await Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Creating myself", null);
-                    var create = typeof(THub).GetMethod("Create");
+                    await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Creating myself", null);
+                    var create = typeof(THub).GetMethod(Contract.Create);
                     if (create is not null)                      
-                        await Job.WithStep($"Create", async state =>
+                        await Job.WithStep(Contract.Create, async state =>
                         {
                             var init = create.Invoke(null, [state.State, state.Hub]);
                             if (init is not null) await (Task<TState>)init;
@@ -46,14 +46,14 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
                     IsInitialized = true;
                 }
-                await Connection.InvokeAsync("SendMessage", typeof(THub).Name, $"processing {message}", null);
+                await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, $"processing {message}", null);
                 await Job.WithStep($"{message}", s => method.Invoke(null, [s.Package, s.State, s.Hub])).Start();
             }
         });
         
-        Connection.Reconnecting += (sender) => Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Attempting to reconnect...", null);
-        Connection.Reconnected += (sender) => Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Reconnected to the server", null);
-        Connection.Closed += (sender) => Connection.InvokeAsync("SendMessage", typeof(THub).Name, "Connection Closed", null);
+        Connection.Reconnecting += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Attempting to reconnect...", null);
+        Connection.Reconnected += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Reconnected to the server", null);
+        Connection.Closed += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Connection Closed", null);
         
         await Connection.StartAsync(cancellationToken);        
     }

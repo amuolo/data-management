@@ -16,7 +16,7 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 {
     private List<Type> Hubs { get; } = [];
 
-    private HubConnection Connection { get; } = new HubConnectionBuilder().WithUrl(SignalR.Url).WithAutomaticReconnect().Build();
+    private HubConnection Connection { get; } = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
 
     bool IsConnected => Connection?.State == HubConnectionState.Connected;
 
@@ -65,7 +65,7 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         App.MapBlazorHub();
 
         foreach (var type in Hubs) 
-            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { SignalR.Address });
+            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { Contract.Address });
 
         App.RunAsync();  // TODO: consider adding an explicit url
 
