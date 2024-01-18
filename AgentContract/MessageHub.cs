@@ -21,7 +21,10 @@ public class MessageHub<IContract> : Hub<IContract>
     {
         Task.Run(async () =>
         {
-            var methods = typeof(IContract).GetInterfaces().SelectMany(i => i.GetMethods()).ToArray();
+            var methods = new[]{typeof(IContract)}.Concat(typeof(IContract).GetInterfaces())
+                                                  .SelectMany(i => i.GetMethods())
+                                                  .ToArray();
+
             var method = methods.FirstOrDefault(m => expression.ToString().Contains(m.Name));
             if (method is not null && IsConnected)
                 await Connection.SendAsync("SendMessage", GetType().Name, method.Name, package);

@@ -1,6 +1,5 @@
 ﻿using Agency;
 using DataDomain;
-using Microsoft.AspNetCore.SignalR;
 
 namespace DataAgent;
 

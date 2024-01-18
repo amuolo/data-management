@@ -8,18 +8,16 @@ using System.Linq.Expressions;
 
 namespace Agency;
 
-public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? App) 
+public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? App) : MessageHub<IContract>
     where IContract : class
 {
     private List<Type> Hubs { get; } = [];
-
-    private MessageHub<IContract> MessageHub { get; set; }
 
     public static Office<IContract> Create()
     {
         var builder = WebApplication.CreateBuilder();
 
-        var office = new Office<IContract>(builder, default) { MessageHub = new MessageHub<IContract>() };
+        var office = new Office<IContract>(builder, default);
 
         builder.Logging.ClearProviders().AddConsole();
 
@@ -66,7 +64,4 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 
         return this;
     }
-
-    public void Post(Expression<Func<IContract, Delegate>> expression, object? package)
-        => MessageHub.Post(expression, package);
 }
