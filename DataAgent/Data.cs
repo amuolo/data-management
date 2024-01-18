@@ -15,14 +15,14 @@ public interface IDataContract
 
 public class DataHub : MessageHub<IDataContract>
 {
-    public async Task<Model> Create(Model model, IHubContext<DataHub, IDataContract> hub)
+    public async Task<Model> Create()
     {
         // TODO: finish
         await Task.CompletedTask;
         return new();
     }
 
-    public async Task HandleImportRequest(string? fileName, Model model, IHubContext<DataHub, IDataContract> hub)
+    public async Task HandleImportRequest(string? fileName, Model model)
     {
         // TODO: finish
         await Task.CompletedTask;

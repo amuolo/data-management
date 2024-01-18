@@ -41,8 +41,8 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     if (create is not null)                      
                         await Job.WithStep(Contract.Create, async state =>
                         {
-                            var init = create.Invoke(MessageHub, [state.State]);
-                            if (init is not null) await (Task<TState>)init;
+                            var init = create.Invoke(MessageHub, null);
+                            if (init is not null) state.State = await (Task<TState>)init;
                         })
                         .Start();
 
