@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
+using System.Reflection;
 
 namespace Agency;
 
@@ -28,17 +29,18 @@ public class Agent<TState, THub, IContract> : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
+
+        var methods = typeof(THub).GetMethods().Where(x => x.Name.Contains("Handle") || x.Name == Contract.Create).ToDictionary(x => x.Name);
         
         Connection.On<string, Guid, string, object?>(Contract.ReceiveMessage, async (sender, senderId, message, package) =>
         {
-            var method = typeof(THub).GetMethod("Handle" + message);
-            if (method is not null)
+            if(methods.TryGetValue("Handle" + message, out var method))
             {
                 if(!IsInitialized)
                 {
                     await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, MessageHub.Id, "Creating myself", null);
-                    var create = typeof(THub).GetMethod(Contract.Create);
-                    if (create is not null)                      
+                    
+                    if (methods.TryGetValue(Contract.Create, out var create))
                         await Job.WithStep(Contract.Create, async state =>
                         {
                             var init = create.Invoke(MessageHub, null);
