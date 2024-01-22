@@ -27,6 +27,7 @@
 </ul>
 
 @code {
+    private Guid id = Guid.NewGuid();
     private HubConnection? hubConnection;
     private List<string> messages = new();
     private string? userInput;
@@ -38,7 +39,7 @@
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
-        hubConnection.On<string, string, object?>("ReceiveMessage", (sender, message, package) =>
+        hubConnection.On<string, Guid, string, object?>("ReceiveMessage", (sender, senderId, message, package) =>
         {
             var formattedMessage = $"{sender}: {message}";
             messages.Add(formattedMessage);
@@ -51,7 +52,7 @@
     private async Task Send()
     {
         if (hubConnection is not null)
-            await hubConnection.SendAsync("SendMessage", userInput, messageInput, null);
+            await hubConnection.SendAsync("SendMessage", userInput, id, messageInput, null);
     }
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;

@@ -29,14 +29,14 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
         
-        Connection.On<string, string, object?>(Contract.ReceiveMessage, async (sender, message, package) =>
+        Connection.On<string, Guid, string, object?>(Contract.ReceiveMessage, async (sender, senderId, message, package) =>
         {
             var method = typeof(THub).GetMethod("Handle" + message);
             if (method is not null)
             {
                 if(!IsInitialized)
                 {
-                    await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Creating myself", null);
+                    await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, MessageHub.Id, "Creating myself", null);
                     var create = typeof(THub).GetMethod(Contract.Create);
                     if (create is not null)                      
                         await Job.WithStep(Contract.Create, async state =>
@@ -48,14 +48,14 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
                     IsInitialized = true;
                 }
-                await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, $"processing {message}", null);
+                await Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, MessageHub.Id, $"processing {message}", null);
                 await Job.WithStep($"{message}", s => method.Invoke(MessageHub, [s.Package, s.State])).Start();
             }
         });
         
-        Connection.Reconnecting += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Attempting to reconnect...", null);
-        Connection.Reconnected += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Reconnected to the server", null);
-        Connection.Closed += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, "Connection Closed", null);
+        Connection.Reconnecting += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, MessageHub.Id, "Attempting to reconnect...", null);
+        Connection.Reconnected += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, MessageHub.Id, "Reconnected to the server", null);
+        Connection.Closed += (sender) => Connection.InvokeAsync(Contract.SendMessage, typeof(THub).Name, MessageHub.Id, "Connection Closed", null);
         
         await Connection.StartAsync(cancellationToken);        
     }

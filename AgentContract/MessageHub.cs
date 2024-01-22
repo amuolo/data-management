@@ -7,6 +7,8 @@ namespace Agency;
 public class MessageHub<IContract> : Hub<IContract>
     where IContract : class
 {
+    public Guid Id { get; } = Guid.NewGuid();
+
     private HubConnection Connection { get; }
 
     bool IsConnected => Connection?.State == HubConnectionState.Connected;
@@ -27,7 +29,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
             var method = methods.FirstOrDefault(m => expression.ToString().Contains(m.Name));
             if (method is not null && IsConnected)
-                await Connection.SendAsync("SendMessage", GetType().Name, method.Name, package);
+                await Connection.SendAsync("SendMessage", GetType().Name, Id, method.Name, package);
         });
     }
 }
