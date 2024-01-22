@@ -120,8 +120,8 @@ public record Job<TState>()
         CurrentStep = name;
         timer.Start();
 
-        var task = Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke());
-        if(func.GetMethodInfo().ReturnType != typeof(void)) State = (TState?)await task;
+        var res = await Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke());
+        if(func.GetMethodInfo().ReturnType != typeof(void)) State = (TState?)res;
 
         timer.Stop();
         Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");
