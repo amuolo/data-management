@@ -23,9 +23,26 @@ public class MessageHub<IContract> : Hub<IContract>
         Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
     }
 
-    private string? GetMessage(Expression<Func<IContract, Delegate>> predicate)
+    private bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)
+    {
         // TODO: improve this mechanism with which name is retrieved from delegate in expression
-        => Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name))?.Name;
+        message = string.Empty;
+        var msg = Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name))?.Name;
+        if (msg is null) return false;
+        message = msg;
+        return true;
+    }
+
+    private bool IsAlive()
+    {          
+        if (Connection is not null && !IsConnected)
+        {
+            Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, $"Hub disconnected."));
+            return false;
+        }
+
+        return true;
+    }
 
     /*******************
      * Post and forget *
@@ -42,21 +59,8 @@ public class MessageHub<IContract> : Hub<IContract>
     public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
         // TODO: post to a specific address if not null
-        var message = GetMessage(predicate);
-
-        // TODO: log message in case message is null, it shouldn't happen
-        if (message is null)
-        {
-            Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, $"{message} not found."));
-            return;
-        }
-
-        // TODO: log message in case of hub disconnected
-        if (!IsConnected)
-        {
-            Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, $"Hub disconnected."));
-            return;
-        }
+        if (!GetMessage(predicate, out var message)) return;
+        if (!IsAlive()) return;
 
         Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, message));
         Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, GetType().Name, Id, message, package));
@@ -77,10 +81,9 @@ public class MessageHub<IContract> : Hub<IContract>
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
     {
-        var message = GetMessage(predicate);
-
-        // TODO: log message in case message is null, it shouldn't happen
-        if (message is null) return;
+        // TODO: post to a specific address if not null
+        if (!GetMessage(predicate, out var message)) return;
+        if (!IsAlive()) return;
 
         // TODO: finish this
         Connection.On<string, Guid, string, object?>(Contract.ReceiveResponse,
