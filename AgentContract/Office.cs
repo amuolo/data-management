@@ -60,6 +60,8 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 
         App.RunAsync();  // TODO: consider adding an explicit url
 
+        Connection.StartAsync();
+
         return this;
     }
 }

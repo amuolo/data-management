@@ -12,5 +12,9 @@ public class Contract
 
     public const string ReceiveMessage = "ReceiveMessage";
 
+    public const string ReceiveResponse = "ReceiveResponse";
+
     public const string Create = "Create";
+
+    public const string Log = "Log";
 }

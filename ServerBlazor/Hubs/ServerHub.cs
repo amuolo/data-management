@@ -8,4 +8,9 @@ public class ServerHub : Hub
     {
         return Clients.All.SendAsync("ReceiveMessage", sender, senderId, message, package);
     }
+
+    public Task Log(string sender, Guid senderId, string message)
+    {
+        return Clients.All.SendAsync("ReceiveLog", sender, senderId, message);
+    }
 }

@@ -39,7 +39,7 @@
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
-        hubConnection.On<string, Guid, string, object?>("ReceiveMessage", (sender, senderId, message, package) =>
+        hubConnection.On<string, Guid, string>("ReceiveLog", (sender, senderId, message) =>
         {
             var formattedMessage = $"{sender}: {message}";
             messages.Add(formattedMessage);
@@ -51,8 +51,10 @@
 
     private async Task Send()
     {
-        if (hubConnection is not null)
+        if (hubConnection is not null) {
+            await hubConnection.SendAsync("Log", userInput, id, messageInput);
             await hubConnection.SendAsync("SendMessage", userInput, id, messageInput, null);
+        }
     }
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
