@@ -19,7 +19,19 @@ public class MessageHub<IContract> : Hub<IContract>
         Connection.StartAsync();
     }
 
-    public void Post(Expression<Func<IContract, Delegate>> expression, object? package = null)
+    /*******************
+     * Post and forget *
+     * *****************/
+    public void Post(Expression<Func<IContract, Delegate>> predicate) 
+        => Post(default(object), predicate, default(object));
+
+    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Delegate>> predicate)
+        => Post(address, predicate, default(object));
+
+    public void Post<TSent>(Expression<Func<IContract, Delegate>> predicate, TSent? package)
+        => Post(default(object), predicate, package);
+
+    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
         Task.Run(async () =>
         {
@@ -27,9 +39,29 @@ public class MessageHub<IContract> : Hub<IContract>
                                                   .SelectMany(i => i.GetMethods())
                                                   .ToArray();
 
-            var method = methods.FirstOrDefault(m => expression.ToString().Contains(m.Name));
+            // TODO: improve this mechanism with which name is retrieved from delegate in expression
+            var method = methods.FirstOrDefault(m => predicate.ToString().Contains(m.Name));
             if (method is not null && IsConnected)
-                await Connection.SendAsync("SendMessage", GetType().Name, Id, method.Name, package);
+                await Connection.SendAsync(Contract.SendMessage, GetType().Name, Id, method.Name, package);
         });
+    }
+
+    /**********************
+     * Post with response *
+     * ********************/
+    public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback) 
+        => PostWithResponse(default(object), predicate, default(object), callback);
+
+    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
+        => PostWithResponse(address, predicate, default(object), callback);
+
+    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
+        => PostWithResponse(default(object), predicate, package, callback);
+
+    public void PostWithResponse<TAddress, TSent, TResponse>
+        (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
+    {
+        // TODO: finish this
+        Post(address, predicate, package);
     }
 }
