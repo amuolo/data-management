@@ -2,11 +2,11 @@
 
 public class Contract
 {
-    public const string Address = "/signalR";
+    public const string SignalRAddress = "/signalR";
 
     public const string BaseUrl = "https://localhost:7158";
 
-    public const string Url = BaseUrl + Address;
+    public const string Url = BaseUrl + SignalRAddress;
 
     public const string SendMessage = "SendMessage";
 
@@ -17,4 +17,6 @@ public class Contract
     public const string Create = "Create";
 
     public const string Log = "Log";
+
+    public const string ReceiveLog = "ReceiveLog";
 }

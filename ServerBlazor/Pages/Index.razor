@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using Agency
 @using Microsoft.AspNetCore.SignalR.Client
 @inject NavigationManager NavManager
 @implements IAsyncDisposable
@@ -27,7 +28,7 @@
 </ul>
 
 @code {
-    private Guid id = Guid.NewGuid();
+    private string? ConnectionId => hubConnection?.ConnectionId;
     private HubConnection? hubConnection;
     private List<string> messages = new();
     private string? userInput;
@@ -35,11 +36,11 @@
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri("/signalR"))
+        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Contract.SignalRAddress))
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
-        hubConnection.On<string, Guid, string>("ReceiveLog", (sender, senderId, message) =>
+        hubConnection.On<string, string, string>(Contract.ReceiveLog, (sender, senderId, message) =>
         {
             var formattedMessage = $"{sender}: {message}";
             messages.Add(formattedMessage);
@@ -52,8 +53,8 @@
     private async Task Send()
     {
         if (hubConnection is not null) {
-            await hubConnection.SendAsync("Log", userInput, id, messageInput);
-            await hubConnection.SendAsync("SendMessage", userInput, id, messageInput, null);
+            await hubConnection.SendAsync(Contract.Log, userInput, ConnectionId, messageInput);
+            await hubConnection.SendAsync(Contract.SendMessage, userInput, ConnectionId, null, messageInput, null);
         }
     }
 

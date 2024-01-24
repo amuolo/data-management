@@ -31,7 +31,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
 
-app.MapHub<ServerHub>("/signalR");
+app.MapHub<ServerHub>(Agency.Contract.SignalRAddress);
 
 app.MapFallbackToPage("/_Host");
 

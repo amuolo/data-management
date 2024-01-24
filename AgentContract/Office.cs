@@ -56,7 +56,7 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         App.MapBlazorHub();
 
         foreach (var type in Hubs) 
-            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { Contract.Address });
+            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { Contract.SignalRAddress });
 
         App.RunAsync();  // TODO: consider adding an explicit url
 

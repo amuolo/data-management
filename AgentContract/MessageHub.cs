@@ -8,9 +8,9 @@ namespace Agency;
 public class MessageHub<IContract> : Hub<IContract>
     where IContract : class
 {
-    public Guid Id { get; } = Guid.NewGuid();
-
     public HubConnection Connection { get; }
+
+    public string? Id => Connection.ConnectionId;
 
     public bool IsConnected => Connection?.State == HubConnectionState.Connected;
 
@@ -58,12 +58,13 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
-        // TODO: post to a specific address if not null
+        // TODO: find a way to use the direct address provided in the parameters for communications
+
         if (!GetMessage(predicate, out var message)) return;
         if (!IsAlive()) return;
 
         Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, message));
-        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, GetType().Name, Id, message, package));
+        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, GetType().Name, Id, null, message, package));
     }
 
     /**********************
@@ -81,12 +82,13 @@ public class MessageHub<IContract> : Hub<IContract>
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
     {
-        // TODO: post to a specific address if not null
+        // TODO: find a way to use the direct address provided in the parameters for communications
+
         if (!GetMessage(predicate, out var message)) return;
         if (!IsAlive()) return;
 
         // TODO: finish this
-        Connection.On<string, Guid, string, object?>(Contract.ReceiveResponse,
+        Connection.On<string, string?, string, object?>(Contract.ReceiveResponse,
             async (sender, senderId, message, package) =>
             {
 
@@ -96,4 +98,6 @@ public class MessageHub<IContract> : Hub<IContract>
 
         Post(address, predicate, package);
     }
+
+    //public void Respond<>
 }

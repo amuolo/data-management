@@ -31,7 +31,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         var methods = typeof(THub).GetMethods().Where(x => x.Name.Contains("Handle") || x.Name == Contract.Create).ToDictionary(x => x.Name);
         
-        Connection.On<string, Guid, string, object?>(Contract.ReceiveMessage, async (sender, senderId, message, package) =>
+        Connection.On<string, string, string, object?>(Contract.ReceiveMessage, async (sender, senderId, message, package) =>
         {
             if(methods.TryGetValue("Handle" + message, out var method))
             {
