@@ -23,8 +23,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         HubContext = hub;
         MessageHub = new();
-        // TODO: use options to pass the logger and the progresses
-        Job = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
+        // TODO: use options to pass the logger and the progresses       
     }
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
@@ -38,7 +37,9 @@ public class Agent<TState, THub, IContract> : BackgroundService
                 if(!IsInitialized)
                 {
                     await Connection.InvokeAsync(Contract.Log, typeof(THub).Name, MessageHub.Id, "Creating myself");
-                    
+
+                    Job = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
+
                     if (methods.TryGetValue(Contract.Create, out var create))
                         await Job.WithStep(Contract.Create, async state =>
                         {

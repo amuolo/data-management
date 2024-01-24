@@ -58,10 +58,9 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
-        // TODO: find a way to use the direct address provided in the parameters for communications
+        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
 
-        if (!GetMessage(predicate, out var message)) return;
-        if (!IsAlive()) return;
+        if (!GetMessage(predicate, out var message) || !IsAlive()) return;
 
         Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, message));
         Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, GetType().Name, Id, null, message, package));
@@ -82,10 +81,9 @@ public class MessageHub<IContract> : Hub<IContract>
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
     {
-        // TODO: find a way to use the direct address provided in the parameters for communications
+        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
 
-        if (!GetMessage(predicate, out var message)) return;
-        if (!IsAlive()) return;
+        if (!GetMessage(predicate, out var message) || !IsAlive()) return;
 
         // TODO: finish this
         Connection.On<string, string?, string, object?>(Contract.ReceiveResponse,
@@ -99,5 +97,11 @@ public class MessageHub<IContract> : Hub<IContract>
         Post(address, predicate, package);
     }
 
-    //public void Respond<>
+    /**************
+     *  Response  *
+     **************/
+    public void Respond(Expression<Func<IContract, Delegate>> predicate)
+    {
+
+    }
 }
