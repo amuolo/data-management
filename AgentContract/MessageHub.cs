@@ -1,7 +1,9 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.Json;
 
 namespace Agency;
 
@@ -10,9 +12,13 @@ public class MessageHub<IContract> : Hub<IContract>
 {
     public HubConnection Connection { get; }
 
-    public string? Id => Connection.ConnectionId;
+    public string Me => GetType().Name;
+
+    public string Id => Connection?.ConnectionId?? "";
 
     public bool IsConnected => Connection?.State == HubConnectionState.Connected;
+
+    protected ConcurrentDictionary<Guid, Action<object>> CallbacksById { get; } = new();
 
     private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
                                                                           .SelectMany(i => i.GetMethods())
@@ -22,6 +28,14 @@ public class MessageHub<IContract> : Hub<IContract>
     {
         Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
     }
+
+    public Action<object>? GetCallback(Guid id)
+    {
+        if (CallbacksById.TryGetValue(id, out var callback)) return callback;
+        else return null;
+    }
+
+    public bool RemoveCallback(Guid messageId) => CallbacksById.Remove(messageId, out var value);
 
     private bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)
     {
@@ -37,7 +51,7 @@ public class MessageHub<IContract> : Hub<IContract>
     {          
         if (Connection is not null && !IsConnected)
         {
-            Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, $"Hub disconnected."));
+            Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, $"Hub disconnected."));
             return false;
         }
 
@@ -59,11 +73,15 @@ public class MessageHub<IContract> : Hub<IContract>
     public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
+        var receiverId = address?.ToString();
 
         if (!GetMessage(predicate, out var message) || !IsAlive()) return;
 
-        Task.Run(async () => await Connection.SendAsync(Contract.Log, GetType().Name, Id, message));
-        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, GetType().Name, Id, null, message, package));
+        var messageId = Guid.NewGuid();
+        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
+
+        Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
+        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
     }
 
     /**********************
@@ -82,26 +100,27 @@ public class MessageHub<IContract> : Hub<IContract>
         (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
     {
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
+        var receiverId = address?.ToString();
 
         if (!GetMessage(predicate, out var message) || !IsAlive()) return;
 
-        // TODO: finish this
-        Connection.On<string, string?, string, object?>(Contract.ReceiveResponse,
-            async (sender, senderId, message, package) =>
+        var messageId = Guid.NewGuid();
+        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
+
+        CallbacksById.TryAdd(messageId, async (object package) =>
+        {
+            await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing response {typeof(TResponse).Name}");
+            try
             {
+                callback((TResponse)package);
+            }
+            catch (Exception ex) 
+            {
+                await Connection.SendAsync(Contract.Log, Me, Id, $"Error: wrong response type {typeof(TResponse).Name}");
+            }
+        });
 
-            });
-
-        Connection.Remove(message);
-
-        Post(address, predicate, package);
-    }
-
-    /**************
-     *  Response  *
-     **************/
-    public void Respond(Expression<Func<IContract, Delegate>> predicate)
-    {
-
+        Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
+        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel, typeof(TSent)));
     }
 }

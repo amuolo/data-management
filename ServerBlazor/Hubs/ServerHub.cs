@@ -6,24 +6,24 @@ namespace ServerBlazor.Hubs;
 
 public class ServerHub : Hub
 {
-    public Task SendMessage(string sender, string? senderId, string? receiverId, string message, object? package = null)
-    {
-        if(receiverId is not null)
-            return Clients.Client(receiverId).SendAsync(Contract.ReceiveMessage, sender, senderId, message, package);
-        else 
-            return Clients.All.SendAsync(Contract.ReceiveMessage, sender, senderId, message, package);
-    }
-
-    public Task Log(string sender, string? senderId, string message)
+    public Task Log(string sender, string senderId, string message)
     {
         return Clients.All.SendAsync(Contract.ReceiveLog, sender, senderId, message);
     }
 
-    public Task SendResponse(string sender, string? senderId, string receiverId, string message, object? package = null)
+    public Task SendMessage(string sender, string senderId, string? receiverId, string message, string messageId, string? parcel = null)
     {
         if(receiverId is not null)
-            return Clients.Client(receiverId).SendAsync(Contract.ReceiveResponse, sender, senderId, message, package);
+            return Clients.Client(receiverId).SendAsync(Contract.ReceiveMessage, sender, senderId, message, messageId, parcel);
+        else 
+            return Clients.All.SendAsync(Contract.ReceiveMessage, sender, senderId, message, messageId, parcel);
+    }
+
+    public Task SendResponse(string sender, string senderId, string? receiverId, Guid messageId, object? response)
+    {
+        if (receiverId is not null)
+            return Clients.Client(receiverId).SendAsync(Contract.ReceiveResponse, sender, senderId, messageId, response);
         else
-            return Clients.All.SendAsync(Contract.ReceiveResponse, sender, senderId, message, package);
+            return Clients.All.SendAsync(Contract.ReceiveResponse, sender, senderId, messageId, response);
     }
 }
