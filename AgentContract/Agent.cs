@@ -66,21 +66,27 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
                 await Job.WithStep($"{message}", async state =>
                 {
-                    var parameterType = method.GetParameters()[0].ParameterType;  // TODO: change hardcoded zeroth element
-                    var package = Deserialize(parcel, parameterType);
-                    var res = method.Invoke(MessageHub, [package, state.State]);
+                    var parameters = method.GetParameters().Select(p =>
+                        p.ParameterType == typeof(TState) ? state.State : Deserialize(parcel, p.ParameterType) ).ToArray();
 
-                    if (res is not null && res.GetType().GetGenericTypeDefinition() == typeof(Task<object>))
+                    var res = method.Invoke(MessageHub, parameters);
+
+                    if (res is not null && method.ReturnType == typeof(Task))
                     {
-                        var response = await (Task<object>)res;
-                        await Connection.SendAsync(Contract.SendResponse, Me, Id, messageId, response);
+                        await (Task)res;
+                    }
+                    else if (res is not null && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                    {
+                        await (Task)res;
+                        var response = res.GetType().GetProperty("Result")?.GetValue(res);
+                        await Connection.SendAsync(Contract.SendResponse, Me, Id, senderId, messageId, response);
                     }
                 })
                 .Start();
             }
         });
 
-        Connection.On<string, string, Guid, object>(Contract.ReceiveResponse, async (sender, senderId, messageId, response) =>
+        Connection.On<string, string, Guid, object?>(Contract.ReceiveResponse, async (sender, senderId, messageId, response) =>
         {
             var callback = MessageHub.GetCallback(messageId);
 

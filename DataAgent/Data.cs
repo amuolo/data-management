@@ -21,12 +21,14 @@ public class DataHub : MessageHub<IDataContract>
         return new();
     }
 
-    public async Task HandleImportRequest(string? fileName, Model model)
+    public async Task<string> HandleImportRequest(string? fileName, Model model)
     {
         // TODO: finish
         await Task.CompletedTask;
 
         Post(agent => agent.DataChanged);
+
+        return "ciao";
     }
 }
 
