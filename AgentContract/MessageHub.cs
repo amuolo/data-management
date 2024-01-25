@@ -65,11 +65,10 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
-        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
-        var receiverId = address?.ToString();
-
         if (!GetMessage(predicate, out var message) || !IsAlive()) return;
 
+        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
+        var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
         var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
 
@@ -92,11 +91,10 @@ public class MessageHub<IContract> : Hub<IContract>
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
     {
-        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
-        var receiverId = address?.ToString();
-
         if (!GetMessage(predicate, out var message) || !IsAlive()) return;
 
+        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
+        var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
         var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
 
