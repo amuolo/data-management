@@ -35,7 +35,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
         // TODO: use options to pass the logger and the progresses       
     }
 
-    private async Task InitializeAsync()
+    private async Task CreateAsync()
     {
         if (!IsInitialized)
         {
@@ -55,56 +55,38 @@ public class Agent<TState, THub, IContract> : BackgroundService
         }
     }
 
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
-    {     
-        Connection.On<string, string, string, string, string?>(Contract.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
+    async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
+    {
+        if (MethodsByName.TryGetValue("Handle" + message, out var method))
         {
-            if(MethodsByName.TryGetValue("Handle" + message, out var method))
-            {
-                await InitializeAsync();
-                await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing {message}");
+            await CreateAsync();
+            await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing {message}");
 
-                await Job.WithStep($"{message}", async state =>
+            await Job.WithStep($"{message}", async state =>
+            {
+                var parameters = method.GetParameters().Select(p =>
+                    p.ParameterType == typeof(TState) ? state.State : Deserialize(parcel, p.ParameterType)).ToArray();
+
+                var res = method.Invoke(MessageHub, parameters);
+
+                if (res is not null && method.ReturnType == typeof(Task))
                 {
-                    var parameters = method.GetParameters().Select(p =>
-                        p.ParameterType == typeof(TState) ? state.State : Deserialize(parcel, p.ParameterType) ).ToArray();
+                    await (Task)res;
+                }
+                else if (res is not null && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                {
+                    await (Task)res;
+                    var response = res.GetType().GetProperty("Result")?.GetValue(res);
+                    await Connection.SendAsync(Contract.SendResponse, Me, Id, senderId, messageId, response);
+                }
+            })
+            .Start();
+        }
+    }
 
-                    var res = method.Invoke(MessageHub, parameters);
-
-                    if (res is not null && method.ReturnType == typeof(Task))
-                    {
-                        await (Task)res;
-                    }
-                    else if (res is not null && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
-                    {
-                        await (Task)res;
-                        var response = res.GetType().GetProperty("Result")?.GetValue(res);
-                        await Connection.SendAsync(Contract.SendResponse, Me, Id, senderId, messageId, response);
-                    }
-                })
-                .Start();
-            }
-        });
-
-        Connection.On<string, string, Guid, object?>(Contract.ReceiveResponse, async (sender, senderId, messageId, response) =>
-        {
-            var callback = MessageHub.GetCallback(messageId);
-
-            if (callback is null)
-            {
-                await Connection.InvokeAsync(Contract.Log, Me, Id, $"Error: response arrived but no callback registered.");
-                return;
-            }
-
-            callback(response);
-            MessageHub.RemoveCallback(messageId);
-        });
-        
-        Connection.Reconnecting += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Attempting to reconnect...");
-        Connection.Reconnected += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Reconnected to the server");
-        Connection.Closed += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Connection Closed");
-
-        await Connection.StartAsync(cancellationToken);        
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    {
+        await MessageHub.InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
     }
 
     private object? Deserialize(string? parcel, Type type)

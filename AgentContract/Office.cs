@@ -11,6 +11,8 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 {
     private List<Type> Hubs { get; } = [];
 
+    private CancellationToken CancellationToken { get; set; } = new();
+
     public static Office<IContract> Create()
     {
         var builder = WebApplication.CreateBuilder();
@@ -60,7 +62,7 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 
         App.RunAsync();  // TODO: consider adding an explicit url
 
-        Connection.StartAsync();
+        Task.Run(async () => await InitializeConnectionAsync(CancellationToken));
 
         return this;
     }

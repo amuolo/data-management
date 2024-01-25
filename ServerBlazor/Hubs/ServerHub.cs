@@ -21,9 +21,9 @@ public class ServerHub : Hub
 
     public Task SendResponse(string sender, string senderId, string? receiverId, Guid messageId, object? response)
     {
-        //if (receiverId is not null)
-        //    return Clients.Client(receiverId).SendAsync(Contract.ReceiveResponse, sender, senderId, messageId, response);
-        //else
+        if (receiverId is not null)
+            return Clients.Client(receiverId).SendAsync(Contract.ReceiveResponse, sender, senderId, messageId, response);
+        else
             return Clients.All.SendAsync(Contract.ReceiveResponse, sender, senderId, messageId, response);
     }
 }

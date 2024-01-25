@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 
 namespace Agency;
 
@@ -28,14 +29,6 @@ public class MessageHub<IContract> : Hub<IContract>
     {
         Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
     }
-
-    public Action<object>? GetCallback(Guid id)
-    {
-        if (CallbacksById.TryGetValue(id, out var callback)) return callback;
-        else return null;
-    }
-
-    public bool RemoveCallback(Guid messageId) => CallbacksById.Remove(messageId, out var value);
 
     private bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)
     {
@@ -122,5 +115,39 @@ public class MessageHub<IContract> : Hub<IContract>
 
         Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
         Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel, typeof(TSent)));
+    }
+
+    /*************************
+     * Initialize Connection *
+     * ***********************/
+    public async Task InitializeConnectionAsync(CancellationToken cancellationToken)
+    {
+        Connection.On<string, string, Guid, object?>(Contract.ReceiveResponse, async (sender, senderId, messageId, response) =>
+        {
+            CallbacksById.TryGetValue(messageId, out var callback);
+
+            if (callback is null)
+            {
+                await Connection.InvokeAsync(Contract.Log, Me, Id, $"Error: response arrived but no callback registered.");
+                return;
+            }
+
+            if (response is not null) callback(response);
+            CallbacksById.Remove(messageId, out var value);
+        });
+
+        Connection.Reconnecting += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Attempting to reconnect...");
+        Connection.Reconnected += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Reconnected to the server");
+        Connection.Closed += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Connection Closed");
+
+        await Connection.StartAsync(cancellationToken);
+    }
+
+    public async Task InitializeConnectionAsync(CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
+    {
+        Connection.On<string, string, string, string, string?>(Contract.ReceiveMessage,
+            async (sender, senderId, message, messageId, parcel) => await actionMessageReceived(sender, senderId, message, messageId, parcel));
+
+        await InitializeConnectionAsync(cancellationToken);
     }
 }
