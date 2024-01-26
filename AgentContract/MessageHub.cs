@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
-using System.Threading;
 
 namespace Agency;
 
@@ -126,7 +125,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
             if (callback is null)
             {
-                await Connection.InvokeAsync(Contract.Log, Me, Id, $"Error: response arrived but no callback registered.");
+                await Connection.InvokeAsync(Contract.Log, Me, Id, $"Warning: response has arrived but left unhandled.");
                 return;
             }
 

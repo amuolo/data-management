@@ -24,9 +24,8 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     private Job<(object? Package, TState State)> Job { get; set; }
 
-    private Dictionary<string, MethodInfo> MethodsByName { get; } = typeof(THub).GetMethods()
-                                                                    .Where(x => x.Name.Contains("Handle") || x.Name == Contract.Create)
-                                                                    .ToDictionary(x => x.Name);
+    private Dictionary<string, MethodInfo> MethodsByName { get; } 
+        = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
 
     public Agent(IHubContext<THub, IContract> hub)
     {
@@ -44,7 +43,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
             Job = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
 
             if (MethodsByName.TryGetValue(Contract.Create, out var create))
-                await Job.WithStep(Contract.Create, async state =>
+                Job = await Job.WithStep(Contract.Create, async state =>
                 {
                     var init = create.Invoke(MessageHub, null);
                     if (init is not null) state.State = await (Task<TState>)init;
@@ -57,7 +56,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
-        if (MethodsByName.TryGetValue("Handle" + message, out var method))
+        if (MethodsByName.TryGetValue(message, out var method))
         {
             await CreateAsync();
             await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing {message}");

@@ -21,7 +21,7 @@ public class DataHub : MessageHub<IDataContract>
         return new();
     }
 
-    public async Task<string> HandleImportRequest(string? fileName, Model model)
+    public async Task<string> ImportRequest(string? fileName, Model model)
     {
         // TODO: finish
         await Task.CompletedTask;
