@@ -91,6 +91,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     private object? Deserialize(string? parcel, Type type)
     {
         if (parcel is null) return parcel;
-        return typeof(JsonSerializer)?.GetMethod(nameof(JsonSerializer.DeserializeAsync), [type])?.Invoke(null, [parcel]);
+        return typeof(JsonSerializer)?.GetMethod(nameof(JsonSerializer.DeserializeAsync), [type])?
+                                      .Invoke(null, [parcel, MessageHub.JsonSerializerOptions]);
     }
 }

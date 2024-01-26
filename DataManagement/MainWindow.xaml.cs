@@ -6,7 +6,6 @@ using System.Windows;
 using System.Windows.Threading;
 using Agency;
 using Microsoft.AspNetCore.Components;
-using Microsoft.AspNetCore.SignalR.Client;
 
 namespace DataManagement;
 
@@ -46,17 +45,19 @@ public partial class MainWindow : Window
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        var file = ((FileInfo)InputFilePicker.SelectedItem);
-        var fileName = file?.FullName?.Replace(State.Path, "");
-        var progressBar = new ProgressBar();
+        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName?.Replace(State.Path, "");
 
         Office.Post(agent => agent.ImportRequest, fileName);
 
-        JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
-                        .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
-                        .WithStep($"Processing new data", () => State.Data.Process())
-                        .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetPrintable()))
-                        .Start();
+        //var file = (FileInfo)InputFilePicker.SelectedItem;
+        //var fileName = file?.FullName?.Replace(State.Path, "");
+        //var progressBar = new ProgressBar();
+
+        //JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
+        //                .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
+        //                .WithStep($"Processing new data", () => State.Data.Process())
+        //                .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetPrintable()))
+        //                .Start();
     }
 
     private void ExportClick(object sender, RoutedEventArgs e)

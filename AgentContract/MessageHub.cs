@@ -4,6 +4,7 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Agency;
 
@@ -50,6 +51,12 @@ public class MessageHub<IContract> : Hub<IContract>
         return true;
     }
 
+    public JsonSerializerOptions JsonSerializerOptions { get; } = new()
+    {
+        ReferenceHandler = ReferenceHandler.Preserve,
+        WriteIndented = true
+    };
+
     /*******************
      * Post and forget *
      * *****************/
@@ -69,7 +76,7 @@ public class MessageHub<IContract> : Hub<IContract>
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
-        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
+        var parcel = package is not null ? JsonSerializer.Serialize(package, JsonSerializerOptions) : null;
 
         Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
         Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
@@ -95,7 +102,7 @@ public class MessageHub<IContract> : Hub<IContract>
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
-        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
+        var parcel = package is not null ? JsonSerializer.Serialize(package, JsonSerializerOptions) : null;
 
         CallbacksById.TryAdd(messageId, async (object package) =>
         {

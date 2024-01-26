@@ -16,7 +16,7 @@ public static class DataOperator
 
     public static List<string> Import(FileInfo? file)
     {
-        if (file == null) throw new Exception(Messages.EmptyFileName);
+        if (file == null) throw new Exception(Logs.EmptyFileName);
 
         switch (file.Extension)
         {
@@ -26,13 +26,13 @@ public static class DataOperator
 
             default:
 
-                throw new Exception(Messages.ExtensionNotHandled);
+                throw new Exception(Logs.ExtensionNotHandled);
         }
     }
 
     public static void Export(List<string> data, string? fileName)
     {
-        if (fileName == null || fileName == "" || fileName.EndsWith("\\")) throw new Exception(Messages.EmptyFileName);
+        if (fileName == null || fileName == "" || fileName.EndsWith("\\")) throw new Exception(Logs.EmptyFileName);
 
         var text = string.Join("\n", data);
 
