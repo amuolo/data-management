@@ -43,21 +43,29 @@ public partial class MainWindow : Window
 
     private void Logger(string msg) => Dispatcher.BeginInvoke(() => MainArea.Items.Insert(0, msg));
 
+    private string? GetFileSelected() => ((FileInfo)InputFilePicker.SelectedItem)?.FullName?.Replace(State.Path, "");
+
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        var fileName = ((FileInfo)InputFilePicker.SelectedItem)?.FullName?.Replace(State.Path, "");
+        var callback = (DataChanged response) =>
+        {
+            if (!response.IsChange) return;
+            State.DataWindow.Update(response.Data);
+        };
 
-        Office.Post(agent => agent.ImportRequest, fileName);
+        Office.PostWithResponse(agent => agent.ImportRequest, GetFileSelected(), callback);
 
-        //var file = (FileInfo)InputFilePicker.SelectedItem;
-        //var fileName = file?.FullName?.Replace(State.Path, "");
-        //var progressBar = new ProgressBar();
+        /* TODO: remove this code once the actor model fully support all these functionalities
+        var file = (FileInfo)InputFilePicker.SelectedItem;
+        var fileName = file?.FullName?.Replace(State.Path, "");
+        var progressBar = new ProgressBar();
 
-        //JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
-        //                .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
-        //                .WithStep($"Processing new data", () => State.Data.Process())
-        //                .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetPrintable()))
-        //                .Start();
+        JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
+                        .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
+                        .WithStep($"Processing new data", () => State.Data.Process())
+                        .WithStep($"Update Data Window", () => State.DataWindow.Update(State.Data.GetPrintable()))
+                        .Start();
+        */
     }
 
     private void ExportClick(object sender, RoutedEventArgs e)

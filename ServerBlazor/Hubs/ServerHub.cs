@@ -11,7 +11,7 @@ public class ServerHub : Hub
         return Clients.All.SendAsync(Contract.ReceiveLog, sender, senderId, message);
     }
 
-    public Task SendMessage(string sender, string senderId, string? receiverId, string message, string messageId, string? parcel = null)
+    public Task SendMessage(string sender, string senderId, string? receiverId, string message, string messageId, string? parcel)
     {
         if(receiverId is not null)
             return Clients.Client(receiverId).SendAsync(Contract.ReceiveMessage, sender, senderId, message, messageId, parcel);
@@ -19,7 +19,7 @@ public class ServerHub : Hub
             return Clients.All.SendAsync(Contract.ReceiveMessage, sender, senderId, message, messageId, parcel);
     }
 
-    public Task SendResponse(string sender, string senderId, string? receiverId, Guid messageId, object? response)
+    public Task SendResponse(string sender, string senderId, string? receiverId, Guid messageId, string response)
     {
         if (receiverId is not null)
             return Clients.Client(receiverId).SendAsync(Contract.ReceiveResponse, sender, senderId, messageId, response);

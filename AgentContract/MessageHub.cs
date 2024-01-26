@@ -19,7 +19,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public bool IsConnected => Connection?.State == HubConnectionState.Connected;
 
-    protected ConcurrentDictionary<Guid, Action<object>> CallbacksById { get; } = new();
+    protected ConcurrentDictionary<Guid, Func<string, Task>> CallbacksById { get; } = new();
 
     private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
                                                                           .SelectMany(i => i.GetMethods())
@@ -41,7 +41,7 @@ public class MessageHub<IContract> : Hub<IContract>
     }
 
     private bool IsAlive()
-    {          
+    {
         if (Connection is not null && !IsConnected)
         {
             Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, $"Hub disconnected."));
@@ -51,16 +51,10 @@ public class MessageHub<IContract> : Hub<IContract>
         return true;
     }
 
-    public JsonSerializerOptions JsonSerializerOptions { get; } = new()
-    {
-        ReferenceHandler = ReferenceHandler.Preserve,
-        WriteIndented = true
-    };
-
     /*******************
      * Post and forget *
      * *****************/
-    public void Post(Expression<Func<IContract, Delegate>> predicate) 
+    public void Post(Expression<Func<IContract, Delegate>> predicate)
         => Post(default(object), predicate, default(object));
 
     public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Delegate>> predicate)
@@ -76,7 +70,7 @@ public class MessageHub<IContract> : Hub<IContract>
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
-        var parcel = package is not null ? JsonSerializer.Serialize(package, JsonSerializerOptions) : null;
+        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
 
         Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
         Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
@@ -85,7 +79,7 @@ public class MessageHub<IContract> : Hub<IContract>
     /**********************
      * Post with response *
      * ********************/
-    public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback) 
+    public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
         => PostWithResponse(default(object), predicate, default(object), callback);
 
     public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
@@ -102,23 +96,27 @@ public class MessageHub<IContract> : Hub<IContract>
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
-        var parcel = package is not null ? JsonSerializer.Serialize(package, JsonSerializerOptions) : null;
+        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
 
-        CallbacksById.TryAdd(messageId, async (object package) =>
+        CallbacksById.TryAdd(messageId, async (string responseParcel) =>
         {
             await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing response {typeof(TResponse).Name}");
             try
             {
-                callback((TResponse)package);
+                var package = JsonSerializer.Deserialize<TResponse>(responseParcel);
+                if (package is not null) 
+                    callback((TResponse)package);
+                else
+                    await Connection.SendAsync(Contract.Log, Me, Id, $"Error: null response after deserialization");
             }
-            catch (Exception ex) 
+            catch (Exception ex)
             {
-                await Connection.SendAsync(Contract.Log, Me, Id, $"Error: wrong response type {typeof(TResponse).Name}");
+                await Connection.SendAsync(Contract.Log, Me, Id, $"Error: Exception thrown: {ex.Message}");
             }
         });
 
         Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
-        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel, typeof(TSent)));
+        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
     }
 
     /*************************
@@ -126,19 +124,9 @@ public class MessageHub<IContract> : Hub<IContract>
      * ***********************/
     public async Task InitializeConnectionAsync(CancellationToken cancellationToken)
     {
-        Connection.On<string, string, Guid, object?>(Contract.ReceiveResponse, async (sender, senderId, messageId, response) =>
-        {
-            CallbacksById.TryGetValue(messageId, out var callback);
-
-            if (callback is null)
-            {
-                await Connection.InvokeAsync(Contract.Log, Me, Id, $"Warning: response has arrived but left unhandled.");
-                return;
-            }
-
-            if (response is not null) callback(response);
-            CallbacksById.Remove(messageId, out var value);
-        });
+        Connection.On<string, string, Guid, string>(Contract.ReceiveResponse, 
+            async (sender, senderId, messageId, response) =>
+                await ActionResponseReceived(sender, senderId, messageId, response));
 
         Connection.Reconnecting += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Attempting to reconnect...");
         Connection.Reconnected += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Reconnected to the server");
@@ -147,11 +135,27 @@ public class MessageHub<IContract> : Hub<IContract>
         await Connection.StartAsync(cancellationToken);
     }
 
-    public async Task InitializeConnectionAsync(CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
+    public async Task InitializeConnectionAsync
+        (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
     {
-        Connection.On<string, string, string, string, string?>(Contract.ReceiveMessage,
-            async (sender, senderId, message, messageId, parcel) => await actionMessageReceived(sender, senderId, message, messageId, parcel));
+        Connection.On<string, string, string, string, string?>(Contract.ReceiveMessage, 
+            async (sender, senderId, message, messageId, parcel) =>
+                await actionMessageReceived(sender, senderId, message, messageId, parcel));
 
         await InitializeConnectionAsync(cancellationToken);
+    }
+
+    async Task ActionResponseReceived(string sender, string senderId, Guid messageId, string response)
+    {
+        CallbacksById.TryGetValue(messageId, out var callback);
+
+        if (callback is null)
+        {
+            await Connection.InvokeAsync(Contract.Log, Me, Id, $"Warning: response has arrived but left unhandled.");
+            return;
+        }
+
+        if (response is not null) await callback(response);
+        CallbacksById.Remove(messageId, out var value);
     }
 }

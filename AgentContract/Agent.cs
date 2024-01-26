@@ -63,8 +63,8 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
             await Job.WithStep($"{message}", async state =>
             {
-                var parameters = method.GetParameters().Select(p =>
-                    p.ParameterType == typeof(TState) ? state.State : Deserialize(parcel, p.ParameterType)).ToArray();
+                var parameters = method.GetParameters().Select(p => p.ParameterType == typeof(TState) ? state.State :
+                                    (parcel is not null ? JsonSerializer.Deserialize(parcel, p.ParameterType) : null)).ToArray();
 
                 var res = method.Invoke(MessageHub, parameters);
 
@@ -76,7 +76,12 @@ public class Agent<TState, THub, IContract> : BackgroundService
                 {
                     await (Task)res;
                     var response = res.GetType().GetProperty("Result")?.GetValue(res);
-                    await Connection.SendAsync(Contract.SendResponse, Me, Id, senderId, messageId, response);
+                    var responseParcel = JsonSerializer.Serialize(response);
+                    await Connection.InvokeAsync(Contract.Log, Me, Id, $"{response?.GetType().Name}");
+                    if (responseParcel is null)
+                        await Connection.InvokeAsync(Contract.Log, Me, Id, $"Error: response null after serialization.");
+                    else
+                        await Connection.SendAsync(Contract.SendResponse, Me, Id, senderId, messageId, responseParcel);
                 }
             })
             .Start();
@@ -86,12 +91,5 @@ public class Agent<TState, THub, IContract> : BackgroundService
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
         await MessageHub.InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
-    }
-
-    private object? Deserialize(string? parcel, Type type)
-    {
-        if (parcel is null) return parcel;
-        return typeof(JsonSerializer)?.GetMethod(nameof(JsonSerializer.DeserializeAsync), [type])?
-                                      .Invoke(null, [parcel, MessageHub.JsonSerializerOptions]);
     }
 }

@@ -14,7 +14,7 @@ public class DataHub : MessageHub<IDataContract>
 
     public async Task<DataChanged> ImportRequest(string fileName, Model model)
     {
-        if (fileName is null) return new DataChanged(false, null);
+        if (fileName is null) return new DataChanged(false, Array.Empty<string>().ToList());
 
         var dirInfo = new DirectoryInfo(".");
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
