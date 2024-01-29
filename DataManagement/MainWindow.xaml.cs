@@ -34,7 +34,9 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        Office = Office<IContract>.Create().AddAgent<Model, DataHub, IDataContract>().Run();
+        Office = Office<IContract>.Create()
+                                  .Register(agent => agent.DataChangedEvent, DataUpdate)
+                                  .AddAgent<Model, DataHub, IDataContract>().Run();
 
         State = new(dirInfo.FullName, new DataWindow());
     }
@@ -45,15 +47,19 @@ public partial class MainWindow : Window
 
     private string? GetSelectedFile() => ((FileInfo)InputFilePicker.SelectedItem)?.FullName?.Replace(State.Path, "");
 
-    private void DataChangedCallback(DataChanged response)
+    private void DataUpdate()
     {
-        if (!response.IsChange) return;
-        State.DataWindow.Update(response.Data);
+        Office.PostWithResponse<List<string>>(agent => agent.ReadRequest, Callback);
+
+        void Callback(List<string> data) {
+            if (data is not null)
+                State.DataWindow.Update(data);
+        }
     }
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        Office.PostWithResponse<string, DataChanged>(agent => agent.ImportRequest, GetSelectedFile(), DataChangedCallback);
+        Office.Post(agent => agent.ImportRequest, GetSelectedFile());
 
         /* TODO: remove this code once the actor model fully support all these functionalities
         var file = (FileInfo)InputFilePicker.SelectedItem;

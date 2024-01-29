@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using System.Linq.Expressions;
 
 namespace Agency;
 
@@ -63,6 +64,24 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         App.RunAsync();  // TODO: consider adding an explicit url
 
         Task.Run(async () => await InitializeConnectionAsync(CancellationToken));
+
+        return this;
+    }
+
+    public Office<IContract> Register<TReceived>(Expression<Func<IContract, Delegate>> predicate, Action<TReceived> action)
+    {
+        if (!GetMessage(predicate, out var message) || !IsAlive()) return this;
+        
+        OperationByPredicate.TryAdd(message, (typeof(TReceived), action));
+
+        return this;
+    }
+
+    public Office<IContract> Register(Expression<Func<IContract, Delegate>> predicate, Action action)
+    {
+        if (!GetMessage(predicate, out var message)) return this;
+
+        OperationByPredicate.TryAdd(message, (null, action));
 
         return this;
     }

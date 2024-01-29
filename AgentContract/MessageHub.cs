@@ -21,6 +21,8 @@ public class MessageHub<IContract> : Hub<IContract>
 
     protected ConcurrentDictionary<Guid, Func<string, Task>> CallbacksById { get; } = new();
 
+    protected ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
+
     private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
                                                                           .SelectMany(i => i.GetMethods())
                                                                           .ToArray();
@@ -30,7 +32,9 @@ public class MessageHub<IContract> : Hub<IContract>
         Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
     }
 
-    private bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)
+    protected async Task LogAsync(string msg) => await Connection.InvokeAsync(Contract.Log, Me, Id, msg);
+
+    protected bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)
     {
         // TODO: improve this mechanism with which name is retrieved from delegate in expression
         message = string.Empty;
@@ -40,7 +44,7 @@ public class MessageHub<IContract> : Hub<IContract>
         return true;
     }
 
-    private bool IsAlive()
+    protected bool IsAlive()
     {
         if (Connection is not null && !IsConnected)
         {
@@ -100,7 +104,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
         CallbacksById.TryAdd(messageId, async (string responseParcel) =>
         {
-            await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing response {typeof(TResponse).Name}");
+            await LogAsync($"processing response {typeof(TResponse).Name}");
             try
             {
                 var package = JsonSerializer.Deserialize<TResponse>(responseParcel);
@@ -123,35 +127,62 @@ public class MessageHub<IContract> : Hub<IContract>
      * Initialize Connection *
      * ***********************/
     public async Task InitializeConnectionAsync(CancellationToken cancellationToken)
-    {
-        Connection.On<string, string, Guid, string>(Contract.ReceiveResponse, 
-            async (sender, senderId, messageId, response) =>
-                await ActionResponseReceived(sender, senderId, messageId, response));
-
-        Connection.Reconnecting += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Attempting to reconnect...");
-        Connection.Reconnected += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Reconnected to the server");
-        Connection.Closed += (sender) => Connection.InvokeAsync(Contract.Log, Me, Id, "Connection Closed");
-
-        await Connection.StartAsync(cancellationToken);
-    }
+        => await InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
 
     public async Task InitializeConnectionAsync
-        (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
+        (CancellationToken cancellationToken, 
+         Func<string, string, string, string, string?, Task> actionMessageReceived)
     {
         Connection.On<string, string, string, string, string?>(Contract.ReceiveMessage, 
             async (sender, senderId, message, messageId, parcel) =>
                 await actionMessageReceived(sender, senderId, message, messageId, parcel));
 
-        await InitializeConnectionAsync(cancellationToken);
+        Connection.On<string, string, Guid, string>(Contract.ReceiveResponse,
+            async (sender, senderId, messageId, response) =>
+                await ActionResponseReceived(sender, senderId, messageId, response));
+
+        Connection.Reconnecting += (sender) => LogAsync("Attempting to reconnect...");
+        Connection.Reconnected += (sender) => LogAsync("Reconnected to the server");
+        Connection.Closed += (sender) => LogAsync("Connection Closed");
+
+        await Connection.StartAsync(cancellationToken);
+    }
+
+    public async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
+    {
+        if (!OperationByPredicate.TryGetValue(message, out var operation)) return;
+
+        if (operation.Type is null || operation.Action.GetMethodInfo().GetParameters().Any())
+        {
+            await LogAsync($"processing {message}");
+            operation.Action.DynamicInvoke();
+        }
+        else
+        {
+            if (parcel is null)
+            {
+                await LogAsync($"Warning: {message} received but {operation.Type.Name} expected.");
+                return;
+            }
+
+            var package = JsonSerializer.Deserialize(parcel, operation.Type);
+
+            if (package is null)
+            {
+                await LogAsync($"Warning: {message} received but {operation.Type.Name} failed deserialization.");
+                return;
+            }
+
+            await LogAsync($"processing {message}");
+            operation.Action.DynamicInvoke(package);
+        }
     }
 
     async Task ActionResponseReceived(string sender, string senderId, Guid messageId, string response)
     {
-        CallbacksById.TryGetValue(messageId, out var callback);
-
-        if (callback is null)
+        if (!CallbacksById.TryGetValue(messageId, out var callback))
         {
-            await Connection.InvokeAsync(Contract.Log, Me, Id, $"Warning: response has arrived but left unhandled.");
+            await LogAsync($"Warning: response has arrived but left unhandled.");
             return;
         }
 

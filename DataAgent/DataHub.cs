@@ -12,9 +12,14 @@ public class DataHub : MessageHub<IDataContract>
         return new();
     }
 
-    public async Task<DataChanged> ImportRequest(string fileName, Model model)
+    public async Task<List<string>> ReadRequest(Model model)
     {
-        if (fileName is null) return new DataChanged(false, Array.Empty<string>().ToList());
+        return model.GetPrintable();
+    }
+
+    public async Task ImportRequest(string fileName, Model model)
+    {
+        if (fileName is null) return;
 
         var dirInfo = new DirectoryInfo(".");
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
@@ -24,7 +29,7 @@ public class DataHub : MessageHub<IDataContract>
 
         model.Process();
 
-        return new DataChanged(true, model.GetPrintable());
+        Post(agent => agent.DataChangedEvent);
     }
 }
 

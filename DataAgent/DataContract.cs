@@ -4,8 +4,11 @@ namespace DataAgent;
 
 public interface IDataContract
 {
-    Task<DataChanged> ImportRequest(string fileName, Model model);
+    Task ReadRequest();
+
+    Task ImportRequest(string fileName, Model model);
+
+    Task DataChangedEvent();
 }
 
-public record DataChanged (bool IsChange, List<string> Data);
 
