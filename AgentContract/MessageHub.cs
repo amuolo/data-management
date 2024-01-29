@@ -105,7 +105,7 @@ public class MessageHub<IContract> : Hub<IContract>
             {
                 var package = JsonSerializer.Deserialize<TResponse>(responseParcel);
                 if (package is not null) 
-                    callback((TResponse)package);
+                    callback(package);
                 else
                     await Connection.SendAsync(Contract.Log, Me, Id, $"Error: null response after deserialization");
             }

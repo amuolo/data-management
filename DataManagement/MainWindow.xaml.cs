@@ -1,5 +1,4 @@
 ﻿using DataDomain;
-using Job;
 using DataAgent;
 using System.IO;
 using System.Windows;
@@ -44,17 +43,17 @@ public partial class MainWindow : Window
 
     private void Logger(string msg) => Dispatcher.BeginInvoke(() => MainArea.Items.Insert(0, msg));
 
-    private string? GetFileSelected() => ((FileInfo)InputFilePicker.SelectedItem)?.FullName?.Replace(State.Path, "");
+    private string? GetSelectedFile() => ((FileInfo)InputFilePicker.SelectedItem)?.FullName?.Replace(State.Path, "");
+
+    private void DataChangedCallback(DataChanged response)
+    {
+        if (!response.IsChange) return;
+        State.DataWindow.Update(response.Data);
+    }
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        var callback = (DataChanged response) =>
-        {
-            if (!response.IsChange) return;
-            State.DataWindow.Update(response.Data);
-        };
-
-        Office.PostWithResponse(agent => agent.ImportRequest, GetFileSelected(), callback);
+        Office.PostWithResponse<string, DataChanged>(agent => agent.ImportRequest, GetSelectedFile(), DataChangedCallback);
 
         /* TODO: remove this code once the actor model fully support all these functionalities
         var file = (FileInfo)InputFilePicker.SelectedItem;
