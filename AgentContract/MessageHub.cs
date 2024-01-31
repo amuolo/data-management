@@ -4,7 +4,6 @@ using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Agency;
 
@@ -30,6 +29,13 @@ public class MessageHub<IContract> : Hub<IContract>
     public MessageHub()
     {
         Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
+    }
+
+    public void Dispose()
+    {
+        Connection.StopAsync().Wait();
+        Connection.DisposeAsync().AsTask().Wait();
+        base.Dispose();
     }
 
     protected async Task LogAsync(string msg) => await Connection.InvokeAsync(Contract.Log, Me, Id, msg);

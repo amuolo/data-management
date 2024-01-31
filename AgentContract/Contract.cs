@@ -18,6 +18,8 @@ public class Contract
 
     public const string Create = nameof(Create);
 
+    public const string Delete = nameof(Delete);
+
     public const string Log = nameof(Log);
 
     public const string ReceiveLog = nameof(ReceiveLog);

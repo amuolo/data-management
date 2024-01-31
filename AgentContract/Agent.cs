@@ -18,7 +18,6 @@ public class Agent<TState, THub, IContract> : BackgroundService
     private bool IsInitialized { get; set; }
 
     private HubConnection Connection => MessageHub.Connection;
-    private bool IsConnected => MessageHub?.IsConnected?? false;
     private string? Id => MessageHub?.Id;
     private string Me => typeof(THub).Name;
 
@@ -29,9 +28,13 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     public Agent(IHubContext<THub, IContract> hub)
     {
-        HubContext = hub;
-        
-        // TODO: use options to pass the logger and the progresses       
+        HubContext = hub;        
+    }
+
+    public override void Dispose()
+    {
+        MessageHub.Dispose();
+        base.Dispose();
     }
 
     private async Task CreateAsync()
@@ -56,7 +59,12 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
-        if (MethodsByName.TryGetValue(message, out var method))
+        if (message == Contract.Delete)
+        {
+            Dispose();
+            return;
+        }
+        else if (MethodsByName.TryGetValue(message, out var method))
         {
             await CreateAsync();
             await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing {message}");
