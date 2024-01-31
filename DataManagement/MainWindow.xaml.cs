@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Components;
 
 namespace DataManagement;
 
-public interface IContract : IDataContract {}
+public interface IApp : IDataContract { }
 
-public record MainWindowState(string Path, DataWindow DataWindow);
+public record MainWindowState(string Path, DataWindow DataWindow, ProgressBar ProgressBar);
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml
@@ -19,7 +19,7 @@ public partial class MainWindow : Window
 {
     private MainWindowState State { get; set; }
 
-    private Office<IContract> Office { get; }
+    private Office<IApp> Office { get; }
 
     public MainWindow()
     {
@@ -34,11 +34,13 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        Office = Office<IContract>.Create()
-                                  .Register(agent => agent.DataChangedEvent, DataUpdate)
-                                  .AddAgent<Model, DataHub, IDataContract>().Run();
+        Office = Office<IApp>.Create()
+                             .Register(agent => agent.DataChangedEvent, DataUpdate)
+                             .Register<double>(agent => agent.ShowProgress, ShowProgress)
+                             .Register<string>(agent => agent.Write, Logger)
+                             .AddAgent<Model, DataHub, IDataContract>().Run();
 
-        State = new(dirInfo.FullName, new DataWindow());
+        State = new(dirInfo.FullName, new DataWindow(), null);
     }
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
@@ -53,19 +55,28 @@ public partial class MainWindow : Window
 
         void Callback(List<string> data) {
             if (data is not null)
+            {
                 State.DataWindow.Update(data);
+                Logger($"Update Data Window");
+            }
         }
+    }
+
+    private void ShowProgress(double progress)
+    {
+        Dispatcher.BeginInvoke(() =>
+        {
+            if (State.ProgressBar is null)
+                State = State with { ProgressBar = new ProgressBar() };
+            State.ProgressBar.Update(progress);
+        });
     }
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
         Office.Post(agent => agent.ImportRequest, GetSelectedFile());
 
-        /* TODO: remove this code once the actor model fully support all these functionalities
-        var file = (FileInfo)InputFilePicker.SelectedItem;
-        var fileName = file?.FullName?.Replace(State.Path, "");
-        var progressBar = new ProgressBar();
-
+        /* This is the old implementation without actor model
         JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
                         .WithStep($"Import from file {fileName}", () => State.Data.Update(DataOperator.Import(file)))
                         .WithStep($"Processing new data", () => State.Data.Process())
@@ -76,11 +87,7 @@ public partial class MainWindow : Window
 
     private void ExportClick(object sender, RoutedEventArgs e)
     {
-        /* TODO: remove this code once the actor model fully support all these functionalities
-        var name = ExportFileName?.Text;
-        var fileName = State.Path + "\\" + name?? "";
-        var progressBar = new ProgressBar();
-
+        /* TODO: implement this
         JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))
                         .WithStep($"Export to file {name}", () => DataOperator.Export(State.Data.GetPrintable(), fileName))
                         .Start();

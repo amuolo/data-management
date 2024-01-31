@@ -38,8 +38,6 @@ public class MessageHub<IContract> : Hub<IContract>
         base.Dispose();
     }
 
-    protected async Task LogAsync(string msg) => await Connection.InvokeAsync(Contract.Log, Me, Id, msg);
-
     protected bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)
     {
         // TODO: improve this mechanism with which name is retrieved from delegate in expression
@@ -54,12 +52,21 @@ public class MessageHub<IContract> : Hub<IContract>
     {
         if (Connection is not null && !IsConnected)
         {
-            Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, $"Hub disconnected."));
+            // TODO: check whether to force reconnection at this point
+            //Task.Run(async () => {
+            //    await Connection.StartAsync();
+            //    await LogAsync($"Hub disconnected.");
+            //});
             return false;
         }
 
         return true;
     }
+
+    /***********************
+     *  Standard Messages  *
+     ***********************/
+    protected async Task LogAsync(string msg) => await Connection.InvokeAsync(Contract.Log, Me, Id, msg);
 
     /*******************
      * Post and forget *
@@ -82,7 +89,7 @@ public class MessageHub<IContract> : Hub<IContract>
         var messageId = Guid.NewGuid();
         var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
 
-        Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
+        Task.Run(async () => await LogAsync(message));
         Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
     }
 
@@ -117,15 +124,15 @@ public class MessageHub<IContract> : Hub<IContract>
                 if (package is not null) 
                     callback(package);
                 else
-                    await Connection.SendAsync(Contract.Log, Me, Id, $"Error: null response after deserialization");
+                    await LogAsync($"Error: null response after deserialization");
             }
             catch (Exception ex)
             {
-                await Connection.SendAsync(Contract.Log, Me, Id, $"Error: Exception thrown: {ex.Message}");
+                await LogAsync($"Error: Exception thrown: {ex.Message}");
             }
         });
 
-        Task.Run(async () => await Connection.SendAsync(Contract.Log, Me, Id, message));
+        Task.Run(async () => await LogAsync(message));
         Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
     }
 
@@ -158,7 +165,7 @@ public class MessageHub<IContract> : Hub<IContract>
     {
         if (!OperationByPredicate.TryGetValue(message, out var operation)) return;
 
-        if (operation.Type is null || operation.Action.GetMethodInfo().GetParameters().Any())
+        if (operation.Type is null || !operation.Action.GetMethodInfo().GetParameters().Any())
         {
             await LogAsync($"processing {message}");
             operation.Action.DynamicInvoke();

@@ -7,29 +7,23 @@ namespace DataManagement;
 /// </summary>
 public partial class ProgressBar : Window
 {
-    int progress;
-    int totalNumSteps;
-
     internal ProgressBar()
     {
         InitializeComponent();
     }
 
-    internal void Enable(int total)
+    internal void Enable()
     {
-        Dispatcher.BeginInvoke(() => {
-            totalNumSteps = total;
-            progress = 1;
-            Show();
-        });
+        Dispatcher.BeginInvoke(() => Show());
     }
 
-    internal void Update()
+    internal void Update(double progress)
     {
         Dispatcher.BeginInvoke(() =>
         {
             ProgressStatus.IsIndeterminate = false;
-            ProgressStatus.Value = progress++ * 100 / totalNumSteps;
+            ProgressStatus.Value = progress * 100;
+            if (progress == 100) Disable();
         });
     }
 

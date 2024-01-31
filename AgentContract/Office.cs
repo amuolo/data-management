@@ -70,7 +70,7 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
 
     public Office<IContract> Register<TReceived>(Expression<Func<IContract, Delegate>> predicate, Action<TReceived> action)
     {
-        if (!GetMessage(predicate, out var message) || !IsAlive()) return this;
+        if (!GetMessage(predicate, out var message)) return this;
         
         OperationByPredicate.TryAdd(message, (typeof(TReceived), action));
 
