@@ -66,7 +66,7 @@ public class MessageHub<IContract> : Hub<IContract>
     /***********************
      *  Standard Messages  *
      ***********************/
-    protected async Task LogAsync(string msg) => await Connection.InvokeAsync(Contract.Log, Me, Id, msg);
+    public async Task LogAsync(string msg) => await Connection.InvokeAsync(Contract.Log, Me, Id, msg);
 
     /*******************
      * Post and forget *
@@ -161,7 +161,7 @@ public class MessageHub<IContract> : Hub<IContract>
         await Connection.StartAsync(cancellationToken);
     }
 
-    public async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
+    internal async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
         if (!OperationByPredicate.TryGetValue(message, out var operation)) return;
 
@@ -191,7 +191,7 @@ public class MessageHub<IContract> : Hub<IContract>
         }
     }
 
-    async Task ActionResponseReceived(string sender, string senderId, Guid messageId, string response)
+    internal async Task ActionResponseReceived(string sender, string senderId, Guid messageId, string response)
     {
         if (!CallbacksById.TryGetValue(messageId, out var callback))
         {

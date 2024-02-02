@@ -3,6 +3,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
@@ -69,7 +70,8 @@ public class Agent<TState, THub, IContract> : BackgroundService
             await CreateAsync();
             await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing {message}");
 
-            await Job.WithStep($"{message}", async state =>
+            await Job.WithOptions(o => o.WithAsyncLogs(MessageHub.LogAsync))
+                     .WithStep($"{message}", async state =>
             {
                 var parameters = method.GetParameters().Select(p => p.ParameterType == typeof(TState) ? state.State :
                                     (parcel is not null ? JsonSerializer.Deserialize(parcel, p.ParameterType) : null)).ToArray();

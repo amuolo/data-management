@@ -14,7 +14,7 @@ public interface IDataContract
 
     Task ShowProgress(double progress);
 
-    Task Write(string message);
+    Task Display(string message);
 }
 
 

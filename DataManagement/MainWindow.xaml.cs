@@ -37,7 +37,7 @@ public partial class MainWindow : Window
         Office = Office<IApp>.Create()
                              .Register(agent => agent.DataChangedEvent, DataUpdate)
                              .Register<double>(agent => agent.ShowProgress, ShowProgress)
-                             .Register<string>(agent => agent.Write, Logger)
+                             .Register<string>(agent => agent.Display, Logger)
                              .AddAgent<Model, DataHub, IDataContract>().Run();
 
         State = new(dirInfo.FullName, new DataWindow(), null);

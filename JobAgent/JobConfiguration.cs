@@ -6,6 +6,8 @@ public record JobConfiguration()
 
     public JobConfiguration WithLogs(Action<string> logger) => this with { Logger = logger };
 
+    public JobConfiguration WithAsyncLogs(Func<string, Task> logger) => this with { AsyncLogger = logger };
+
     public JobConfiguration WithProgress(Action<int> enable, Action update, Action close)
         => this with 
         {
@@ -17,6 +19,8 @@ public record JobConfiguration()
     /* Internal */
 
     internal Action<string> Logger { get; set; } = delegate { };
+
+    internal Func<string, Task> AsyncLogger { get; set; }
 
     internal bool ShowProgress => ProgressBarEnable != null;
 

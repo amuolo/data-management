@@ -21,11 +21,9 @@ public static class DataOperator
         switch (file.Extension)
         {
             case ".csv":
-
                 return File.ReadLines(file.FullName).SelectMany(str => str.Split(new[] { "\n" }, StringSplitOptions.None)).ToList();
 
             default:
-
                 throw new Exception(Logs.ExtensionNotHandled);
         }
     }
