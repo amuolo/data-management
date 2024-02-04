@@ -33,9 +33,9 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public void Dispose()
     {
+        base.Dispose();
         Connection.StopAsync().Wait();
         Connection.DisposeAsync().AsTask().Wait();
-        base.Dispose();
     }
 
     protected bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)

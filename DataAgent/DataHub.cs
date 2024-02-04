@@ -1,5 +1,6 @@
 ﻿using Agency;
 using DataDomain;
+using System.Reflection.Metadata;
 
 namespace DataAgent;
 
@@ -41,6 +42,15 @@ public class DataHub : MessageHub<IDataContract>
         Post(agent => agent.Display, $"Data has been processed");
         Post(agent => agent.ShowProgress, 3d/3);
         Post(agent => agent.DataChangedEvent);
+
+        //await Task.Run(async () =>
+        //{
+        //    var timer = new PeriodicTimer(Contract.TimeOut);
+        //    while (await timer.WaitForNextTickAsync())
+        //    {
+        //        (DateTime.Now - DateTime.UtcNow).TotalSeconds > Contract.TimeOut.TotalSeconds
+        //    }
+        //});
     }
 }
 

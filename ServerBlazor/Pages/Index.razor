@@ -32,6 +32,7 @@
 @code {
     private string? ConnectionId => hubConnection?.ConnectionId;
     private HubConnection? hubConnection;
+    private Dictionary<string, DateTime> uptimeByActor = new();
     private List<string> messages = new();
     private string? userInput;
     private string? messageInput;
@@ -49,6 +50,15 @@
             InvokeAsync(StateHasChanged);
         });
 
+        hubConnection.On<string, string, string, string, string?>(Contract.ReceiveMessage, (sender, senderId, message, messageId, parcel) =>
+        {
+            if (uptimeByActor.TryGetValue(sender, out var time))
+                time = DateTime.UtcNow;
+            else
+                uptimeByActor.TryAdd(sender, DateTime.UtcNow);
+        });
+
+        StartAgentsTimingMachine();
         await hubConnection.StartAsync();
     }
 
@@ -65,6 +75,27 @@
     }
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
+
+    private void StartAgentsTimingMachine() 
+    {
+        Task.Run(async () =>
+        {
+            var timer = new PeriodicTimer(Contract.TimeOut);
+            while (await timer.WaitForNextTickAsync())
+            {
+                foreach(var kvp in uptimeByActor)
+                {
+                    if (hubConnection is not null && IsConnected &&
+                        (DateTime.UtcNow - kvp.Value).TotalSeconds > Contract.TimeOut.TotalSeconds)
+                    {
+                        await hubConnection.SendAsync(Contract.SendMessage, Contract.Server, ConnectionId,
+                                                      kvp.Key, Contract.Delete, Guid.NewGuid(), null);
+                        uptimeByActor.Remove(kvp.Key);
+                    }
+                }
+            }
+        });
+    }
 
     public async ValueTask DisposeAsync()
     {

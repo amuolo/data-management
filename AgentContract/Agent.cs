@@ -34,8 +34,8 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     public override void Dispose()
     {
-        MessageHub.Dispose();
         base.Dispose();
+        MessageHub.Dispose();
     }
 
     private async Task CreateAsync()

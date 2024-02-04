@@ -16,6 +16,8 @@ public class Contract
 
     public const string ReceiveResponse = nameof(ReceiveResponse);  
 
+    public const string Server = nameof(Server);
+
     public const string Create = nameof(Create);
 
     public const string Delete = nameof(Delete);
@@ -23,4 +25,6 @@ public class Contract
     public const string Log = nameof(Log);
 
     public const string ReceiveLog = nameof(ReceiveLog);
+
+    public static readonly TimeSpan TimeOut = TimeSpan.FromMinutes(30);
 }
