@@ -2,6 +2,7 @@
 
 @using Agency
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
 
 @inject NavigationManager NavManager
 @implements IAsyncDisposable
@@ -32,6 +33,7 @@
 @code {
     private string? ConnectionId => hubConnection?.ConnectionId;
     private HubConnection? hubConnection;
+    private CancellationTokenSource TokenSource = new();
     private Dictionary<string, DateTime> uptimeByActor = new();
     private List<string> messages = new();
     private string? userInput;
@@ -39,19 +41,25 @@
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Contract.SignalRAddress))
+        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Consts.SignalRAddress))
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
-        hubConnection.On<string, string, string>(Contract.ReceiveLog, (sender, senderId, message) =>
+        hubConnection.On<string, string, string>(Consts.ReceiveLog, (sender, senderId, message) =>
         {
             var formattedMessage = $"{sender}: {message}";
             messages.Add(formattedMessage);
             InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<string, string, string, string, string?>(Contract.ReceiveMessage, (sender, senderId, message, messageId, parcel) =>
+        hubConnection.On<string, string, string, string, string?>(Consts.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
         {
+            if (message == Consts.DiscoverAgents)
+            {
+                var responseParcel = JsonSerializer.Serialize(uptimeByActor.Keys);
+                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, senderId, messageId, responseParcel);
+            }
+
             if (uptimeByActor.TryGetValue(sender, out var time))
                 time = DateTime.UtcNow;
             else
@@ -69,8 +77,8 @@
         var message = messageInput ?? "";
 
         if (hubConnection is not null) {
-            await hubConnection.SendAsync(Contract.Log, sender, ConnectionId, message);
-            await hubConnection.SendAsync(Contract.SendMessage, sender, ConnectionId, null, message, messageId, null);
+            await hubConnection.SendAsync(Consts.Log, sender, ConnectionId, message);
+            await hubConnection.SendAsync(Consts.SendMessage, sender, ConnectionId, null, message, messageId, null);
         }
     }
 
@@ -80,16 +88,16 @@
     {
         Task.Run(async () =>
         {
-            var timer = new PeriodicTimer(Contract.TimeOut);
-            while (await timer.WaitForNextTickAsync())
+            var timer = new PeriodicTimer(Consts.TimeOut);
+            while (await timer.WaitForNextTickAsync() && !TokenSource.IsCancellationRequested)
             {
                 foreach(var kvp in uptimeByActor)
                 {
                     if (hubConnection is not null && IsConnected &&
-                        (DateTime.UtcNow - kvp.Value).TotalSeconds > Contract.TimeOut.TotalSeconds)
+                        (DateTime.UtcNow - kvp.Value).TotalSeconds > Consts.TimeOut.TotalSeconds)
                     {
-                        await hubConnection.SendAsync(Contract.SendMessage, Contract.Server, ConnectionId,
-                                                      kvp.Key, Contract.Delete, Guid.NewGuid(), null);
+                        await hubConnection.SendAsync(Consts.SendMessage, Consts.Server, ConnectionId,
+                                                      kvp.Key, Consts.Delete, Guid.NewGuid(), null);
                         uptimeByActor.Remove(kvp.Key);
                     }
                 }

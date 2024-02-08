@@ -3,7 +3,6 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Reflection;
 using System.Text.Json;
 
@@ -42,12 +41,12 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         if (!IsInitialized)
         {
-            await Connection.InvokeAsync(Contract.Log, Me, Id, "Creating myself");
+            await Connection.InvokeAsync(Consts.Log, Me, Id, "Creating myself");
 
             Job = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
 
-            if (MethodsByName.TryGetValue(Contract.Create, out var create))
-                Job = await Job.WithStep(Contract.Create, async state =>
+            if (MethodsByName.TryGetValue(Consts.Create, out var create))
+                Job = await Job.WithStep(Consts.Create, async state =>
                 {
                     var init = create.Invoke(MessageHub, null);
                     if (init is not null) state.State = await (Task<TState>)init;
@@ -60,7 +59,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
-        if (message == Contract.Delete)
+        if (message == Consts.Delete)
         {
             Dispose();
             return;
@@ -68,7 +67,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
         else if (MethodsByName.TryGetValue(message, out var method))
         {
             await CreateAsync();
-            await Connection.InvokeAsync(Contract.Log, Me, Id, $"processing {message}");
+            await Connection.InvokeAsync(Consts.Log, Me, Id, $"processing {message}");
 
             await Job.WithOptions(o => o.WithAsyncLogs(MessageHub.LogAsync))
                      .WithStep($"{message}", async state =>
@@ -78,20 +77,22 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
                 var res = method.Invoke(MessageHub, parameters);
 
-                if (res is not null && method.ReturnType == typeof(Task))
+                if (res is null) return;
+
+                if (method.ReturnType == typeof(Task))
                 {
                     await (Task)res;
                 }
-                else if (res is not null && method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                else if (method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
                     await (Task)res;
                     var response = res.GetType().GetProperty("Result")?.GetValue(res);
                     var responseParcel = JsonSerializer.Serialize(response);
-                    await Connection.InvokeAsync(Contract.Log, Me, Id, $"{response?.GetType().Name}");
+                    await Connection.InvokeAsync(Consts.Log, Me, Id, $"{response?.GetType().Name}");
                     if (responseParcel is null)
-                        await Connection.InvokeAsync(Contract.Log, Me, Id, $"Error: response null after serialization.");
+                        await Connection.InvokeAsync(Consts.Log, Me, Id, $"Error: response null after serialization.");
                     else
-                        await Connection.SendAsync(Contract.SendResponse, Me, Id, senderId, messageId, responseParcel);
+                        await Connection.SendAsync(Consts.SendResponse, Me, Id, senderId, messageId, responseParcel);
                 }
             })
             .Start();

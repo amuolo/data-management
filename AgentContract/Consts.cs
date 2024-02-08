@@ -1,6 +1,6 @@
 ﻿namespace Agency;
 
-public class Contract
+public class Consts
 {
     public const string SignalRAddress = "/signalR";
 
@@ -15,6 +15,8 @@ public class Contract
     public const string SendResponse = nameof(SendResponse);
 
     public const string ReceiveResponse = nameof(ReceiveResponse);  
+
+    public const string DiscoverAgents= nameof(DiscoverAgents);
 
     public const string Server = nameof(Server);
 

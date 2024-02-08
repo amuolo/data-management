@@ -28,7 +28,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public MessageHub()
     {
-        Connection = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
+        Connection = new HubConnectionBuilder().WithUrl(Consts.Url).WithAutomaticReconnect().Build();
     }
 
     public void Dispose()
@@ -66,7 +66,7 @@ public class MessageHub<IContract> : Hub<IContract>
     /***********************
      *  Standard Messages  *
      ***********************/
-    public async Task LogAsync(string msg) => await Connection.InvokeAsync(Contract.Log, Me, Id, msg);
+    public async Task LogAsync(string msg) => await Connection.InvokeAsync(Consts.Log, Me, Id, msg);
 
     /*******************
      * Post and forget *
@@ -90,7 +90,7 @@ public class MessageHub<IContract> : Hub<IContract>
         var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
 
         Task.Run(async () => await LogAsync(message));
-        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
+        Task.Run(async () => await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, message, messageId, parcel));
     }
 
     /**********************
@@ -110,6 +110,12 @@ public class MessageHub<IContract> : Hub<IContract>
     {
         if (!GetMessage(predicate, out var message) || !IsAlive()) return;
 
+        PostWithResponse<TAddress, TSent, TResponse>(address, message, package, callback);
+    }
+
+    public void PostWithResponse<TAddress, TSent, TResponse>
+        (TAddress? address, string message, TSent? package, Action<TResponse> callback)
+    { 
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
@@ -133,7 +139,7 @@ public class MessageHub<IContract> : Hub<IContract>
         });
 
         Task.Run(async () => await LogAsync(message));
-        Task.Run(async () => await Connection.SendAsync(Contract.SendMessage, Me, Id, receiverId, message, messageId, parcel));
+        Task.Run(async () => await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, message, messageId, parcel));
     }
 
     /*************************
@@ -146,11 +152,11 @@ public class MessageHub<IContract> : Hub<IContract>
         (CancellationToken cancellationToken, 
          Func<string, string, string, string, string?, Task> actionMessageReceived)
     {
-        Connection.On<string, string, string, string, string?>(Contract.ReceiveMessage, 
+        Connection.On<string, string, string, string, string?>(Consts.ReceiveMessage, 
             async (sender, senderId, message, messageId, parcel) =>
                 await actionMessageReceived(sender, senderId, message, messageId, parcel));
 
-        Connection.On<string, string, Guid, string>(Contract.ReceiveResponse,
+        Connection.On<string, string, Guid, string>(Consts.ReceiveResponse,
             async (sender, senderId, messageId, response) =>
                 await ActionResponseReceived(sender, senderId, messageId, response));
 

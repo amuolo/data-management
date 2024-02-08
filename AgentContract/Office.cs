@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -7,12 +8,13 @@ using System.Linq.Expressions;
 
 namespace Agency;
 
-public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? App) : MessageHub<IContract>
+public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? App)
+    : MessageHub<IContract>
     where IContract : class
 {
     private List<Type> Hubs { get; } = [];
 
-    private CancellationToken CancellationToken { get; set; } = new();
+    private CancellationTokenSource TokenSource { get; } = new();
 
     public static Office<IContract> Create()
     {
@@ -59,11 +61,13 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         App.MapBlazorHub();
 
         foreach (var type in Hubs) 
-            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { Contract.SignalRAddress });
+            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { Consts.SignalRAddress });
 
         App.RunAsync();  // TODO: consider adding an explicit url
 
-        Task.Run(async () => await InitializeConnectionAsync(CancellationToken));
+        Task.Run(async () => await InitializeConnectionAsync(TokenSource.Token));
+
+        RunAgentsDiscoveryService();
 
         return this;
     }
@@ -84,5 +88,23 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         OperationByPredicate.TryAdd(message, (null, action));
 
         return this;
+    }
+
+    public void RunAgentsDiscoveryService()
+    {
+        Task.Run(async () =>
+        {
+            var timer = new PeriodicTimer(Consts.TimeOut);
+            do
+            {
+                PostWithResponse<object, object, string[]>(null, Consts.DiscoverAgents, null, Callback);
+            }
+            while (await timer.WaitForNextTickAsync() && !TokenSource.IsCancellationRequested);
+        });
+    }
+
+    void Callback(string[] agents)
+    {
+        //throw new NotImplementedException();
     }
 }
