@@ -29,11 +29,47 @@ public class Office<IContract>
 
     public Office<IContract> Run()
     {
-        Task.Run(async () => await InitializeConnectionAsync(TokenSource.Token));
-
-        AgentsDiscovery();
+        Task.Run(async () =>
+        {
+            await InitializeConnectionAsync(TokenSource.Token);
+            await EstablishConnectionWithServerAsync();
+            await HireAgentsAsync();
+        });
 
         return this;
+    }
+
+    private async Task EstablishConnectionWithServerAsync()
+    {
+        var connected = false;
+        var timerReconnection = new PeriodicTimer(Consts.ReconnectionTimeOut);
+
+        do
+        {
+            PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
+            await timerReconnection.WaitForNextTickAsync();
+        }
+        while (!connected && !TokenSource.IsCancellationRequested);
+    }
+
+    private async Task HireAgentsAsync()
+    {
+        var timer = new PeriodicTimer(Consts.TimeOut);
+
+        do
+        {
+            PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
+            await timer.WaitForNextTickAsync();
+        }
+        while (!IsConnected && !TokenSource.IsCancellationRequested);
+
+        void HireAgents(string[] registeredAgents)
+        {
+            foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name)))
+            {
+                WebApplications[actor.Agent.Name] = Recruitment.Recruit(actor);
+            }
+        }
     }
 
     public Office<IContract> Register<TReceived>(Expression<Func<IContract, Delegate>> predicate, Action<TReceived> action)
@@ -52,37 +88,5 @@ public class Office<IContract>
         OperationByPredicate.TryAdd(message, (null, action));
 
         return this;
-    }
-
-    public void AgentsDiscovery()
-    {
-        Task.Run(async () =>
-        {
-            var timer = new PeriodicTimer(Consts.TimeOut);
-            var timerReconnection = new PeriodicTimer(Consts.ReconnectionTimeOut);
-            var connected = false;
-
-            do
-            {
-                PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
-                await timerReconnection.WaitForNextTickAsync();
-            }
-            while (!connected && !TokenSource.IsCancellationRequested);
-
-            do
-            {
-                PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
-                await timer.WaitForNextTickAsync();
-            }
-            while (!IsConnected && !TokenSource.IsCancellationRequested);
-        });
-    }
-
-    void HireAgents(string[] registeredAgents)
-    {
-        foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name))) 
-        {
-            WebApplications[actor.Agent.Name] = Recruitment.Recruit(actor);
-        }
     }
 }
