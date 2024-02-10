@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
@@ -22,9 +24,8 @@ internal static class Recruitment
         builder.Services.AddResponseCompression(opts =>
             opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
 
-        builder.Services.GetType().GetMethod("AddHostedService", [actor.Agent])?.Invoke(builder.Services, null);
-
-        //builder.Services.AddHostedService<Agent<TState, THub, IHubContract>>();
+        // This is the generic variant of builder.Services.AddHostedService<Agent>()
+        builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), actor.Agent));
 
         var app = builder.Build();
 
@@ -39,7 +40,11 @@ internal static class Recruitment
         app.UseStaticFiles();
         app.MapBlazorHub();
 
-        app.GetType().GetMethod("MapHub", [actor.Hub])?.Invoke(app, new object[] { Consts.SignalRAddress });
+        // TODO: This fails because generic methods in MessageHub are not compatible with Hubs
+        // This is the generic variant of app.MapHub<Hub>(address)
+        //typeof(HubEndpointRouteBuilderExtensions)
+        //    .GetMethod("MapHub", [typeof(IEndpointRouteBuilder), typeof(string)])
+        //    .MakeGenericMethod(actor.Hub).Invoke(null, [app, Consts.SignalRAddress]);
 
         app.RunAsync();  // TODO: consider adding an explicit url
 

@@ -96,17 +96,17 @@ public class MessageHub<IContract> : Hub<IContract>
     /**********************
      * Post with response *
      * ********************/
-    public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse?> callback)
+    public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
         => PostWithResponse(default(object), predicate, default(object), callback);
 
-    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, Action<TResponse?> callback)
+    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
         => PostWithResponse(address, predicate, default(object), callback);
 
-    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse?> callback)
+    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
         => PostWithResponse(default(object), predicate, package, callback);
 
     public void PostWithResponse<TAddress, TSent, TResponse>
-        (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse?> callback)
+        (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
     {
         if (!GetMessage(predicate, out var message)) return;
 
@@ -114,7 +114,7 @@ public class MessageHub<IContract> : Hub<IContract>
     }
 
     public void PostWithResponse<TAddress, TSent, TResponse>
-        (TAddress? address, string message, TSent? package, Action<TResponse?> callback)
+        (TAddress? address, string message, TSent? package, Action<TResponse> callback)
     {
         // TODO: wait asynchronously that the connection is established
         if (!IsAlive()) return;

@@ -61,7 +61,8 @@
             }
             else if (message == Consts.ConnectToServer)
             {
-                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, ConnectionId, senderId, messageId, default(object));
+                var responseParcel = JsonSerializer.Serialize(new ServerInfo());
+                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, ConnectionId, senderId, messageId, responseParcel);
             }
 
             if (uptimeByActor.TryGetValue(sender, out var time))

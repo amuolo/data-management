@@ -64,15 +64,17 @@ public class Office<IContract>
 
             do
             {
-                PostWithResponse<object, object, object>(null, Consts.ConnectToServer, null, _ => connected = true);
+                PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
+                await timerReconnection.WaitForNextTickAsync();
             }
-            while (await timerReconnection.WaitForNextTickAsync() && !connected && !TokenSource.IsCancellationRequested);
+            while (!connected && !TokenSource.IsCancellationRequested);
 
             do
             {
                 PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
+                await timer.WaitForNextTickAsync();
             }
-            while (await timer.WaitForNextTickAsync() && !IsConnected && !TokenSource.IsCancellationRequested);
+            while (!IsConnected && !TokenSource.IsCancellationRequested);
         });
     }
 
