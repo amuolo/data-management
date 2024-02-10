@@ -54,10 +54,14 @@
 
         hubConnection.On<string, string, string, string, string?>(Consts.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
         {
-            if (message == Consts.DiscoverAgents)
+            if (message == Consts.AgentsDiscovery)
             {
                 var responseParcel = JsonSerializer.Serialize(uptimeByActor.Keys);
-                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, senderId, messageId, responseParcel);
+                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, ConnectionId, senderId, messageId, responseParcel);
+            }
+            else if (message == Consts.ConnectToServer)
+            {
+                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, ConnectionId, senderId, messageId, default(object));
             }
 
             if (uptimeByActor.TryGetValue(sender, out var time))

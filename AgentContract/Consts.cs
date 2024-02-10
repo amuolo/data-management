@@ -16,7 +16,9 @@ public class Consts
 
     public const string ReceiveResponse = nameof(ReceiveResponse);  
 
-    public const string DiscoverAgents= nameof(DiscoverAgents);
+    public const string AgentsDiscovery= nameof(AgentsDiscovery);
+
+    public const string ConnectToServer = nameof(ConnectToServer);
 
     public const string Server = nameof(Server);
 
@@ -29,4 +31,6 @@ public class Consts
     public const string ReceiveLog = nameof(ReceiveLog);
 
     public static readonly TimeSpan TimeOut = TimeSpan.FromMinutes(30);
+
+    public static readonly TimeSpan ReconnectionTimeOut = TimeSpan.FromSeconds(5);
 }

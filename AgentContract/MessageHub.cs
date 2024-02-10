@@ -96,26 +96,29 @@ public class MessageHub<IContract> : Hub<IContract>
     /**********************
      * Post with response *
      * ********************/
-    public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
+    public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse?> callback)
         => PostWithResponse(default(object), predicate, default(object), callback);
 
-    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
+    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, Action<TResponse?> callback)
         => PostWithResponse(address, predicate, default(object), callback);
 
-    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
+    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse?> callback)
         => PostWithResponse(default(object), predicate, package, callback);
 
     public void PostWithResponse<TAddress, TSent, TResponse>
-        (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
+        (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse?> callback)
     {
-        if (!GetMessage(predicate, out var message) || !IsAlive()) return;
+        if (!GetMessage(predicate, out var message)) return;
 
-        PostWithResponse<TAddress, TSent, TResponse>(address, message, package, callback);
+        PostWithResponse(address, message, package, callback);
     }
 
     public void PostWithResponse<TAddress, TSent, TResponse>
-        (TAddress? address, string message, TSent? package, Action<TResponse> callback)
-    { 
+        (TAddress? address, string message, TSent? package, Action<TResponse?> callback)
+    {
+        // TODO: wait asynchronously that the connection is established
+        if (!IsAlive()) return;
+
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();
         var messageId = Guid.NewGuid();
@@ -126,11 +129,18 @@ public class MessageHub<IContract> : Hub<IContract>
             await LogAsync($"processing response {typeof(TResponse).Name}");
             try
             {
-                var package = JsonSerializer.Deserialize<TResponse>(responseParcel);
-                if (package is not null) 
-                    callback(package);
+                if(responseParcel is null)
+                {
+                    callback(default);
+                }
                 else
-                    await LogAsync($"Error: null response after deserialization");
+                {
+                    var package = JsonSerializer.Deserialize<TResponse>(responseParcel);
+                    if (package is not null)
+                        callback(package);
+                    else
+                        await LogAsync($"Error: response deserialization failed");
+                }
             }
             catch (Exception ex)
             {
@@ -205,7 +215,7 @@ public class MessageHub<IContract> : Hub<IContract>
             return;
         }
 
-        if (response is not null) await callback(response);
+        await callback(response);
         CallbacksById.Remove(messageId, out var value);
     }
 }

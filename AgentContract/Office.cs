@@ -1,38 +1,21 @@
 ﻿using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.ResponseCompression;
-using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using System.Linq.Expressions;
 
 namespace Agency;
 
-public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? App)
+public class Office<IContract>
     : MessageHub<IContract>
     where IContract : class
 {
-    private List<Type> Hubs { get; } = [];
+    private List<(Type Agent, Type Hub)> Actors { get; } = [];
 
     private CancellationTokenSource TokenSource { get; } = new();
 
+    private Dictionary<string, WebApplication> WebApplications { get; } = [];
+
     public static Office<IContract> Create()
-    {
-        var builder = WebApplication.CreateBuilder();
-
-        var office = new Office<IContract>(builder, default);
-
-        builder.Logging.ClearProviders().AddConsole();
-
-        builder.Services.AddRazorPages();
-        builder.Services.AddRazorComponents();
-        builder.Services.AddServerSideBlazor();
-        builder.Services.AddSignalR();
-
-        builder.Services.AddResponseCompression(opts =>
-            opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(new[] { "application/octet-stream" }));
-              
-        return office;
+    {              
+        return new Office<IContract>();
     }
 
     public Office<IContract> AddAgent<TState, THub, IHubContract>()
@@ -40,34 +23,15 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
             where THub : MessageHub<IHubContract>, new()
             where IHubContract : class
     {
-        Builder.Services.AddHostedService<Agent<TState, THub, IHubContract>>();
-        Hubs.Add(typeof(THub));
+        Actors.Add((typeof(Agent<TState, THub, IHubContract>), typeof(THub)));
         return this;
     }
 
     public Office<IContract> Run()
     {
-        App = Builder.Build();
-
-        if(!App.Environment.IsDevelopment())
-        {
-            App.UseExceptionHandler("/Error");
-            App.UseHsts();
-        }
-
-        App.UseRouting();
-        App.UseHttpsRedirection();
-        App.UseStaticFiles();
-        App.MapBlazorHub();
-
-        foreach (var type in Hubs) 
-            App.GetType().GetMethod("MapHub", [type])?.Invoke(App, new object[] { Consts.SignalRAddress });
-
-        App.RunAsync();  // TODO: consider adding an explicit url
-
         Task.Run(async () => await InitializeConnectionAsync(TokenSource.Token));
 
-        RunAgentsDiscoveryService();
+        AgentsDiscovery();
 
         return this;
     }
@@ -90,21 +54,33 @@ public class Office<IContract>(WebApplicationBuilder Builder, WebApplication? Ap
         return this;
     }
 
-    public void RunAgentsDiscoveryService()
+    public void AgentsDiscovery()
     {
         Task.Run(async () =>
         {
             var timer = new PeriodicTimer(Consts.TimeOut);
+            var timerReconnection = new PeriodicTimer(Consts.ReconnectionTimeOut);
+            var connected = false;
+
             do
             {
-                PostWithResponse<object, object, string[]>(null, Consts.DiscoverAgents, null, Callback);
+                PostWithResponse<object, object, object>(null, Consts.ConnectToServer, null, _ => connected = true);
             }
-            while (await timer.WaitForNextTickAsync() && !TokenSource.IsCancellationRequested);
+            while (await timerReconnection.WaitForNextTickAsync() && !connected && !TokenSource.IsCancellationRequested);
+
+            do
+            {
+                PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
+            }
+            while (await timer.WaitForNextTickAsync() && !IsConnected && !TokenSource.IsCancellationRequested);
         });
     }
 
-    void Callback(string[] agents)
+    void HireAgents(string[] registeredAgents)
     {
-        //throw new NotImplementedException();
+        foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name))) 
+        {
+            WebApplications[actor.Agent.Name] = Recruitment.Recruit(actor);
+        }
     }
 }
