@@ -36,8 +36,8 @@ public partial class MainWindow : Window
 
         Office = Office<IApp>.Create()
                              .Register(agent => agent.DataChangedEvent, DataUpdate)
-                             .Register<double>(agent => agent.ShowProgress, ShowProgress)
-                             .Register<string>(agent => agent.Display, Logger)
+                             .Register(agent => agent.ShowProgress, ShowProgress)
+                             .Register(agent => agent.Display, Logger)
                              .AddAgent<Model, DataHub, IDataContract>().Run();
 
         State = new(dirInfo.FullName, new DataWindow(), null);
@@ -45,7 +45,7 @@ public partial class MainWindow : Window
 
     private void OpenDataWindowClick(object sender, RoutedEventArgs e) => State.DataWindow.Show();
 
-    private void Logger(string msg) => Dispatcher.BeginInvoke(() => MainArea.Items.Insert(0, msg));
+    private Action<string> Logger => (string msg) => Dispatcher.BeginInvoke(() => MainArea.Items.Insert(0, msg));
 
     private string? GetSelectedFile() => ((FileInfo)InputFilePicker.SelectedItem)?.FullName?.Replace(State.Path, "");
 
@@ -62,7 +62,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ShowProgress(double progress)
+    private Action<double> ShowProgress => (double progress) =>
     {
         Dispatcher.BeginInvoke(() =>
         {
@@ -70,7 +70,7 @@ public partial class MainWindow : Window
                 State = State with { ProgressBar = new ProgressBar() };
             State.ProgressBar.Update(progress);
         });
-    }
+    };
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
