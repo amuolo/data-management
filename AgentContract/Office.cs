@@ -32,29 +32,16 @@ public class Office<IContract>
         Task.Run(async () =>
         {
             await InitializeConnectionAsync(TokenSource.Token);
-            await EstablishConnectionWithServerAsync();
+            await ConnectToServerAsync(TokenSource.Token);
             await HireAgentsAsync();
         });
 
         return this;
     }
 
-    private async Task EstablishConnectionWithServerAsync()
-    {
-        var connected = false;
-        var timerReconnection = new PeriodicTimer(Consts.ReconnectionTimeOut);
-
-        do
-        {
-            PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
-            await timerReconnection.WaitForNextTickAsync();
-        }
-        while (!connected && !TokenSource.IsCancellationRequested);
-    }
-
     private async Task HireAgentsAsync()
     {
-        var timer = new PeriodicTimer(Consts.TimeOut);
+        var timer = new PeriodicTimer(Consts.HireAgentsPeriod);
 
         do
         {

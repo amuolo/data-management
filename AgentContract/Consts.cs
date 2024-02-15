@@ -30,7 +30,7 @@ public class Consts
 
     public const string ReceiveLog = nameof(ReceiveLog);
 
-    public static readonly TimeSpan TimeOut = TimeSpan.FromMinutes(30);
+    public static readonly TimeSpan HireAgentsPeriod = TimeSpan.FromMinutes(30);
 
-    public static readonly TimeSpan ReconnectionTimeOut = TimeSpan.FromSeconds(5);
+    public static readonly TimeSpan ServerConnectionAttemptPeriod = TimeSpan.FromSeconds(5);
 }

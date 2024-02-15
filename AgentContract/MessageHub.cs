@@ -16,15 +16,17 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public string Id => Connection?.ConnectionId?? "";
 
-    public bool IsConnected => Connection?.State == HubConnectionState.Connected;
+    protected bool IsConnected => Connection?.State == HubConnectionState.Connected;
 
-    protected ConcurrentDictionary<Guid, Func<string, Task>> CallbacksById { get; } = new();
+    internal ConcurrentQueue<Parcel<IContract>> Outbox { get; } = new();
 
-    protected ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
+    internal ConcurrentDictionary<Guid, Func<string, Task>> CallbacksById { get; } = new();
 
-    private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
-                                                                          .SelectMany(i => i.GetMethods())
-                                                                          .ToArray();
+    internal ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
+
+    internal MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
+                                                                           .SelectMany(i => i.GetMethods())
+                                                                           .ToArray();
 
     public MessageHub()
     {
@@ -61,6 +63,19 @@ public class MessageHub<IContract> : Hub<IContract>
         }
 
         return true;
+    }
+
+    internal async Task ConnectToServerAsync(CancellationToken token)
+    {
+        var connected = false;
+        var timerReconnection = new PeriodicTimer(Consts.ServerConnectionAttemptPeriod);
+
+        do
+        {
+            PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
+            await timerReconnection.WaitForNextTickAsync();
+        }
+        while (!connected && !token.IsCancellationRequested);
     }
 
     /***********************
