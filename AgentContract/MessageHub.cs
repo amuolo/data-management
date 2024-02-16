@@ -16,7 +16,11 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public string Id => Connection?.ConnectionId?? "";
 
-    protected bool IsConnected => Connection?.State == HubConnectionState.Connected;
+    protected CancellationTokenSource TokenSource { get; } = new();
+
+    protected bool IsServerAlive { get; set; }
+
+    protected bool IsConnected => Connection is not null && Connection?.State == HubConnectionState.Connected;
 
     internal ConcurrentQueue<Parcel<IContract>> Outbox { get; } = new();
 
@@ -31,11 +35,13 @@ public class MessageHub<IContract> : Hub<IContract>
     public MessageHub()
     {
         Connection = new HubConnectionBuilder().WithUrl(Consts.Url).WithAutomaticReconnect().Build();
+        StartServiceServerConnection(TokenSource.Token);
     }
 
     public void Dispose()
     {
         base.Dispose();
+        TokenSource.Cancel();
         Connection.StopAsync().Wait();
         Connection.DisposeAsync().AsTask().Wait();
     }
@@ -50,32 +56,24 @@ public class MessageHub<IContract> : Hub<IContract>
         return true;
     }
 
-    protected bool IsAlive()
+    private void StartServiceServerConnection(CancellationToken token)
     {
-        if (Connection is not null && !IsConnected)
+        Task.Run(async () =>
         {
-            // TODO: check whether to force reconnection at this point
-            //Task.Run(async () => {
-            //    await Connection.StartAsync();
-            //    await LogAsync($"Hub disconnected.");
-            //});
-            return false;
-        }
+            do
+            {
+                var connected = false;
+                using (var timerReconnection = new PeriodicTimer(Consts.ServerConnectionAttemptPeriod))
+                {
+                    PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
+                    await timerReconnection.WaitForNextTickAsync();
+                }
+                IsServerAlive = connected;
 
-        return true;
-    }
-
-    internal async Task ConnectToServerAsync(CancellationToken token)
-    {
-        var connected = false;
-        var timerReconnection = new PeriodicTimer(Consts.ServerConnectionAttemptPeriod);
-
-        do
-        {
-            PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
-            await timerReconnection.WaitForNextTickAsync();
-        }
-        while (!connected && !token.IsCancellationRequested);
+                if (!IsServerAlive) CallbacksById.Clear();
+            }
+            while (!token.IsCancellationRequested);
+        });
     }
 
     /***********************
@@ -97,7 +95,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
-        if (!GetMessage(predicate, out var message) || !IsAlive()) return;
+        if (!GetMessage(predicate, out var message) || !IsConnected) return;
 
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();
@@ -131,8 +129,7 @@ public class MessageHub<IContract> : Hub<IContract>
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, string message, TSent? package, Action<TResponse> callback)
     {
-        // TODO: wait asynchronously that the connection is established
-        if (!IsAlive()) return;
+        if(!IsConnected) return;
 
         // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
         var receiverId = address?.ToString();

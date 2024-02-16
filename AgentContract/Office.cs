@@ -9,9 +9,11 @@ public class Office<IContract>
 {
     private List<(Type Agent, Type Hub)> Actors { get; } = [];
 
-    private CancellationTokenSource TokenSource { get; } = new();
-
     private Dictionary<string, WebApplication> WebApplications { get; } = [];
+
+    private Office() : base()
+    {
+    }
 
     public static Office<IContract> Create()
     {              
@@ -32,31 +34,36 @@ public class Office<IContract>
         Task.Run(async () =>
         {
             await InitializeConnectionAsync(TokenSource.Token);
-            await ConnectToServerAsync(TokenSource.Token);
-            await HireAgentsAsync();
+            StartServiceHiringAgents(TokenSource.Token);
         });
 
         return this;
     }
 
-    private async Task HireAgentsAsync()
+    private void StartServiceHiringAgents(CancellationToken token)
     {
-        var timer = new PeriodicTimer(Consts.HireAgentsPeriod);
-
-        do
+        Task.Run(async () =>
         {
-            PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
-            await timer.WaitForNextTickAsync();
-        }
-        while (!IsConnected && !TokenSource.IsCancellationRequested);
+            var timer = new PeriodicTimer(Consts.HireAgentsPeriod);
 
-        void HireAgents(string[] registeredAgents)
-        {
-            foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name)))
+            do
             {
-                WebApplications[actor.Agent.Name] = Recruitment.Recruit(actor);
+                while (!IsConnected || !IsServerAlive)
+                    await Task.Delay(Consts.ServerConnectionAttemptPeriod);
+
+                PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
+                await timer.WaitForNextTickAsync();
             }
-        }
+            while (!token.IsCancellationRequested);
+
+            void HireAgents(string[] registeredAgents)
+            {
+                foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name)))
+                {
+                    WebApplications[actor.Agent.Name] = Recruitment.Recruit(actor);
+                }
+            }
+        });
     }
 
     public Office<IContract> Register<TReceived>(Expression<Func<IContract, Delegate>> predicate, Action<TReceived> action)
