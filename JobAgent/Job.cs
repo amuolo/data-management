@@ -128,7 +128,9 @@ public record Job<TState>()
         if(func.GetMethodInfo().ReturnType != typeof(void)) State = (TState?)res;
 
         timer.Stop();
-        Configuration.Logger?.Invoke($"{name} took {timer.ElapsedMilliseconds} ms");
+        var log = $"{name} took {timer.ElapsedMilliseconds} ms";
+        Configuration.Logger?.Invoke(log);
+        Configuration.AsyncLogger?.Invoke(log);
         return true;
     }
 
