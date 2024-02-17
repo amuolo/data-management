@@ -48,9 +48,6 @@ public class Office<IContract>
 
             do
             {
-                while (!IsConnected || !IsServerAlive)
-                    await Task.Delay(Consts.ServerConnectionAttemptPeriod);
-
                 PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
                 await timer.WaitForNextTickAsync();
             }

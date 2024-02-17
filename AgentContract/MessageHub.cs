@@ -1,9 +1,12 @@
 ﻿using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq.Expressions;
+using System.Net;
 using System.Reflection;
 using System.Text.Json;
+using System.Threading;
 
 namespace Agency;
 
@@ -22,20 +25,24 @@ public class MessageHub<IContract> : Hub<IContract>
 
     protected bool IsConnected => Connection is not null && Connection?.State == HubConnectionState.Connected;
 
-    internal ConcurrentQueue<Parcel<IContract>> Outbox { get; } = new();
+    private event EventHandler NewMessageInOutbox;
 
-    internal ConcurrentDictionary<Guid, Func<string, Task>> CallbacksById { get; } = new();
+    private SemaphoreSlim Semaphore { get; } = new(1, 1);
+
+    private ConcurrentQueue<Parcel<IContract>> Outbox { get; } = new();
+
+    private ConcurrentDictionary<Guid, Action<string>> CallbacksById { get; } = new();
 
     internal ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
 
-    internal MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
+    private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
                                                                            .SelectMany(i => i.GetMethods())
                                                                            .ToArray();
 
     public MessageHub()
     {
         Connection = new HubConnectionBuilder().WithUrl(Consts.Url).WithAutomaticReconnect().Build();
-        StartServiceServerConnection(TokenSource.Token);
+        NewMessageInOutbox += SendingMessage;
     }
 
     public void Dispose()
@@ -56,30 +63,78 @@ public class MessageHub<IContract> : Hub<IContract>
         return true;
     }
 
-    private void StartServiceServerConnection(CancellationToken token)
+    private async Task WaitConnection()
     {
+        while (!IsConnected)
+            await Task.Delay(Consts.ServerConnectionAttemptPeriod);
+    }
+
+    private async Task ConnectToServer(CancellationToken token)
+    {
+        var id = Guid.NewGuid();
+        var connected = false;
+        var timerReconnection = new PeriodicTimer(Consts.ServerConnectionAttemptPeriod);
+
+        CallbacksById.TryAdd(id, _ => {
+            connected = true;
+            timerReconnection.Dispose();
+        });
+
+        do
+        {
+            await Connection.SendAsync(Consts.SendMessage, Me, Id, null, Consts.ConnectToServer, id, null);
+            await timerReconnection.WaitForNextTickAsync();
+            IsServerAlive = connected;
+        }
+        while (!token.IsCancellationRequested && !IsServerAlive);
+    }
+
+    private void SendingMessage(object? sender, EventArgs e)
+    {
+        if (Semaphore.CurrentCount == 0) return;
+
         Task.Run(async () =>
         {
-            do
-            {
-                var connected = false;
-                using (var timerReconnection = new PeriodicTimer(Consts.ServerConnectionAttemptPeriod))
-                {
-                    PostWithResponse<object, object, ServerInfo>(null, Consts.ConnectToServer, null, _ => connected = true);
-                    await timerReconnection.WaitForNextTickAsync();
-                }
-                IsServerAlive = connected;
+            await Semaphore.WaitAsync(TokenSource.Token);
+            await WaitConnection();
+            await ConnectToServer(TokenSource.Token);
 
-                if (!IsServerAlive) CallbacksById.Clear();
+            while (!Outbox.IsEmpty && !TokenSource.IsCancellationRequested)
+            {
+                var ok = Outbox.TryDequeue(out var parcel);
+
+                if (!ok || parcel is null)
+                {
+                    LogPost("Issue with Outbox dequeuing");
+                    return;
+                }
+                else if (parcel.Type == Consts.SendMessage)
+                {
+                    var receiverId = parcel.Address?.ToString();
+                    var box = parcel.Package is not null ? JsonSerializer.Serialize(parcel.Package) : null;
+
+                    LogPost(parcel.Message);
+                    await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, parcel.Message, parcel.Id, box);
+                }
+                else if(parcel.Type == Consts.Log)
+                {
+                    await Connection.InvokeAsync(Consts.Log, Me, Id, parcel.Message);
+                }
             }
-            while (!token.IsCancellationRequested);
+
+            Semaphore.Release();
         });
     }
 
-    /***********************
-     *  Standard Messages  *
-     ***********************/
-    public async Task LogAsync(string msg) => await Connection.InvokeAsync(Consts.Log, Me, Id, msg);
+    /***************
+     *   Logging   *
+     ***************/
+    public void LogPost(string msg)
+    {
+        var parcel = new Parcel<IContract>(null, null, msg) with { Type = Consts.Log };
+        Outbox.Enqueue(parcel);
+        NewMessageInOutbox.Invoke(this, new EventArgs());
+    }
 
     /*******************
      * Post and forget *
@@ -95,15 +150,10 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
     {
-        if (!GetMessage(predicate, out var message) || !IsConnected) return;
+        if (!GetMessage(predicate, out var message)) return;
 
-        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
-        var receiverId = address?.ToString();
-        var messageId = Guid.NewGuid();
-        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
-
-        Task.Run(async () => await LogAsync(message));
-        Task.Run(async () => await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, message, messageId, parcel));
+        Outbox.Enqueue(new Parcel<IContract>(address, package, message));
+        NewMessageInOutbox.Invoke(this, new EventArgs());
     }
 
     /**********************
@@ -129,16 +179,12 @@ public class MessageHub<IContract> : Hub<IContract>
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, string message, TSent? package, Action<TResponse> callback)
     {
-        if(!IsConnected) return;
+        var parcel = new Parcel<IContract>(address, package, message);
+        Outbox.Enqueue(parcel);
 
-        // TODO: find a way to use the direct address provided in the parameters to enable point-to-point communications
-        var receiverId = address?.ToString();
-        var messageId = Guid.NewGuid();
-        var parcel = package is not null ? JsonSerializer.Serialize(package) : null;
-
-        CallbacksById.TryAdd(messageId, async (string responseParcel) =>
+        CallbacksById.TryAdd(parcel.Id, (string responseParcel) =>
         {
-            await LogAsync($"processing response {typeof(TResponse).Name}");
+            LogPost($"processing response {typeof(TResponse).Name}");
             try
             {
                 if(responseParcel is null)
@@ -151,17 +197,16 @@ public class MessageHub<IContract> : Hub<IContract>
                     if (package is not null)
                         callback(package);
                     else
-                        await LogAsync($"Error: response deserialization failed");
+                        LogPost($"Error: response deserialization failed");
                 }
             }
             catch (Exception ex)
             {
-                await LogAsync($"Error: Exception thrown: {ex.Message}");
+                LogPost($"Error: Exception thrown: {ex.Message}");
             }
         });
 
-        Task.Run(async () => await LogAsync(message));
-        Task.Run(async () => await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, message, messageId, parcel));
+        NewMessageInOutbox.Invoke(this, new EventArgs());
     }
 
     /*************************
@@ -171,38 +216,48 @@ public class MessageHub<IContract> : Hub<IContract>
         => await InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
 
     public async Task InitializeConnectionAsync
-        (CancellationToken cancellationToken, 
-         Func<string, string, string, string, string?, Task> actionMessageReceived)
+        (CancellationToken cancellationToken, Action<string, string, string, string, string?> actionMessageReceived)
     {
-        Connection.On<string, string, string, string, string?>(Consts.ReceiveMessage, 
+        Connection.On(Consts.ReceiveMessage, actionMessageReceived);
+
+        await FinalizeConnectionAsync(cancellationToken);
+    }
+
+    public async Task InitializeConnectionAsync
+        (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
+    {
+        Connection.On<string, string, string, string, string?>(Consts.ReceiveMessage,
             async (sender, senderId, message, messageId, parcel) =>
                 await actionMessageReceived(sender, senderId, message, messageId, parcel));
 
-        Connection.On<string, string, Guid, string>(Consts.ReceiveResponse,
-            async (sender, senderId, messageId, response) =>
-                await ActionResponseReceived(sender, senderId, messageId, response));
+        await FinalizeConnectionAsync(cancellationToken);
+    }
 
-        Connection.Reconnecting += (sender) => LogAsync("Attempting to reconnect...");
-        Connection.Reconnected += (sender) => LogAsync("Reconnected to the server");
-        Connection.Closed += (sender) => LogAsync("Connection Closed");
+    private async Task FinalizeConnectionAsync(CancellationToken cancellationToken)
+    {
+        Connection.On<string, string, Guid, string>(Consts.ReceiveResponse, ActionResponseReceived);
+
+        Connection.Reconnecting += (sender) => Task.Run(() => LogPost("Attempting to reconnect..."));
+        Connection.Reconnected += (sender) => Task.Run(() => LogPost("Reconnected to the server"));
+        Connection.Closed += (sender) => Task.Run(() => LogPost("Connection Closed"));
 
         await Connection.StartAsync(cancellationToken);
     }
 
-    internal async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
+    private void ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
         if (!OperationByPredicate.TryGetValue(message, out var operation)) return;
 
         if (operation.Type is null || !operation.Action.GetMethodInfo().GetParameters().Any())
         {
-            await LogAsync($"processing {message}");
+            LogPost($"processing {message}");
             operation.Action.DynamicInvoke();
         }
         else
         {
             if (parcel is null)
             {
-                await LogAsync($"Warning: {message} received but {operation.Type.Name} expected.");
+                LogPost($"Warning: {message} received but {operation.Type.Name} expected.");
                 return;
             }
 
@@ -210,24 +265,24 @@ public class MessageHub<IContract> : Hub<IContract>
 
             if (package is null)
             {
-                await LogAsync($"Warning: {message} received but {operation.Type.Name} failed deserialization.");
+                LogPost($"Warning: {message} received but {operation.Type.Name} failed deserialization.");
                 return;
             }
 
-            await LogAsync($"processing {message}");
+            LogPost($"processing {message}");
             operation.Action.DynamicInvoke(package);
         }
     }
 
-    internal async Task ActionResponseReceived(string sender, string senderId, Guid messageId, string response)
+    internal void ActionResponseReceived(string sender, string senderId, Guid messageId, string response)
     {
         if (!CallbacksById.TryGetValue(messageId, out var callback))
         {
-            await LogAsync($"Warning: response has arrived but left unhandled.");
+            LogPost($"Warning: response has arrived but left unhandled.");
             return;
         }
 
-        await callback(response);
+        callback(response);
         CallbacksById.Remove(messageId, out var value);
     }
 }

@@ -69,7 +69,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
             await CreateAsync();
             await Connection.InvokeAsync(Consts.Log, Me, Id, $"processing {message}");
 
-            await Job.WithOptions(o => o.WithAsyncLogs(MessageHub.LogAsync))
+            await Job.WithOptions(o => o.WithLogs(MessageHub.LogPost))
                      .WithStep($"{message}", async state =>
             {
                 var parameters = method.GetParameters().Select(p => p.ParameterType == typeof(TState) ? state.State :
