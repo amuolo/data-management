@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Enterprise.JobFactory\Enterprise.JobFactory.csproj" />
+    <ProjectReference Include="..\Enterprise.Utils\Enterprise.Utils.csproj" />
   </ItemGroup>
 
   <ItemGroup>

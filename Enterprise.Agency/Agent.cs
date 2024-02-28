@@ -1,4 +1,5 @@
 ﻿using Enterprise.Job;
+using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
@@ -87,7 +88,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     await (Task)res;
                     var response = res.GetType().GetProperty("Result")?.GetValue(res);
                     var responseParcel = JsonSerializer.Serialize(response);
-                    await Connection.InvokeAsync(Consts.Log, Me, Id, $"{response?.GetType().Name}");
+                    await Connection.InvokeAsync(Consts.Log, Me, Id, $"{response?.GetType().ExtractName()}");
                     if (responseParcel is null)
                         await Connection.InvokeAsync(Consts.Log, Me, Id, $"Error: response null after serialization.");
                     else

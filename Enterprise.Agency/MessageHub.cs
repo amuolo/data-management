@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.SignalR;
+﻿using Enterprise.Utils;
+using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
@@ -12,7 +13,7 @@ public class MessageHub<IContract> : Hub<IContract>
 {
     public HubConnection Connection { get; }
 
-    public string Me => GetType().Name;
+    public string Me => GetType().ExtractName();
 
     public string Id => Connection?.ConnectionId?? "";
 

@@ -1,10 +1,10 @@
-﻿using Microsoft.AspNetCore.Builder;
+﻿using Enterprise.Utils;
+using Microsoft.AspNetCore.Builder;
 using System.Linq.Expressions;
 
 namespace Enterprise.Agency;
 
-public class Office<IContract>
-    : MessageHub<IContract>
+public class Office<IContract> : MessageHub<IContract>
     where IContract : class
 {
     private List<(Type Agent, Type Hub)> Actors { get; } = [];
@@ -53,10 +53,12 @@ public class Office<IContract>
             }
             while (!token.IsCancellationRequested);
 
+            // TODO: move recruitment to server-side to avoid over-production of agents
             void HireAgents(string[] registeredAgents)
             {
                 foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name)))
                 {
+                    LogPost($"Recruiting {TypeHelper.ExtractName(actor.Agent)}");
                     WebApplications[actor.Agent.Name] = Recruitment.Recruit(actor);
                 }
             }
