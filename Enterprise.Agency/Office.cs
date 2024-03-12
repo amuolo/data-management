@@ -33,7 +33,7 @@ public class Office<IContract> : MessageHub<IContract>
     {
         Task.Run(async () =>
         {
-            await InitializeConnectionAsync(TokenSource.Token);
+            await InitializeConnectionAsync(TokenSource.Token).ConfigureAwait(false);
             StartServiceHiringAgents(TokenSource.Token);
         });
 
@@ -49,7 +49,7 @@ public class Office<IContract> : MessageHub<IContract>
             do
             {
                 PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
-                await timer.WaitForNextTickAsync();
+                await timer.WaitForNextTickAsync().ConfigureAwait(false);
             }
             while (!token.IsCancellationRequested);
 

@@ -70,7 +70,7 @@ public record Job<TState>()
         {
             try
             {
-                await Semaphore.WaitAsync(cancellationToken);
+                await Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
                 if (Configuration.ShowProgress) Configuration.ProgressBarEnable?.DynamicInvoke(Steps.Count);
 
@@ -80,10 +80,10 @@ public record Job<TState>()
 
                     if (!ok) throw new Exception("Issue with job dequeuing");
 
-                    await Execute(step.Name, step.Func);
+                    await Execute(step.Name, step.Func).ConfigureAwait(false);
 
                     foreach (var post in PostActions)
-                        await Execute(post.Name, post.Func);
+                        await Execute(post.Name, post.Func).ConfigureAwait(false);
 
                     if (Configuration.ShowProgress) Configuration.ProgressBarUpdate();
                 }
@@ -94,7 +94,7 @@ public record Job<TState>()
                 if(Configuration.Logger is not null)
                     Configuration.Logger.Invoke(msg);
                 if(Configuration.AsyncLogger is not null)
-                    await Configuration.AsyncLogger.Invoke(msg);
+                    await Configuration.AsyncLogger.Invoke(msg).ConfigureAwait(false);
             }
             finally
             {

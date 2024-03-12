@@ -71,7 +71,7 @@
                 uptimeByActor.TryAdd(sender, DateTime.UtcNow);
         });
 
-        StartAgentsTimingMachine();
+        StartAgentsTimingsMachine();
         await hubConnection.StartAsync();
     }
 
@@ -89,12 +89,12 @@
 
     public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
 
-    private void StartAgentsTimingMachine() 
+    private void StartAgentsTimingsMachine() 
     {
         Task.Run(async () =>
         {
             var timer = new PeriodicTimer(Consts.HireAgentsPeriod);
-            while (await timer.WaitForNextTickAsync() && !TokenSource.IsCancellationRequested)
+            while (await timer.WaitForNextTickAsync().ConfigureAwait(false) && !TokenSource.IsCancellationRequested)
             {
                 foreach(var kvp in uptimeByActor)
                 {
@@ -102,7 +102,7 @@
                         (DateTime.UtcNow - kvp.Value).TotalSeconds > Consts.HireAgentsPeriod.TotalSeconds)
                     {
                         await hubConnection.SendAsync(Consts.SendMessage, Consts.Server, ConnectionId,
-                                                      kvp.Key, Consts.Delete, Guid.NewGuid(), null);
+                                                      kvp.Key, Consts.Delete, Guid.NewGuid(), null).ConfigureAwait(false);
                         uptimeByActor.Remove(kvp.Key);
                     }
                 }
@@ -113,6 +113,6 @@
     public async ValueTask DisposeAsync()
     {
         if (hubConnection is not null)
-            await hubConnection.DisposeAsync();
+            await hubConnection.DisposeAsync().ConfigureAwait(false);
     }
 }

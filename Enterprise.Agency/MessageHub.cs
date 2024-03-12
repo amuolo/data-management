@@ -64,7 +64,7 @@ public class MessageHub<IContract> : Hub<IContract>
     private async Task WaitConnection()
     {
         while (!IsConnected)
-            await Task.Delay(Consts.ServerConnectionAttemptPeriod);
+            await Task.Delay(Consts.ServerConnectionAttemptPeriod).ConfigureAwait(false);
     }
 
     private async Task ConnectToServer(CancellationToken token)
@@ -80,8 +80,8 @@ public class MessageHub<IContract> : Hub<IContract>
 
         do
         {
-            await Connection.SendAsync(Consts.SendMessage, Me, Id, null, Consts.ConnectToServer, id, null);
-            await timerReconnection.WaitForNextTickAsync();
+            await Connection.SendAsync(Consts.SendMessage, Me, Id, null, Consts.ConnectToServer, id, null).ConfigureAwait(false);
+            await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
             IsServerAlive = connected;
         }
         while (!token.IsCancellationRequested && !IsServerAlive);
@@ -93,9 +93,9 @@ public class MessageHub<IContract> : Hub<IContract>
 
         Task.Run(async () =>
         {
-            await Semaphore.WaitAsync(TokenSource.Token);
-            await WaitConnection();
-            await ConnectToServer(TokenSource.Token);
+            await Semaphore.WaitAsync(TokenSource.Token).ConfigureAwait(false);
+            await WaitConnection().ConfigureAwait(false);
+            await ConnectToServer(TokenSource.Token).ConfigureAwait(false);
 
             while (!Outbox.IsEmpty && !TokenSource.IsCancellationRequested)
             {
@@ -112,11 +112,11 @@ public class MessageHub<IContract> : Hub<IContract>
                     var box = parcel.Package is not null ? JsonSerializer.Serialize(parcel.Package) : null;
 
                     LogPost(parcel.Message);
-                    await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, parcel.Message, parcel.Id, box);
+                    await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, parcel.Message, parcel.Id, box).ConfigureAwait(false);
                 }
                 else if(parcel.Type == Consts.Log)
                 {
-                    await Connection.InvokeAsync(Consts.Log, Me, Id, parcel.Message);
+                    await Connection.InvokeAsync(Consts.Log, Me, Id, parcel.Message).ConfigureAwait(false);
                 }
             }
 
@@ -235,9 +235,11 @@ public class MessageHub<IContract> : Hub<IContract>
     {
         Connection.On<string, string, Guid, string>(Consts.ReceiveResponse, ActionResponseReceived);
 
-        Connection.Reconnecting += (sender) => Task.Run(() => LogPost("Attempting to reconnect..."));
-        Connection.Reconnected += (sender) => Task.Run(() => LogPost("Reconnected to the server"));
-        Connection.Closed += (sender) => Task.Run(() => LogPost("Connection Closed"));
+        string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
+
+        Connection.Reconnecting += (exc) => { LogPost($"Attempting to reconnect... {getMsg(exc)}"); return Task.CompletedTask; };
+        Connection.Reconnected += (id) => { LogPost("Reconnected to the server"); return Task.CompletedTask; };
+        Connection.Closed += (exc) => { LogPost($"Connection Closed! {getMsg(exc)}"); return Task.CompletedTask; };
 
         await Connection.StartAsync(cancellationToken);
     }
