@@ -1,4 +1,5 @@
-﻿using Enterprise.Utils;
+﻿using Enterprise.MessageHub;
+using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
 using System.Collections.Concurrent;
@@ -39,7 +40,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public MessageHub()
     {
-        Connection = new HubConnectionBuilder().WithUrl(Consts.Url).WithAutomaticReconnect().Build();
+        Connection = new HubConnectionBuilder().WithUrl(Constants.Url).WithAutomaticReconnect().Build();
         NewMessageInOutbox += SendingMessage;
     }
 
@@ -80,7 +81,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
         do
         {
-            await Connection.SendAsync(Consts.SendMessage, Me, Id, null, Consts.ConnectToServer, id, null).ConfigureAwait(false);
+            await Connection.SendAsync(Constants.SendMessage, Me, Id, null, Constants.ConnectToServer, id, null).ConfigureAwait(false);
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
             IsServerAlive = connected;
         }
@@ -106,17 +107,17 @@ public class MessageHub<IContract> : Hub<IContract>
                     LogPost("Issue with Outbox dequeuing");
                     return;
                 }
-                else if (parcel.Type == Consts.SendMessage)
+                else if (parcel.Type == Constants.SendMessage)
                 {
                     var receiverId = parcel.Address?.ToString();
                     var box = parcel.Package is not null ? JsonSerializer.Serialize(parcel.Package) : null;
 
                     LogPost(parcel.Message);
-                    await Connection.SendAsync(Consts.SendMessage, Me, Id, receiverId, parcel.Message, parcel.Id, box).ConfigureAwait(false);
+                    await Connection.SendAsync(Constants.SendMessage, Me, Id, receiverId, parcel.Message, parcel.Id, box).ConfigureAwait(false);
                 }
-                else if(parcel.Type == Consts.Log)
+                else if(parcel.Type == Constants.Log)
                 {
-                    await Connection.InvokeAsync(Consts.Log, Me, Id, parcel.Message).ConfigureAwait(false);
+                    await Connection.InvokeAsync(Constants.Log, Me, Id, parcel.Message).ConfigureAwait(false);
                 }
             }
 
@@ -129,7 +130,7 @@ public class MessageHub<IContract> : Hub<IContract>
      ***************/
     public void LogPost(string msg)
     {
-        var parcel = new Parcel<IContract>(null, null, msg) with { Type = Consts.Log };
+        var parcel = new Parcel<IContract>(null, null, msg) with { Type = Constants.Log };
         Outbox.Enqueue(parcel);
         NewMessageInOutbox.Invoke(this, new EventArgs());
     }
@@ -216,7 +217,7 @@ public class MessageHub<IContract> : Hub<IContract>
     public async Task InitializeConnectionAsync
         (CancellationToken cancellationToken, Action<string, string, string, string, string?> actionMessageReceived)
     {
-        Connection.On(Consts.ReceiveMessage, actionMessageReceived);
+        Connection.On(Constants.ReceiveMessage, actionMessageReceived);
 
         await FinalizeConnectionAsync(cancellationToken);
     }
@@ -224,7 +225,7 @@ public class MessageHub<IContract> : Hub<IContract>
     public async Task InitializeConnectionAsync
         (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
     {
-        Connection.On<string, string, string, string, string?>(Consts.ReceiveMessage,
+        Connection.On<string, string, string, string, string?>(Constants.ReceiveMessage,
             async (sender, senderId, message, messageId, parcel) =>
                 await actionMessageReceived(sender, senderId, message, messageId, parcel));
 
@@ -233,7 +234,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
     private async Task FinalizeConnectionAsync(CancellationToken cancellationToken)
     {
-        Connection.On<string, string, Guid, string>(Consts.ReceiveResponse, ActionResponseReceived);
+        Connection.On<string, string, Guid, string>(Constants.ReceiveResponse, ActionResponseReceived);
 
         string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
 

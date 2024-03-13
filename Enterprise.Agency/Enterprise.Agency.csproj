@@ -9,12 +9,13 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Wpf" Version="8.0.3" />
-    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.1" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Enterprise.JobFactory\Enterprise.JobFactory.csproj" />
+    <ProjectReference Include="..\Enterprise.MessageHub\Enterprise.MessageHub.csproj" />
     <ProjectReference Include="..\Enterprise.Utils\Enterprise.Utils.csproj" />
   </ItemGroup>
 

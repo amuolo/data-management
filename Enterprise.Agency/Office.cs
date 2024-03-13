@@ -1,4 +1,5 @@
-﻿using Enterprise.Utils;
+﻿using Enterprise.MessageHub;
+using Enterprise.Utils;
 using Microsoft.AspNetCore.Builder;
 using System.Linq.Expressions;
 
@@ -48,7 +49,7 @@ public class Office<IContract> : MessageHub<IContract>
 
             do
             {
-                PostWithResponse<object, object, string[]>(null, Consts.AgentsDiscovery, null, HireAgents);
+                PostWithResponse<object, object, string[]>(null, Constants.AgentsDiscovery, null, HireAgents);
                 await timer.WaitForNextTickAsync().ConfigureAwait(false);
             }
             while (!token.IsCancellationRequested);

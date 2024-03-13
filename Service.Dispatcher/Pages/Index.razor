@@ -1,6 +1,7 @@
 ﻿@page "/"
 
 @using Enterprise.Agency
+@using Enterprise.MessageHub
 @using Microsoft.AspNetCore.SignalR.Client
 @using System.Text.Json
 
@@ -41,28 +42,28 @@
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Consts.SignalRAddress))
+        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Constants.SignalRAddress))
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
-        hubConnection.On<string, string, string>(Consts.ReceiveLog, (sender, senderId, message) =>
+        hubConnection.On<string, string, string>(Constants.ReceiveLog, (sender, senderId, message) =>
         {
             var formattedMessage = $"{sender}: {message}";
             messages.Add(formattedMessage);
             InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<string, string, string, string, string?>(Consts.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
+        hubConnection.On<string, string, string, string, string?>(Constants.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
         {
-            if (message == Consts.AgentsDiscovery)
+            if (message == Constants.AgentsDiscovery)
             {
                 var responseParcel = JsonSerializer.Serialize(uptimeByActor.Keys);
-                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, ConnectionId, senderId, messageId, responseParcel);
+                await hubConnection.SendAsync(Constants.SendResponse, Constants.Server, ConnectionId, senderId, messageId, responseParcel);
             }
-            else if (message == Consts.ConnectToServer)
+            else if (message == Constants.ConnectToServer)
             {
                 var responseParcel = JsonSerializer.Serialize(new ServerInfo());
-                await hubConnection.SendAsync(Consts.SendResponse, Consts.Server, ConnectionId, senderId, messageId, responseParcel);
+                await hubConnection.SendAsync(Constants.SendResponse, Constants.Server, ConnectionId, senderId, messageId, responseParcel);
             }
 
             if (uptimeByActor.TryGetValue(sender, out var time))
@@ -82,8 +83,8 @@
         var message = messageInput ?? "";
 
         if (hubConnection is not null) {
-            await hubConnection.SendAsync(Consts.Log, sender, ConnectionId, message);
-            await hubConnection.SendAsync(Consts.SendMessage, sender, ConnectionId, null, message, messageId, null);
+            await hubConnection.SendAsync(Constants.Log, sender, ConnectionId, message);
+            await hubConnection.SendAsync(Constants.SendMessage, sender, ConnectionId, null, message, messageId, null);
         }
     }
 
@@ -101,8 +102,8 @@
                     if (hubConnection is not null && IsConnected &&
                         (DateTime.UtcNow - kvp.Value).TotalSeconds > Consts.HireAgentsPeriod.TotalSeconds)
                     {
-                        await hubConnection.SendAsync(Consts.SendMessage, Consts.Server, ConnectionId,
-                                                      kvp.Key, Consts.Delete, Guid.NewGuid(), null).ConfigureAwait(false);
+                        await hubConnection.SendAsync(Constants.SendMessage, Constants.Server, ConnectionId,
+                                                      kvp.Key, Constants.Delete, Guid.NewGuid(), null).ConfigureAwait(false);
                         uptimeByActor.Remove(kvp.Key);
                     }
                 }

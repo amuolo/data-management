@@ -1,4 +1,5 @@
 ﻿using Enterprise.Job;
+using Enterprise.MessageHub;
 using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
@@ -13,7 +14,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     where THub : MessageHub<IContract>, new()
     where IContract : class
 {
-    private IHubContext<THub, IContract> HubContext { get; }
+    private IHubContext<ServerHub> HubContext { get; }
     private THub MessageHub { get; set; } = new();
     private bool IsInitialized { get; set; }
 
@@ -26,9 +27,9 @@ public class Agent<TState, THub, IContract> : BackgroundService
     private Dictionary<string, MethodInfo> MethodsByName { get; } 
         = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
 
-    public Agent(IHubContext<THub, IContract> hub)
+    public Agent(IHubContext<ServerHub> hubContext)
     {
-        HubContext = hub;        
+        HubContext = hubContext;        
     }
 
     public override void Dispose()
@@ -41,12 +42,12 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         if (!IsInitialized)
         {
-            await Connection.InvokeAsync(Consts.Log, Me, Id, "Creating myself");
+            await Connection.InvokeAsync(Constants.Log, Me, Id, "Creating myself");
 
             Job = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
 
-            if (MethodsByName.TryGetValue(Consts.Create, out var create))
-                Job = await Job.WithStep(Consts.Create, async state =>
+            if (MethodsByName.TryGetValue(Constants.Create, out var create))
+                Job = await Job.WithStep(Constants.Create, async state =>
                 {
                     var init = create.Invoke(MessageHub, null);
                     if (init is not null) state.State = await (Task<TState>)init;
@@ -59,7 +60,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
-        if (message == Consts.Delete)
+        if (message == Constants.Delete)
         {
             Dispose();
             return;
@@ -67,7 +68,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
         else if (MethodsByName.TryGetValue(message, out var method))
         {
             await CreateAsync();
-            await Connection.InvokeAsync(Consts.Log, Me, Id, $"processing {message}");
+            await Connection.InvokeAsync(Constants.Log, Me, Id, $"processing {message}");
 
             await Job.WithOptions(o => o.WithLogs(MessageHub.LogPost))
                      .WithStep($"{message}", async state =>
@@ -88,11 +89,11 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     await (Task)res;
                     var response = res.GetType().GetProperty("Result")?.GetValue(res);
                     var responseParcel = JsonSerializer.Serialize(response);
-                    await Connection.InvokeAsync(Consts.Log, Me, Id, $"{response?.GetType().ExtractName()}");
+                    await Connection.InvokeAsync(Constants.Log, Me, Id, $"{response?.GetType().ExtractName()}");
                     if (responseParcel is null)
-                        await Connection.InvokeAsync(Consts.Log, Me, Id, $"Error: response null after serialization.");
+                        await Connection.InvokeAsync(Constants.Log, Me, Id, $"Error: response null after serialization.");
                     else
-                        await Connection.SendAsync(Consts.SendResponse, Me, Id, senderId, messageId, responseParcel);
+                        await Connection.SendAsync(Constants.SendResponse, Me, Id, senderId, messageId, responseParcel);
                 }
             })
             .Start();

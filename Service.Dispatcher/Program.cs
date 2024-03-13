@@ -1,6 +1,5 @@
+using Enterprise.MessageHub;
 using Microsoft.AspNetCore.ResponseCompression;
-
-using Service.Dispatcher;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,7 +25,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
 
-app.MapHub<ServerHub>(Enterprise.Agency.Consts.SignalRAddress);
+app.MapHub<ServerHub>(Constants.SignalRAddress);
 
 app.MapFallbackToPage("/_Host");
 
