@@ -45,7 +45,7 @@ public class Office<IContract> : MessageHub<IContract>
     {
         Task.Run(async () =>
         {
-            var timer = new PeriodicTimer(Consts.HireAgentsPeriod);
+            var timer = new PeriodicTimer(TimeSpans.HireAgentsPeriod);
 
             do
             {

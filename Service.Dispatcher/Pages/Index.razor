@@ -94,13 +94,13 @@
     {
         Task.Run(async () =>
         {
-            var timer = new PeriodicTimer(Consts.HireAgentsPeriod);
+            var timer = new PeriodicTimer(TimeSpans.HireAgentsPeriod);
             while (await timer.WaitForNextTickAsync().ConfigureAwait(false) && !TokenSource.IsCancellationRequested)
             {
                 foreach(var kvp in uptimeByActor)
                 {
                     if (hubConnection is not null && IsConnected &&
-                        (DateTime.UtcNow - kvp.Value).TotalSeconds > Consts.HireAgentsPeriod.TotalSeconds)
+                        (DateTime.UtcNow - kvp.Value).TotalSeconds > TimeSpans.HireAgentsPeriod.TotalSeconds)
                     {
                         await hubConnection.SendAsync(Constants.SendMessage, Constants.Server, ConnectionId,
                                                       kvp.Key, Constants.Delete, Guid.NewGuid(), null).ConfigureAwait(false);

@@ -1,6 +1,6 @@
 ﻿namespace Enterprise.Agency;
 
-public class Consts
+public class TimeSpans
 {
     public static readonly TimeSpan HireAgentsPeriod = TimeSpan.FromMinutes(30);
 

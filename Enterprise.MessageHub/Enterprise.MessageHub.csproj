@@ -14,4 +14,8 @@
 	<FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Enterprise.Utils\Enterprise.Utils.csproj" />
+  </ItemGroup>
+
 </Project>

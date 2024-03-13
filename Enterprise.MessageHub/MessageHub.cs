@@ -9,8 +9,7 @@ using System.Text.Json;
 
 namespace Enterprise.Agency;
 
-public class MessageHub<IContract> : Hub<IContract>
-    where IContract : class
+public class MessageHub<IContract> where IContract : class
 {
     public HubConnection Connection { get; }
 
@@ -32,7 +31,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
     private ConcurrentDictionary<Guid, Action<string>> CallbacksById { get; } = new();
 
-    internal ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
+    public ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
 
     private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
                                                                            .SelectMany(i => i.GetMethods())
@@ -46,7 +45,7 @@ public class MessageHub<IContract> : Hub<IContract>
 
     public void Dispose()
     {
-        base.Dispose();
+        //base.Dispose();
         TokenSource.Cancel();
         Connection.StopAsync().Wait();
         Connection.DisposeAsync().AsTask().Wait();
@@ -65,14 +64,14 @@ public class MessageHub<IContract> : Hub<IContract>
     private async Task WaitConnection()
     {
         while (!IsConnected)
-            await Task.Delay(Consts.ServerConnectionAttemptPeriod).ConfigureAwait(false);
+            await Task.Delay(TimeSpans.ServerConnectionAttemptPeriod).ConfigureAwait(false);
     }
 
     private async Task ConnectToServer(CancellationToken token)
     {
         var id = Guid.NewGuid();
         var connected = false;
-        var timerReconnection = new PeriodicTimer(Consts.ServerConnectionAttemptPeriod);
+        var timerReconnection = new PeriodicTimer(TimeSpans.ServerConnectionAttemptPeriod);
 
         CallbacksById.TryAdd(id, _ => {
             connected = true;
@@ -115,7 +114,7 @@ public class MessageHub<IContract> : Hub<IContract>
                     LogPost(parcel.Message);
                     await Connection.SendAsync(Constants.SendMessage, Me, Id, receiverId, parcel.Message, parcel.Id, box).ConfigureAwait(false);
                 }
-                else if(parcel.Type == Constants.Log)
+                else if (parcel.Type == Constants.Log)
                 {
                     await Connection.InvokeAsync(Constants.Log, Me, Id, parcel.Message).ConfigureAwait(false);
                 }
@@ -186,7 +185,7 @@ public class MessageHub<IContract> : Hub<IContract>
             LogPost($"processing response {typeof(TResponse).Name}");
             try
             {
-                if(responseParcel is null)
+                if (responseParcel is null)
                 {
                     callback(default);
                 }
