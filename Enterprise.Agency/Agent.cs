@@ -1,8 +1,6 @@
 ﻿using Enterprise.Job;
 using Enterprise.MessageHub;
-using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR;
-using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
 using System.Reflection;
 using System.Text.Json;
@@ -14,22 +12,19 @@ public class Agent<TState, THub, IContract> : BackgroundService
     where THub : MessageHub<IContract>, new()
     where IContract : class
 {
-    private IHubContext<ServerHub> HubContext { get; }
+    private IHubContext<ServerHub> ServerHub { get; }
     private THub MessageHub { get; set; } = new();
     private bool IsInitialized { get; set; }
 
-    private HubConnection Connection => MessageHub.Connection;
-    private string? Id => MessageHub?.Id;
-    private string Me => typeof(THub).Name;
-
     private Job<(object? Package, TState State)> Job { get; set; }
+        = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
 
     private Dictionary<string, MethodInfo> MethodsByName { get; } 
         = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
 
     public Agent(IHubContext<ServerHub> hubContext)
     {
-        HubContext = hubContext;        
+        ServerHub = hubContext;        
     }
 
     public override void Dispose()
@@ -38,16 +33,21 @@ public class Agent<TState, THub, IContract> : BackgroundService
         MessageHub.Dispose();
     }
 
+    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
+    {
+        await MessageHub.InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
+
+        await Post.StartMessageServiceAsync(MessageHub.Queue, MessageHub.Connection, cancellationToken);
+    }
+
     private async Task CreateAsync()
     {
         if (!IsInitialized)
         {
-            await Connection.InvokeAsync(Constants.Log, Me, Id, "Creating myself");
+            MessageHub.LogPost("Creating myself");
 
-            Job = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
-
-            if (MethodsByName.TryGetValue(Constants.Create, out var create))
-                Job = await Job.WithStep(Constants.Create, async state =>
+            if (MethodsByName.TryGetValue(Messages.Create, out var create))
+                Job = await Job.WithStep(Messages.Create, async state =>
                 {
                     var init = create.Invoke(MessageHub, null);
                     if (init is not null) state.State = await (Task<TState>)init;
@@ -60,7 +60,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
-        if (message == Constants.Delete)
+        if (message == Messages.Delete)
         {
             Dispose();
             return;
@@ -68,7 +68,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
         else if (MethodsByName.TryGetValue(message, out var method))
         {
             await CreateAsync();
-            await Connection.InvokeAsync(Constants.Log, Me, Id, $"processing {message}");
+            MessageHub.LogPost($"processing {message}");
 
             await Job.WithOptions(o => o.WithLogs(MessageHub.LogPost))
                      .WithStep($"{message}", async state =>
@@ -87,21 +87,11 @@ public class Agent<TState, THub, IContract> : BackgroundService
                 else if (method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
                     await (Task)res;
-                    var response = res.GetType().GetProperty("Result")?.GetValue(res);
-                    var responseParcel = JsonSerializer.Serialize(response);
-                    await Connection.InvokeAsync(Constants.Log, Me, Id, $"{response?.GetType().ExtractName()}");
-                    if (responseParcel is null)
-                        await Connection.InvokeAsync(Constants.Log, Me, Id, $"Error: response null after serialization.");
-                    else
-                        await Connection.SendAsync(Constants.SendResponse, Me, Id, senderId, messageId, responseParcel);
+                    var result = res.GetType().GetProperty("Result")?.GetValue(res);
+                    MessageHub.Queue.Enqueue(new Parcel(senderId, result, message) with { Type = MessageType.SendResponse });
                 }
             })
             .Start();
         }
-    }
-
-    protected override async Task ExecuteAsync(CancellationToken cancellationToken)
-    {
-        await MessageHub.InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
     }
 }

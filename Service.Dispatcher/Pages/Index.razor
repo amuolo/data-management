@@ -39,31 +39,32 @@
     private List<string> messages = new();
     private string? userInput;
     private string? messageInput;
+    private string server = nameof(server);
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Constants.SignalRAddress))
+        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Contract.SignalRAddress))
                                                   .WithAutomaticReconnect()
                                                   .Build();
 
-        hubConnection.On<string, string, string>(Constants.ReceiveLog, (sender, senderId, message) =>
+        hubConnection.On<string, string, string>(MessageType.ReceiveLog, (sender, senderId, message) =>
         {
             var formattedMessage = $"{sender}: {message}";
             messages.Add(formattedMessage);
             InvokeAsync(StateHasChanged);
         });
 
-        hubConnection.On<string, string, string, string, string?>(Constants.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
+        hubConnection.On<string, string, string, string, string?>(MessageType.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
         {
-            if (message == Constants.AgentsDiscovery)
+            if (message == Messages.AgentsDiscovery)
             {
                 var responseParcel = JsonSerializer.Serialize(uptimeByActor.Keys);
-                await hubConnection.SendAsync(Constants.SendResponse, Constants.Server, ConnectionId, senderId, messageId, responseParcel);
+                await hubConnection.SendAsync(MessageType.SendResponse, server, ConnectionId, senderId, messageId, responseParcel).ConfigureAwait(false);
+                await hubConnection.SendAsync(MessageType.Log, server, ConnectionId, $"{MessageType.SendResponse} {Messages.AgentsDiscovery}");
             }
-            else if (message == Constants.ConnectToServer)
+            else if (message == Messages.ConnectToServer)
             {
-                var responseParcel = JsonSerializer.Serialize(new ServerInfo());
-                await hubConnection.SendAsync(Constants.SendResponse, Constants.Server, ConnectionId, senderId, messageId, responseParcel);
+                await hubConnection.SendAsync(MessageType.EstablishConnection, server, ConnectionId, senderId, messageId).ConfigureAwait(false);
             }
 
             if (uptimeByActor.TryGetValue(sender, out var time))
@@ -83,8 +84,8 @@
         var message = messageInput ?? "";
 
         if (hubConnection is not null) {
-            await hubConnection.SendAsync(Constants.Log, sender, ConnectionId, message);
-            await hubConnection.SendAsync(Constants.SendMessage, sender, ConnectionId, null, message, messageId, null);
+            await hubConnection.SendAsync(MessageType.Log, sender, ConnectionId, message);
+            await hubConnection.SendAsync(MessageType.SendMessage, sender, ConnectionId, null, message, messageId, null);
         }
     }
 
@@ -102,8 +103,7 @@
                     if (hubConnection is not null && IsConnected &&
                         (DateTime.UtcNow - kvp.Value).TotalSeconds > TimeSpans.HireAgentsPeriod.TotalSeconds)
                     {
-                        await hubConnection.SendAsync(Constants.SendMessage, Constants.Server, ConnectionId,
-                                                      kvp.Key, Constants.Delete, Guid.NewGuid(), null).ConfigureAwait(false);
+                        await hubConnection.SendAsync(MessageType.SendMessage, server, ConnectionId, kvp.Key, Messages.Delete, Guid.NewGuid(), null).ConfigureAwait(false);
                         uptimeByActor.Remove(kvp.Key);
                     }
                 }

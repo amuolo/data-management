@@ -1,5 +1,6 @@
 ﻿using Enterprise.MessageHub;
 using Enterprise.Utils;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq.Expressions;
 
@@ -12,13 +13,21 @@ public class Office<IContract> : MessageHub<IContract>
 
     private Dictionary<string, IHost> Hosts { get; } = [];
 
+    private HostApplicationBuilder Builder { get; } = Host.CreateApplicationBuilder();
+
     private Office() : base()
     {
     }
 
     public static Office<IContract> Create()
     {              
-        return new Office<IContract>();
+        var office = new Office<IContract>();
+
+        office.Builder.Services.AddHostedService<Post>()
+                               .AddSingleton(office.Queue)
+                               .AddSingleton(office.Connection);
+
+        return office;
     }
 
     public Office<IContract> AddAgent<TState, THub, IHubContract>()
@@ -32,6 +41,9 @@ public class Office<IContract> : MessageHub<IContract>
 
     public Office<IContract> Run()
     {
+        var host = Builder.Build();
+        host.RunAsync();
+
         Task.Run(async () =>
         {
             await InitializeConnectionAsync(TokenSource.Token).ConfigureAwait(false);
@@ -49,7 +61,7 @@ public class Office<IContract> : MessageHub<IContract>
 
             do
             {
-                PostWithResponse<object, object, string[]>(null, Constants.AgentsDiscovery, null, HireAgents);
+                PostWithResponse<object, object, string[]>(null, Messages.AgentsDiscovery, null, HireAgents);
                 await timer.WaitForNextTickAsync().ConfigureAwait(false);
             }
             while (!token.IsCancellationRequested);
