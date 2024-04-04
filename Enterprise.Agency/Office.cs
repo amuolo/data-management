@@ -1,6 +1,6 @@
 ﻿using Enterprise.MessageHub;
 using Enterprise.Utils;
-using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.Hosting;
 using System.Linq.Expressions;
 
 namespace Enterprise.Agency;
@@ -10,7 +10,7 @@ public class Office<IContract> : MessageHub<IContract>
 {
     private List<(Type Agent, Type Hub)> Actors { get; } = [];
 
-    private Dictionary<string, WebApplication> WebApplications { get; } = [];
+    private Dictionary<string, IHost> Hosts { get; } = [];
 
     private Office() : base()
     {
@@ -60,7 +60,7 @@ public class Office<IContract> : MessageHub<IContract>
                 foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name)))
                 {
                     LogPost($"Recruiting {TypeHelper.ExtractName(actor.Agent)}");
-                    WebApplications[actor.Agent.Name] = Recruitment.Recruit(actor);
+                    Hosts[actor.Agent.Name] = Recruitment.Recruit(actor);
                 }
             }
         });
