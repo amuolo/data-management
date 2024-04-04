@@ -125,7 +125,7 @@ public class MessageHub<IContract> where IContract : class
     }
 
     /***************
-     *   Logging   *
+         Logging   
      ***************/
     public void LogPost(string msg)
     {
@@ -135,8 +135,8 @@ public class MessageHub<IContract> where IContract : class
     }
 
     /*******************
-     * Post and forget *
-     * *****************/
+       Post and forget 
+     *******************/
     public void Post(Expression<Func<IContract, Delegate>> predicate)
         => Post(default(object), predicate, default(object));
 
@@ -155,8 +155,8 @@ public class MessageHub<IContract> where IContract : class
     }
 
     /**********************
-     * Post with response *
-     * ********************/
+       Post with response 
+     **********************/
     public void PostWithResponse<TResponse>(Expression<Func<IContract, Delegate>> predicate, Action<TResponse> callback)
         => PostWithResponse(default(object), predicate, default(object), callback);
 
@@ -207,42 +207,9 @@ public class MessageHub<IContract> where IContract : class
         NewMessageInOutbox.Invoke(this, new EventArgs());
     }
 
-    /*************************
-     * Initialize Connection *
-     * ***********************/
-    public async Task InitializeConnectionAsync(CancellationToken cancellationToken)
-        => await InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
-
-    public async Task InitializeConnectionAsync
-        (CancellationToken cancellationToken, Action<string, string, string, string, string?> actionMessageReceived)
-    {
-        Connection.On(Constants.ReceiveMessage, actionMessageReceived);
-
-        await FinalizeConnectionAsync(cancellationToken);
-    }
-
-    public async Task InitializeConnectionAsync
-        (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
-    {
-        Connection.On<string, string, string, string, string?>(Constants.ReceiveMessage,
-            async (sender, senderId, message, messageId, parcel) =>
-                await actionMessageReceived(sender, senderId, message, messageId, parcel));
-
-        await FinalizeConnectionAsync(cancellationToken);
-    }
-
-    private async Task FinalizeConnectionAsync(CancellationToken cancellationToken)
-    {
-        Connection.On<string, string, Guid, string>(Constants.ReceiveResponse, ActionResponseReceived);
-
-        string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
-
-        Connection.Reconnecting += (exc) => { LogPost($"Attempting to reconnect... {getMsg(exc)}"); return Task.CompletedTask; };
-        Connection.Reconnected += (id) => { LogPost("Reconnected to the server"); return Task.CompletedTask; };
-        Connection.Closed += (exc) => { LogPost($"Connection Closed! {getMsg(exc)}"); return Task.CompletedTask; };
-
-        await Connection.StartAsync(cancellationToken);
-    }
+    /**********************
+            Actions 
+     **********************/
 
     private void ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
@@ -284,5 +251,42 @@ public class MessageHub<IContract> where IContract : class
 
         callback(response);
         CallbacksById.Remove(messageId, out var value);
+    }
+
+    /*************************
+       Initialize Connection 
+     *************************/
+    public async Task InitializeConnectionAsync(CancellationToken cancellationToken)
+        => await InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
+
+    public async Task InitializeConnectionAsync
+        (CancellationToken cancellationToken, Action<string, string, string, string, string?> actionMessageReceived)
+    {
+        Connection.On(Constants.ReceiveMessage, actionMessageReceived);
+
+        await FinalizeConnectionAsync(cancellationToken);
+    }
+
+    public async Task InitializeConnectionAsync
+        (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
+    {
+        Connection.On<string, string, string, string, string?>(Constants.ReceiveMessage,
+            async (sender, senderId, message, messageId, parcel) =>
+                await actionMessageReceived(sender, senderId, message, messageId, parcel));
+
+        await FinalizeConnectionAsync(cancellationToken);
+    }
+
+    private async Task FinalizeConnectionAsync(CancellationToken cancellationToken)
+    {
+        Connection.On<string, string, Guid, string>(Constants.ReceiveResponse, ActionResponseReceived);
+
+        string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
+
+        Connection.Reconnecting += (exc) => { LogPost($"Attempting to reconnect... {getMsg(exc)}"); return Task.CompletedTask; };
+        Connection.Reconnected += (id) => { LogPost("Reconnected to the server"); return Task.CompletedTask; };
+        Connection.Closed += (exc) => { LogPost($"Connection Closed! {getMsg(exc)}"); return Task.CompletedTask; };
+
+        await Connection.StartAsync(cancellationToken);
     }
 }

@@ -31,7 +31,7 @@ public class DataHub : MessageHub<IDataContract>
 
         Post(agent => agent.ShowProgress, 1d/3);
 
-        model.Update(DataOperator.Import(file));
+        model.Update(DataOperators.Import(file));
 
         Post(agent => agent.Display, $"File {fileName} imported");
         Post(agent => agent.ShowProgress, 2d/3);

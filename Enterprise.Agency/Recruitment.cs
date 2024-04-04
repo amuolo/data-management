@@ -15,9 +15,6 @@ internal static class Recruitment
 
         builder.Logging.ClearProviders().AddConsole();
 
-        builder.Services.AddRazorPages();
-        builder.Services.AddRazorComponents();
-        builder.Services.AddServerSideBlazor();
         builder.Services.AddSignalR();
 
         builder.Services.AddResponseCompression(opts =>
@@ -34,19 +31,7 @@ internal static class Recruitment
             app.UseHsts();
         }
 
-        app.UseRouting();
-        app.UseHttpsRedirection();
-        app.UseStaticFiles();
-        app.MapBlazorHub();
-
-        // TODO: This fails because generic methods in MessageHub are not compatible with Hubs
-        // This is the generic variant of app.MapHub<Hub>(address)
-        //typeof(HubEndpointRouteBuilderExtensions)
-        //    .GetMethod("MapHub", [typeof(IEndpointRouteBuilder), typeof(string)])
-        //    .MakeGenericMethod(actor.Hub).Invoke(null, [app, Consts.SignalRAddress]);
-
-        app.RunAsync();  // TODO: consider adding an explicit url
-
+        app.RunAsync();
         return app;
     }
 }

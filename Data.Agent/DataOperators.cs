@@ -2,7 +2,7 @@
 
 namespace Data.Agent;
 
-public static class DataOperator
+public static class DataOperators
 {
     public static object? Load()
     {
