@@ -1,3 +1,4 @@
+using Enterprise.Agency;
 using Enterprise.MessageHub;
 using Microsoft.AspNetCore.ResponseCompression;
 
@@ -6,6 +7,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
+
+builder.Services.AddHostedService<Agent<HiringState, HiringHub, IHiringContract>>();
 
 builder.Services.AddResponseCompression(opts =>
 {
