@@ -2,9 +2,9 @@
 
 public class Messages
 {
-    public const string ConnectToServer = "Connect to Server";
+    public const string ConnectToServer = nameof(ConnectToServer);
 
-    public const string AgentsDiscovery = "Agents Discovery";
+    public const string AgentsDiscovery = nameof(AgentsDiscovery);
 
     public const string Create = nameof(Create);
 

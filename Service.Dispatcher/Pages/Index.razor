@@ -43,7 +43,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Contract.SignalRAddress))
+        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Addresses.SignalR))
                                                   .WithAutomaticReconnect()
                                                   .Build();
 

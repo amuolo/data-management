@@ -9,6 +9,8 @@ namespace Enterprise.Agency;
 public class Office<IContract> : MessageHub<IContract>
     where IContract : class
 {
+    public bool IsReady { get; private set; }
+
     private List<(Type Agent, Type Hub)> Actors { get; } = [];
 
     private Dictionary<string, IHost> Hosts { get; } = [];
@@ -47,6 +49,7 @@ public class Office<IContract> : MessageHub<IContract>
         Task.Run(async () =>
         {
             await InitializeConnectionAsync(TokenSource.Token).ConfigureAwait(false);
+            await MessageHub.Post.ConnectToServerAsync(Connection, Queue.Name, TokenSource.Token);
             StartServiceHiringAgents(TokenSource.Token);
         });
 

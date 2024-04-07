@@ -29,7 +29,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
 
-app.MapHub<ServerHub>(Contract.SignalRAddress);
+app.MapHub<ServerHub>(Addresses.SignalR);
 
 app.MapFallbackToPage("/_Host");
 

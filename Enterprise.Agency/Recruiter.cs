@@ -15,7 +15,7 @@ public class HiringState
 public interface IHiringContract
 {
     /* in */
-    Task UpdateRequest(string agent);
+    Task AgentsDiscoveryRequest(string agent);
 }
 
 public class HiringHub : MessageHub<IHiringContract>
@@ -42,7 +42,7 @@ public class Recruiter : Agent<HiringState, HiringHub, IHiringContract>
 
         await Post.EstablishConnectionAsync(MessageHub.Connection);
 
-        await Post.ConnectToServerAsync(MessageHub.Connection, MessageHub.Queue, cancellationToken);
+        await Post.ConnectToServerAsync(MessageHub.Connection, MessageHub.Queue.Name, cancellationToken);
 
         await Post.StartMessageServiceAsync(MessageHub.Queue, MessageHub.Connection, cancellationToken);
     }

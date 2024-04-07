@@ -14,7 +14,7 @@ public class MessageHub<IContract> where IContract : class
 
     public SmartQueue<Parcel> Queue { get; }
 
-    public HubConnection Connection { get; } = new HubConnectionBuilder().WithUrl(Contract.Url).WithAutomaticReconnect().Build();
+    public HubConnection Connection { get; } = new HubConnectionBuilder().WithUrl(Addresses.Url).WithAutomaticReconnect().Build();
 
     public ConcurrentDictionary<Guid, Action<string>> CallbacksById { get; } = new();
 
@@ -106,7 +106,7 @@ public class MessageHub<IContract> where IContract : class
  
         CallbacksById.TryAdd(parcel.Id, (string responseParcel) =>
         {
-            LogPost($"processing response {typeof(TResponse).Name}");
+            LogPost($"processing response {message} {typeof(TResponse).Name}");
             try
             {
                 if (responseParcel is null)

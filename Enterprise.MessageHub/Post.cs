@@ -36,7 +36,7 @@ public class Post : BackgroundService
         {
             await queue.Semaphore.WaitAsync(token).ConfigureAwait(false);
             await EstablishConnectionAsync(connection).ConfigureAwait(false);
-            await ConnectToServerAsync(connection, queue, token).ConfigureAwait(false);
+            await ConnectToServerAsync(connection, queue.Name, token).ConfigureAwait(false);
 
             while (!queue.IsEmpty && !token.IsCancellationRequested)
             {
@@ -76,10 +76,11 @@ public class Post : BackgroundService
         while (connection is null || connection?.State != HubConnectionState.Connected)
         {
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
+            // TODO: add log
         }
     }
 
-    public static async Task ConnectToServerAsync(HubConnection connection, SmartQueue<Parcel> queue, CancellationToken token)
+    public static async Task ConnectToServerAsync(HubConnection connection, string name, CancellationToken token)
     {
         var counter = 0;
         var id = Guid.NewGuid();
@@ -97,8 +98,12 @@ public class Post : BackgroundService
         do
         {
             if(++counter % 10 == 0)
-                await connection.SendAsync(MessageTypes.Log, queue.Name, id, $"Struggling to connect to server, attempt {++counter}").ConfigureAwait(false);
-            await connection.SendAsync(MessageTypes.SendMessage, queue.Name, GetId(connection), null, Messages.ConnectToServer, id, null).ConfigureAwait(false);
+            {
+                var msg = $"{name} struggling to connect to server, attempt {++counter}";
+                await connection.SendAsync(MessageTypes.Log, name, id, msg).ConfigureAwait(false);
+                // TODO: add log
+            }
+            await connection.SendAsync(MessageTypes.SendMessage, name, GetId(connection), null, Messages.ConnectToServer, id, null).ConfigureAwait(false);
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
         }
         while (!token.IsCancellationRequested && !connected);
