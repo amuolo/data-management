@@ -8,6 +8,7 @@ namespace Enterprise.Agency;
 
 internal static class Recruitment
 {
+    /*  This method should be eventually publishing a new app component to a separate physical location. */
     internal static IHost Recruit((Type Agent, Type Hub) actor)
     {
         var builder = Host.CreateApplicationBuilder();

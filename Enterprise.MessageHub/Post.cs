@@ -2,7 +2,6 @@
 using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
-using Microsoft.VisualBasic;
 using System.Text.Json;
 
 namespace Enterprise.MessageHub;
@@ -36,8 +35,8 @@ public class Post : BackgroundService
         while (!token.IsCancellationRequested)
         {
             await queue.Semaphore.WaitAsync(token).ConfigureAwait(false);
-            await EstablishConnection(connection).ConfigureAwait(false);
-            await ConnectToServer(connection, queue, token).ConfigureAwait(false);
+            await EstablishConnectionAsync(connection).ConfigureAwait(false);
+            await ConnectToServerAsync(connection, queue, token).ConfigureAwait(false);
 
             while (!queue.IsEmpty && !token.IsCancellationRequested)
             {
@@ -49,16 +48,16 @@ public class Post : BackgroundService
                     LogPost(queue, "Issue with Outbox dequeuing");
                     return;
                 }
-                else if (parcel.Type == MessageType.SendMessage || parcel.Type == MessageType.SendResponse)
+                else if (parcel.Type == MessageTypes.SendMessage || parcel.Type == MessageTypes.SendResponse)
                 {
                     var receiverId = parcel.Address?.ToString();
                     var packet = parcel.Package is not null ? JsonSerializer.Serialize(parcel.Package) : null;
                     LogPost(queue, $"{parcel.Type} {parcel.Message}");
                     await connection.SendAsync(parcel.Type, queue.Name, id, receiverId, parcel.Message, parcel.Id, packet).ConfigureAwait(false);
                 }
-                else if (parcel.Type == MessageType.Log)
+                else if (parcel.Type == MessageTypes.Log)
                 {
-                    await connection.SendAsync(MessageType.Log, queue.Name, id, parcel.Message).ConfigureAwait(false);
+                    await connection.SendAsync(MessageTypes.Log, queue.Name, id, parcel.Message).ConfigureAwait(false);
                 }
             }
         }
@@ -68,9 +67,9 @@ public class Post : BackgroundService
     }
 
     public static void LogPost(SmartQueue<Parcel> queue, string msg)
-        => queue.Enqueue(new Parcel(null, null, msg) with { Type = MessageType.Log });
+        => queue.Enqueue(new Parcel(null, null, msg) with { Type = MessageTypes.Log });
 
-    private static async Task EstablishConnection(HubConnection connection)
+    public static async Task EstablishConnectionAsync(HubConnection connection)
     {
         var timerReconnection = new PeriodicTimer(TimeSpans.ServerConnectionAttemptPeriod);
 
@@ -80,14 +79,14 @@ public class Post : BackgroundService
         }
     }
 
-    private static async Task ConnectToServer(HubConnection connection, SmartQueue<Parcel> queue, CancellationToken token)
+    public static async Task ConnectToServerAsync(HubConnection connection, SmartQueue<Parcel> queue, CancellationToken token)
     {
         var counter = 0;
         var id = Guid.NewGuid();
         var connected = false;
         var timerReconnection = new PeriodicTimer(TimeSpans.ServerConnectionAttemptPeriod);
 
-        var subscription = connection.On(MessageType.ConnectionEstablished, (string sender, string senderId, Guid messageId) => {
+        var subscription = connection.On(MessageTypes.ConnectionEstablished, (string sender, string senderId, Guid messageId) => {
             if (messageId == id)
             {
                 connected = true;
@@ -98,8 +97,8 @@ public class Post : BackgroundService
         do
         {
             if(++counter % 10 == 0)
-                await connection.SendAsync(MessageType.Log, queue.Name, id, $"Struggling to connect to server, attempt {++counter}").ConfigureAwait(false);
-            await connection.SendAsync(MessageType.SendMessage, queue.Name, GetId(connection), null, Messages.ConnectToServer, id, null).ConfigureAwait(false);
+                await connection.SendAsync(MessageTypes.Log, queue.Name, id, $"Struggling to connect to server, attempt {++counter}").ConfigureAwait(false);
+            await connection.SendAsync(MessageTypes.SendMessage, queue.Name, GetId(connection), null, Messages.ConnectToServer, id, null).ConfigureAwait(false);
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
         }
         while (!token.IsCancellationRequested && !connected);

@@ -56,7 +56,7 @@ public class MessageHub<IContract> where IContract : class
      ***************/
     public void LogPost(string msg)
     {
-        var parcel = new Parcel(null, null, msg) with { Type = MessageType.Log };
+        var parcel = new Parcel(null, null, msg) with { Type = MessageTypes.Log };
         Queue.Enqueue(parcel);
     }
 
@@ -186,7 +186,7 @@ public class MessageHub<IContract> where IContract : class
     public async Task InitializeConnectionAsync
         (CancellationToken cancellationToken, Action<string, string, string, string, string?> actionMessageReceived)
     {
-        Connection.On(MessageType.ReceiveMessage, actionMessageReceived);
+        Connection.On(MessageTypes.ReceiveMessage, actionMessageReceived);
 
         await FinalizeConnectionAsync(cancellationToken);
     }
@@ -194,7 +194,7 @@ public class MessageHub<IContract> where IContract : class
     public async Task InitializeConnectionAsync
         (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
     {
-        Connection.On<string, string, string, string, string?>(MessageType.ReceiveMessage,
+        Connection.On<string, string, string, string, string?>(MessageTypes.ReceiveMessage,
             async (sender, senderId, message, messageId, parcel) =>
                 await actionMessageReceived(sender, senderId, message, messageId, parcel));
 
@@ -203,7 +203,7 @@ public class MessageHub<IContract> where IContract : class
 
     private async Task FinalizeConnectionAsync(CancellationToken cancellationToken)
     {
-        Connection.On<string, string, Guid, string>(MessageType.ReceiveResponse, ActionResponseReceived);
+        Connection.On<string, string, Guid, string>(MessageTypes.ReceiveResponse, ActionResponseReceived);
 
         string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
 

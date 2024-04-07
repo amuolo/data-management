@@ -12,9 +12,9 @@ public class Agent<TState, THub, IContract> : BackgroundService
     where THub : MessageHub<IContract>, new()
     where IContract : class
 {
-    private IHubContext<ServerHub> ServerHub { get; }
-    private THub MessageHub { get; set; } = new();
-    private bool IsInitialized { get; set; }
+    protected IHubContext<ServerHub> ServerHub { get; }
+    protected THub MessageHub { get; set; } = new();
+    protected bool IsInitialized { get; set; }
 
     private Job<(object? Package, TState State)> Job { get; set; }
         = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
@@ -58,7 +58,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
         }
     }
 
-    async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
+    protected async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
         if (message == Messages.Delete)
         {
@@ -88,7 +88,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                 {
                     await (Task)res;
                     var result = res.GetType().GetProperty("Result")?.GetValue(res);
-                    MessageHub.Queue.Enqueue(new Parcel(senderId, result, message) with { Type = MessageType.SendResponse });
+                    MessageHub.Queue.Enqueue(new Parcel(senderId, result, message) with { Type = MessageTypes.SendResponse });
                 }
             })
             .Start();

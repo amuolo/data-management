@@ -8,7 +8,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 
-builder.Services.AddHostedService<Agent<HiringState, HiringHub, IHiringContract>>();
+builder.Services.AddHostedService<Recruiter>();
 
 builder.Services.AddResponseCompression(opts =>
 {

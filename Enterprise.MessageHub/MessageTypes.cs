@@ -1,6 +1,6 @@
 ﻿namespace Enterprise.MessageHub;
 
-public class MessageType
+public class MessageTypes
 {
     public const string SendMessage = nameof(SendMessage);
     public const string ReceiveMessage = "Receive Message";
