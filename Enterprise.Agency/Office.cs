@@ -82,20 +82,14 @@ public class Office<IContract> : MessageHub<IContract>
     }
 
     public Office<IContract> Register<TReceived>(Expression<Func<IContract, Delegate>> predicate, Action<TReceived> action)
-    {
-        if (!GetMessage(predicate, out var message)) return this;
-        
-        OperationByPredicate.TryAdd(message, (typeof(TReceived), action));
-
+    {       
+        OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action));
         return this;
     }
 
     public Office<IContract> Register(Expression<Func<IContract, Delegate>> predicate, Action action)
     {
-        if (!GetMessage(predicate, out var message)) return this;
-
-        OperationByPredicate.TryAdd(message, (null, action));
-
+        OperationByPredicate.TryAdd(GetMessage(predicate), (null, action));
         return this;
     }
 }

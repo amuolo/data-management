@@ -7,7 +7,7 @@ public interface IDataContract
     /* in */
     Task ReadRequest();
 
-    Task ImportRequest(string fileName, Model model);
+    Task ImportRequest(string fileName);
 
     /* out */
     Task DataChangedEvent();

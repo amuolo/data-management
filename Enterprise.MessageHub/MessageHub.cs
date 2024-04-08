@@ -40,15 +40,13 @@ public class MessageHub<IContract> where IContract : class
         //base.Dispose();
         TokenSource.Cancel();
     }
-
-    protected bool GetMessage(Expression<Func<IContract, Delegate>> predicate, out string message)
+    
+    protected string GetMessage<TExpression>(TExpression predicate) where TExpression : Expression
     {
         // TODO: improve this mechanism with which name is retrieved from delegate in expression
-        message = string.Empty;
         var msg = Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name))?.Name;
-        if (msg is null) return false;
-        message = msg;
-        return true;
+        if (msg is null) throw new Exception($"null delegate retrieved from: {predicate}.");
+        return msg;
     }
 
     /***************
@@ -63,21 +61,18 @@ public class MessageHub<IContract> where IContract : class
     /*******************
        Post and forget 
      *******************/
-    public void Post(Expression<Func<IContract, Delegate>> predicate)
-        => Post(default(object), predicate, default(object));
+    public void Post(Expression<Func<IContract, Func<Task>>> predicate) => Post(default(object), predicate);
+    public void Post<TSent>(Expression<Func<IContract, Func<TSent, Task>>> predicate) => Post(default(object), predicate, default);
 
-    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Delegate>> predicate)
-        => Post(address, predicate, default(object));
+    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Func<TSent, Task>>> predicate) => Post(address, predicate, default);
 
-    public void Post<TSent>(Expression<Func<IContract, Delegate>> predicate, TSent? package)
-        => Post(default(object), predicate, package);
+    public void Post<TSent>(Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) => Post(default(object), predicate, package);
 
-    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package)
-    {
-        if (!GetMessage(predicate, out var message)) return;
+    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Func<Task>>> predicate)
+        => Queue.Enqueue(new Parcel(address, default, GetMessage(predicate)));
 
-        Queue.Enqueue(new Parcel(address, package, message));
-    }
+    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package)
+        => Queue.Enqueue(new Parcel(address, package, GetMessage(predicate)));
 
     /**********************
        Post with response 
@@ -93,11 +88,7 @@ public class MessageHub<IContract> where IContract : class
 
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, Expression<Func<IContract, Delegate>> predicate, TSent? package, Action<TResponse> callback)
-    {
-        if (!GetMessage(predicate, out var message)) return;
-
-        PostWithResponse(address, message, package, callback);
-    }
+        => PostWithResponse(address, GetMessage(predicate), package, callback);
 
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, string message, TSent? package, Action<TResponse> callback)
