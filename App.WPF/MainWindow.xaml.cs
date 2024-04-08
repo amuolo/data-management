@@ -53,7 +53,8 @@ public partial class MainWindow : Window
     {
         Office.PostWithResponse<List<string>>(agent => agent.ReadRequest, Callback);
 
-        void Callback(List<string> data) {
+        void Callback(List<string> data) 
+        {
             if (data is not null)
             {
                 State.DataWindow.Update(data);

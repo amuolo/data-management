@@ -5,7 +5,7 @@ namespace Data.Agent;
 public interface IDataContract
 {
     /* in */
-    Task ReadRequest();
+    Task<List<string>> ReadRequest();
 
     Task ImportRequest(string fileName);
 
