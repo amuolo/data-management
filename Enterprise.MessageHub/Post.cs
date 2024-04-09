@@ -30,15 +30,15 @@ public class Post : BackgroundService
         await StartMessageServiceAsync(Queue, Connection, stoppingToken);
     }
 
-    public static async Task StartMessageServiceAsync(SmartQueue<Parcel> queue, HubConnection connection, CancellationToken token)
+    public static async Task StartMessageServiceAsync(SmartQueue<Parcel> queue, HubConnection connection, CancellationToken cancellationToken)
     {
-        while (!token.IsCancellationRequested)
+        while (!cancellationToken.IsCancellationRequested)
         {
-            await queue.Semaphore.WaitAsync(token).ConfigureAwait(false);
-            await EstablishConnectionAsync(connection).ConfigureAwait(false);
-            await ConnectToServerAsync(connection, queue.Name, token).ConfigureAwait(false);
+            await queue.Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await EstablishConnectionAsync(connection, cancellationToken).ConfigureAwait(false);
+            await ConnectToActorAsync(connection, queue.Name, Addresses.Server, cancellationToken).ConfigureAwait(false);
 
-            while (!queue.IsEmpty && !token.IsCancellationRequested)
+            while (!queue.IsEmpty && !cancellationToken.IsCancellationRequested)
             {
                 var ok = queue.TryDequeue(out var parcel);
                 var id = GetId(connection);
@@ -69,18 +69,18 @@ public class Post : BackgroundService
     public static void LogPost(SmartQueue<Parcel> queue, string msg)
         => queue.Enqueue(new Parcel(null, null, msg) with { Type = MessageTypes.Log });
 
-    public static async Task EstablishConnectionAsync(HubConnection connection)
+    public static async Task EstablishConnectionAsync(HubConnection connection, CancellationToken cancellationToken)
     {
         var timerReconnection = new PeriodicTimer(TimeSpans.ServerConnectionAttemptPeriod);
 
-        while (connection is null || connection?.State != HubConnectionState.Connected)
+        while ((connection is null || connection?.State != HubConnectionState.Connected) && !cancellationToken.IsCancellationRequested)
         {
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
             // TODO: add log
         }
     }
 
-    public static async Task ConnectToServerAsync(HubConnection connection, string name, CancellationToken token)
+    public static async Task ConnectToActorAsync(HubConnection connection, string from, string to, CancellationToken cancellationToken)
     {
         var counter = 0;
         var id = Guid.NewGuid();
@@ -99,14 +99,14 @@ public class Post : BackgroundService
         {
             if(++counter % 10 == 0)
             {
-                var msg = $"{name} struggling to connect to server, attempt {++counter}";
-                await connection.SendAsync(MessageTypes.Log, name, id, msg).ConfigureAwait(false);
+                var msg = $"{from} struggling to connect to server, attempt {++counter}";
+                await connection.SendAsync(MessageTypes.Log, from, id, msg).ConfigureAwait(false);
                 // TODO: add log
             }
-            await connection.SendAsync(MessageTypes.SendMessage, name, GetId(connection), null, Messages.ConnectToServer, id, null).ConfigureAwait(false);
+            await connection.SendAsync(MessageTypes.SendMessage, from, GetId(connection), null, Messages.ConnectTo + to, id, null).ConfigureAwait(false);
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
         }
-        while (!token.IsCancellationRequested && !connected);
+        while (!cancellationToken.IsCancellationRequested && !connected);
 
         subscription.Dispose();
     }

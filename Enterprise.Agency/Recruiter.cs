@@ -5,9 +5,11 @@ using System.Collections.Concurrent;
 
 namespace Enterprise.Agency;
 
+public record AgentsDossier(List<(Type Agent, Type Hub)> Actors, string FromOffice);
+
 public class HiringState
 {
-    public ConcurrentDictionary<string, (Type Agent, string Id, DateTime Time, bool Active)> DossierByAgent { get; set; } = [];
+    public ConcurrentDictionary<string, List<(Type Agent, Type Hub, DateTime Time, bool Active)>> DossierByOffice { get; set; } = [];
 
     public Dictionary<string, IHost> Hosts { get; set; } = [];
 }
@@ -15,18 +17,57 @@ public class HiringState
 public interface IHiringContract
 {
     /* in */
-    Task AgentsDiscoveryRequest(string agent);
+    Task AgentsDiscoveryRequest(AgentsDossier dossier);
 }
 
 public class HiringHub : MessageHub<IHiringContract>
 {
-    public async Task<string> GetRequest(string agent, HiringState state)
+    public async Task<string> AgentsDiscoveryRequest(AgentsDossier dossier, HiringState state)
     {
-        state.DossierByAgent.TryGetValue(agent, out var info);
+        var hired = new List<(Type Agent, Type Hub)>();
 
-        // TODO: finish this
+        if (dossier.Actors is not null)
+        {
+            if (state.DossierByOffice.TryGetValue(dossier.FromOffice, out var info))
+            {
+                dossier.Actors.ForEach(actor =>
+                {
+                    if (!info.Any(x => x.Agent == actor.Agent))
+                    {
+                        info.Add((actor.Agent, actor.Hub, DateTime.Now, true));
+                        hired.Add(actor);
+                    }
+                });
+            }
+            else
+            {
+                state.DossierByOffice[dossier.FromOffice] = dossier.Actors.Select(x => (x.Agent, x.Hub, DateTime.Now, true)).ToList();
+                hired = dossier.Actors;
+            }
+        }
+        else
+        {
+            if (state.DossierByOffice.TryGetValue(dossier.FromOffice, out var info))
+            {
+                info.ForEach(x => 
+                { 
+                    if(!x.Active)
+                        hired.Add((x.Agent, x.Hub));
+                });
+            }
+            else
+            {
+                LogPost($"{GetType().Name} received {nameof(AgentsDiscoveryRequest)} from unknown office: {dossier.FromOffice}.");
+            }
+        }
 
-        return info.Id;
+        foreach (var actor in hired)
+        {
+            state.Hosts[actor.Agent.Name] = Recruitment.Recruit(actor);
+            await MessageHub.Post.ConnectToActorAsync(Connection, GetType().Name, actor.Agent.Name, default);
+        }
+                
+        return "";
     }
 }
 
@@ -38,13 +79,7 @@ public class Recruiter : Agent<HiringState, HiringHub, IHiringContract>
 
     protected override async Task ExecuteAsync(CancellationToken cancellationToken)
     {
-        await MessageHub.InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
-
-        await Post.EstablishConnectionAsync(MessageHub.Connection);
-
-        await Post.ConnectToServerAsync(MessageHub.Connection, MessageHub.Queue.Name, cancellationToken);
-
-        await Post.StartMessageServiceAsync(MessageHub.Queue, MessageHub.Connection, cancellationToken);
+        await base.ExecuteAsync(cancellationToken);
     }
 }
 

@@ -62,8 +62,20 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         if (message == Messages.Delete)
         {
+            MessageHub.LogPost($"processing {message}");
             Dispose();
             return;
+        }
+        else if (message == Messages.ReadRequest)
+        {
+            MessageHub.LogPost($"processing {message}");
+            MessageHub.Queue.Enqueue(new Parcel(senderId, Job.State, Messages.ReadResponse));
+            // TODO: check whether this mechanism handles read requests in parallel
+        }
+        else if (message.Contains(Messages.ConnectTo) && message.Contains(typeof(THub).Name))
+        {
+            MessageHub.LogPost($"processing {message}");
+            MessageHub.Queue.Enqueue(new Parcel(senderId, null, Messages.Connected));
         }
         else if (MethodsByName.TryGetValue(message, out var method))
         {

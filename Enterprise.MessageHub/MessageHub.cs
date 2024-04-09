@@ -10,7 +10,7 @@ namespace Enterprise.Agency;
 
 public class MessageHub<IContract> where IContract : class
 {
-    protected CancellationTokenSource TokenSource { get; } = new();
+    protected CancellationTokenSource Cancellation { get; } = new();
 
     public SmartQueue<Parcel> Queue { get; }
 
@@ -38,7 +38,7 @@ public class MessageHub<IContract> where IContract : class
     public void Dispose()
     {
         //base.Dispose();
-        TokenSource.Cancel();
+        Cancellation.Cancel();
     }
     
     protected string GetMessage<TExpression>(TExpression predicate) where TExpression : Expression
@@ -49,6 +49,7 @@ public class MessageHub<IContract> where IContract : class
         {
             LogPost($"MessageHub delegate resolution failed for: {predicate}.");
             // TODO: add logging
+            return "";
         }
         return msg;
     }

@@ -20,7 +20,7 @@ public record JobConfiguration()
 
     internal Action<string> Logger { get; set; } = delegate { };
 
-    internal Func<string, Task> AsyncLogger { get; set; }
+    internal Func<string, Task> AsyncLogger { get; set; } = _ => Task.CompletedTask;
 
     internal bool ShowProgress => ProgressBarEnable != null;
 

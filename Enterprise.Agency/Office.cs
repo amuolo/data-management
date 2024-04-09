@@ -44,13 +44,13 @@ public class Office<IContract> : MessageHub<IContract>
     public Office<IContract> Run()
     {
         var host = Builder.Build();
-        host.RunAsync();
+        host.RunAsync(Cancellation.Token);
 
         Task.Run(async () =>
         {
-            await InitializeConnectionAsync(TokenSource.Token).ConfigureAwait(false);
-            await MessageHub.Post.ConnectToServerAsync(Connection, Queue.Name, TokenSource.Token);
-            StartServiceHiringAgents(TokenSource.Token);
+            await InitializeConnectionAsync(Cancellation.Token).ConfigureAwait(false);
+            await MessageHub.Post.ConnectToActorAsync(Connection, Queue.Name, Addresses.Server, Cancellation.Token);
+            StartServiceHiringAgents(Cancellation.Token);
         });
 
         return this;

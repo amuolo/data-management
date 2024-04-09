@@ -62,7 +62,7 @@
                 await hubConnection.SendAsync(MessageTypes.SendResponse, server, ConnectionId, senderId, messageId, responseParcel).ConfigureAwait(false);
                 await hubConnection.SendAsync(MessageTypes.Log, server, ConnectionId, $"{MessageTypes.SendResponse} {Messages.AgentsDiscovery}");
             }
-            else if (message == Messages.ConnectToServer)
+            else if (message.Contains(Messages.ConnectTo) && message.Contains(Addresses.Server))
             {
                 await hubConnection.SendAsync(MessageTypes.EstablishConnection, server, ConnectionId, senderId, messageId).ConfigureAwait(false);
             }

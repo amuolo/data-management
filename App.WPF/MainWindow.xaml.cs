@@ -10,7 +10,7 @@ namespace App.WPF;
 
 public interface IApp : IDataContract { }
 
-public record MainWindowState(string Path, DataWindow DataWindow, ProgressBar ProgressBar);
+public record MainWindowState(string Path, DataWindow DataWindow, ProgressBar? ProgressBar);
 
 /// <summary>
 /// Interaction logic for MainWindow.xaml

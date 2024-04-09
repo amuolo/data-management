@@ -7,4 +7,6 @@ public class Addresses
     public const string BaseUrl = "https://localhost:7158";
 
     public const string Url = BaseUrl + SignalR;
+
+    public const string Server = nameof(Server);
 }
