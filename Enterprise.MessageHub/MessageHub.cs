@@ -27,17 +27,10 @@ public class MessageHub<IContract> where IContract : class
     public MessageHub()
     {
         Queue = new(GetType().ExtractName());
-
-        Queue.OnNewItem += () =>
-        {
-            if (Queue.Semaphore.CurrentCount == 0)
-                Queue.Semaphore.Release();
-        };
     }
 
     public void Dispose()
     {
-        //base.Dispose();
         Cancellation.Cancel();
     }
     

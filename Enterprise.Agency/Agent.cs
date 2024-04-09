@@ -16,7 +16,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     protected THub MessageHub { get; set; } = new();
     protected bool IsInitialized { get; set; }
 
-    private Job<(object? Package, TState State)> Job { get; set; }
+    protected Job<(object? Package, TState State)> Job { get; set; }
         = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
 
     private Dictionary<string, MethodInfo> MethodsByName { get; } 
@@ -29,6 +29,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     public override void Dispose()
     {
+        MessageHub.LogPost($"disposing");
         base.Dispose();
         MessageHub.Dispose();
     }
@@ -60,13 +61,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
     {
-        if (message == Messages.Delete)
-        {
-            MessageHub.LogPost($"processing {message}");
-            Dispose();
-            return;
-        }
-        else if (message == Messages.ReadRequest)
+        if (message == Messages.ReadRequest)
         {
             MessageHub.LogPost($"processing {message}");
             MessageHub.Queue.Enqueue(new Parcel(senderId, Job.State, Messages.ReadResponse));

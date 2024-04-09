@@ -17,6 +17,12 @@ public class SmartQueue<T>
     public SmartQueue(string name) 
     {
         Name = name;
+
+        OnNewItem += () =>
+        {
+            if (Semaphore.CurrentCount == 0)
+                Semaphore.Release();
+        };
     }
 
     public bool IsEmpty => Queue.IsEmpty;

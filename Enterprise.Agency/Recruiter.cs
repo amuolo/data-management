@@ -85,5 +85,52 @@ public class Recruiter : Agent<HiringState, HiringHub, IHiringContract>
     {
         await base.ExecuteAsync(cancellationToken);
     }
+
+    protected async Task DecommissionAsync(CancellationToken cancellationToken)
+    {
+        var state = Job.State.State;
+        var outerTimer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            if (state is null || !state.DossierByOffice.Any())
+            {
+                await outerTimer.WaitForNextTickAsync();
+                continue;
+            }
+
+            using(var innerTimer = new PeriodicTimer(GetNextDecommission(state)))
+            {
+                await innerTimer.WaitForNextTickAsync();
+                foreach (var agent in GetFiredAgents(state))
+                {
+                    if (state.Hosts.TryGetValue(agent, out var host))
+                        await host.StopAsync();
+                    else
+                        MessageHub.LogPost($"Decommissioner failed to fire agent {agent}: not found.");
+                }
+            }
+        }
+    }
+
+    private TimeSpan GetNextDecommission(HiringState state)
+    {
+        var items = state.DossierByOffice.SelectMany(x => x.Value.Select(y => DateTime.Now - y.Time)).OrderBy(x => x).ToArray();
+
+        var max = items.FirstOrDefault() - TimeSpans.HireAgentsPeriod;
+
+        return max.TotalSeconds < 0 ? -max : TimeSpan.FromSeconds(1);
+    }
+
+    private string[] GetFiredAgents(HiringState state)
+    {
+        var agents = state.DossierByOffice.SelectMany(x => x.Value)
+                                          .OrderBy(x => x.Time)
+                                          .Where(x => (DateTime.Now - x.Time) > TimeSpans.HireAgentsPeriod)
+                                          .Select(x => x.Agent.Name)
+                                          .ToArray();
+
+        return agents;
+    }
 }
 
