@@ -7,6 +7,8 @@ namespace Enterprise.Agency;
 
 public record AgentsDossier(List<(Type Agent, Type Hub)> Actors, string FromOffice);
 
+public record RecruiterResponse;
+
 public class HiringState
 {
     public ConcurrentDictionary<string, List<(Type Agent, Type Hub, DateTime Time, bool Active)>> DossierByOffice { get; set; } = [];
@@ -17,12 +19,12 @@ public class HiringState
 public interface IHiringContract
 {
     /* in */
-    Task AgentsDiscoveryRequest(AgentsDossier dossier);
+    Task<RecruiterResponse> AgentsDiscoveryRequest(AgentsDossier dossier);
 }
 
 public class HiringHub : MessageHub<IHiringContract>
 {
-    public async Task<string> AgentsDiscoveryRequest(AgentsDossier dossier, HiringState state)
+    public async Task<RecruiterResponse> AgentsDiscoveryRequest(AgentsDossier dossier, HiringState state)
     {
         var hired = new List<(Type Agent, Type Hub)>();
 
@@ -53,6 +55,8 @@ public class HiringHub : MessageHub<IHiringContract>
                 { 
                     if(!x.Active)
                         hired.Add((x.Agent, x.Hub));
+                    x.Active = true;
+                    x.Time = DateTime.Now;
                 });
             }
             else
@@ -67,7 +71,7 @@ public class HiringHub : MessageHub<IHiringContract>
             await MessageHub.Post.ConnectToActorAsync(Connection, GetType().Name, actor.Agent.Name, default);
         }
                 
-        return "";
+        return new RecruiterResponse();
     }
 }
 
