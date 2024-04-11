@@ -1,8 +1,8 @@
 ﻿namespace Enterprise.MessageHub;
 
-public record Parcel(object? Address, object? Package, string Message)
+public record Parcel(object? Target, string? TargetId, object? Item, string Message)
 {
-    public string Type { get; set; } = MessageTypes.SendMessage;
+    public string Type { get; set; } = nameof(ServerHub.SendMessage);
 
-    public Guid Id { get; } = Guid.NewGuid();
+    public string Id { get; set; } = Guid.NewGuid().ToString();
 }

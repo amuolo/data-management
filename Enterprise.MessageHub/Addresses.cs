@@ -8,5 +8,5 @@ public class Addresses
 
     public const string Url = BaseUrl + SignalR;
 
-    public const string Server = nameof(Server);
+    public const string Logger = nameof(Logger);
 }

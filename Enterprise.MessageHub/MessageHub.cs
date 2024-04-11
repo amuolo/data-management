@@ -1,22 +1,28 @@
 ﻿using Enterprise.MessageHub;
 using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
+using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Text.Json;
 
 namespace Enterprise.Agency;
 
-public class MessageHub<IContract> where IContract : class
+public class MessageHub<IContract> where IContract : class, IHubContract
 {
+    protected bool IsLogger { get; set; } = false;
+
     protected CancellationTokenSource Cancellation { get; } = new();
 
-    public SmartQueue<Parcel> Queue { get; }
+    public SmartStore<Parcel> Queue { get; }
 
-    public HubConnection Connection { get; } = new HubConnectionBuilder().WithUrl(Addresses.Url).WithAutomaticReconnect().Build();
+    public HubConnection Connection { get; protected set; } = new HubConnectionBuilder().WithUrl(Addresses.Url).WithAutomaticReconnect().Build();
 
-    public ConcurrentDictionary<Guid, Action<string>> CallbacksById { get; } = new();
+    public string Id => Connection.ConnectionId?? throw new ArgumentNullException(nameof(HubConnection));
+
+    public string Me => IsLogger ? Addresses.Logger : GetType().ExtractName();
+
+    public ConcurrentDictionary<string, Action<string>> CallbacksById { get; } = new();
 
     public ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
 
@@ -26,10 +32,11 @@ public class MessageHub<IContract> where IContract : class
 
     public MessageHub()
     {
-        Queue = new(GetType().ExtractName());
+        Queue = new(Me);
+        ActionMessageReceived = StandardActionMessageReceivedAsync;
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         Cancellation.Cancel();
     }
@@ -41,7 +48,6 @@ public class MessageHub<IContract> where IContract : class
         if (msg is null)
         {
             LogPost($"MessageHub delegate resolution failed for: {predicate}.");
-            // TODO: add logging
             return "";
         }
         return msg;
@@ -52,24 +58,27 @@ public class MessageHub<IContract> where IContract : class
      ***************/
     public void LogPost(string msg)
     {
-        var parcel = new Parcel(null, null, msg) with { Type = MessageTypes.Log };
+        // TODO: add logging
+        var parcel = new Parcel(default, default, default, msg) with { Type = nameof(ServerHub.Log) };
         Queue.Enqueue(parcel);
     }
 
     /*******************
        Post and forget 
      *******************/
+    public void Post(string message) => Queue.Enqueue(new Parcel(default, default, default, message));
+
     public void Post(Expression<Func<IContract, Action>> predicate) => Post(default(object), predicate);
     public void Post(Expression<Func<IContract, Func<Task>>> predicate) => Post(default(object), predicate);
 
-    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Action>> predicate) => Queue.Enqueue(new Parcel(address, default, GetMessage(predicate)));
-    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Func<Task>>> predicate) => Queue.Enqueue(new Parcel(address, default, GetMessage(predicate)));
+    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Action>> predicate) => Queue.Enqueue(new Parcel(address, default, default, GetMessage(predicate)));
+    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Func<Task>>> predicate) => Queue.Enqueue(new Parcel(address, default, default, GetMessage(predicate)));
 
     public void Post<TSent>(Expression<Func<IContract, Action<TSent>>> predicate, TSent? package) => Post(default(object), predicate, package);
     public void Post<TSent>(Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) => Post(default(object), predicate, package);
 
-    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Action<TSent>>> predicate, TSent? package) => Queue.Enqueue(new Parcel(address, package, GetMessage(predicate)));
-    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) => Queue.Enqueue(new Parcel(address, package, GetMessage(predicate)));
+    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Action<TSent>>> predicate, TSent? package) => Queue.Enqueue(new Parcel(address, default, package, GetMessage(predicate)));
+    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) => Queue.Enqueue(new Parcel(address, default, package, GetMessage(predicate)));
 
     /**********************
        Post with response 
@@ -89,9 +98,9 @@ public class MessageHub<IContract> where IContract : class
     public void PostWithResponse<TAddress, TSent, TResponse>
         (TAddress? address, string message, TSent? package, Action<TResponse> callback)
     {
-        var parcel = new Parcel(address, package, message);
+        var parcel = new Parcel(address, null, package, message);
  
-        CallbacksById.TryAdd(parcel.Id, (string responseParcel) =>
+        var ok = CallbacksById.TryAdd(parcel.Id, (string responseParcel) =>
         {
             LogPost($"processing response {message} {typeof(TResponse).Name}");
             try
@@ -102,7 +111,7 @@ public class MessageHub<IContract> where IContract : class
                 }
                 else
                 {
-                    var package = JsonSerializer.Deserialize<TResponse>(responseParcel);
+                    var package = JsonConvert.DeserializeObject<TResponse>(responseParcel);
                     if (package is not null)
                         callback(package);
                     else
@@ -115,14 +124,18 @@ public class MessageHub<IContract> where IContract : class
             }
         });
 
+        if (!ok)
+            LogPost($"Callback registration failed for {message}.");
+
         Queue.Enqueue(parcel);
     }
 
     /**********************
             Actions 
      **********************/
+    public Action<string, string, string, string, string?> ActionMessageReceived { get; set; }
 
-    private void ActionMessageReceived(string sender, string senderId, string message, string messageId, string? parcel)
+    protected void StandardActionMessageReceivedAsync(string sender, string senderId, string message, string messageId, string? package)
     {
         if (!OperationByPredicate.TryGetValue(message, out var operation)) return;
 
@@ -133,30 +146,30 @@ public class MessageHub<IContract> where IContract : class
         }
         else
         {
-            if (parcel is null)
+            if (package is null)
             {
                 LogPost($"Warning: {message} received but {operation.Type.Name} expected.");
                 return;
             }
 
-            var package = JsonSerializer.Deserialize(parcel, operation.Type);
+            var item = JsonConvert.DeserializeObject(package, operation.Type);
 
-            if (package is null)
+            if (item is null)
             {
                 LogPost($"Warning: {message} received but {operation.Type.Name} failed deserialization.");
                 return;
             }
 
             LogPost($"processing {message}");
-            operation.Action.DynamicInvoke(package);
+            operation.Action.DynamicInvoke(item);
         }
     }
 
-    internal void ActionResponseReceived(string sender, string senderId, Guid messageId, string response)
+    private void ActionResponseReceived(string sender, string senderId, string messageId, string response)
     {
         if (!CallbacksById.TryGetValue(messageId, out var callback))
         {
-            LogPost($"Warning: response has arrived but left unhandled.");
+            LogPost($"warning: response {response} has arrived but left unhandled.");
             return;
         }
 
@@ -167,30 +180,35 @@ public class MessageHub<IContract> where IContract : class
     /*************************
        Initialize Connection 
      *************************/
-    public async Task InitializeConnectionAsync(CancellationToken cancellationToken)
-        => await InitializeConnectionAsync(cancellationToken, ActionMessageReceived);
+    public async Task InitializeConnectionAsync(CancellationToken token)
+        => await InitializeConnectionAsync(token, ActionMessageReceived);
 
-    public async Task InitializeConnectionAsync
-        (CancellationToken cancellationToken, Action<string, string, string, string, string?> actionMessageReceived)
+    public async Task InitializeConnectionAsync(CancellationToken token, Action<string, string, string, string, string?> actionMessageReceived)
     {
         Connection.On(MessageTypes.ReceiveMessage, actionMessageReceived);
 
-        await FinalizeConnectionAsync(cancellationToken);
+        await FinalizeConnectionAsync(token);
     }
 
-    public async Task InitializeConnectionAsync
-        (CancellationToken cancellationToken, Func<string, string, string, string, string?, Task> actionMessageReceived)
+    public async Task InitializeConnectionAsync(CancellationToken token, Func<string, string, string, string, string?, Task> actionMessageReceived)
     {
         Connection.On<string, string, string, string, string?>(MessageTypes.ReceiveMessage,
-            async (sender, senderId, message, messageId, parcel) =>
-                await actionMessageReceived(sender, senderId, message, messageId, parcel));
+            async (sender, senderId, message, messageId, package) =>
+                await actionMessageReceived(sender, senderId, message, messageId, package));
 
-        await FinalizeConnectionAsync(cancellationToken);
+        await FinalizeConnectionAsync(token);
     }
 
-    private async Task FinalizeConnectionAsync(CancellationToken cancellationToken)
+    private async Task FinalizeConnectionAsync(CancellationToken token)
     {
-        Connection.On<string, string, Guid, string>(MessageTypes.ReceiveResponse, ActionResponseReceived);
+        Connection.On(nameof(IHubContract.ConnectRequest),
+            async (string sender, string senderId, string requestId, string target) =>
+            {
+                if (target == Me)
+                    await Connection.SendAsync(nameof(IHubContract.ConnectionEstablished), Id, senderId, requestId);
+            });
+
+        Connection.On<string, string, string, string>(MessageTypes.ReceiveResponse, ActionResponseReceived);
 
         string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
 
@@ -198,6 +216,6 @@ public class MessageHub<IContract> where IContract : class
         Connection.Reconnected += (id) => { LogPost("Reconnected to the server"); return Task.CompletedTask; };
         Connection.Closed += (exc) => { LogPost($"Connection Closed! {getMsg(exc)}"); return Task.CompletedTask; };
 
-        await Connection.StartAsync(cancellationToken);
+        await Connection.StartAsync(token);
     }
 }

@@ -64,17 +64,17 @@ public record Job<TState>()
         return New<TState, TResult>(this); 
     }
 
-    public Task<Job<TState>> Start(CancellationToken cancellationToken = new())
+    public Task<Job<TState>> Start(CancellationToken token = new())
     {
         return Task.Run(async () =>
         {
             try
             {
-                await Semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                await Semaphore.WaitAsync(token).ConfigureAwait(false);
 
                 if (Configuration.ShowProgress) Configuration.ProgressBarEnable?.DynamicInvoke(Steps.Count);
 
-                while (!Steps.IsEmpty && !cancellationToken.IsCancellationRequested)
+                while (!Steps.IsEmpty && !token.IsCancellationRequested)
                 {
                     var ok = Steps.TryDequeue(out var step);
 

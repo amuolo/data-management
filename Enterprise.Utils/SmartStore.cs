@@ -4,7 +4,7 @@ namespace Enterprise.Utils;
 
 public delegate void CustomEventHandler();
 
-public class SmartQueue<T>
+public class SmartStore<T>
 {
     public event CustomEventHandler? OnNewItem;
 
@@ -14,7 +14,7 @@ public class SmartQueue<T>
 
     public string Name { get; set; }
 
-    public SmartQueue(string name) 
+    public SmartStore(string name) 
     {
         Name = name;
 
@@ -33,9 +33,16 @@ public class SmartQueue<T>
         OnNewItem?.Invoke();
     }
 
-    public bool TryDequeue(out T item)
+    public bool TryDequeue(out T? item)
     {
         var ok = Queue.TryDequeue(out var x);
+        item = x;
+        return ok;
+    }
+
+    public bool TryPeek(out T? item)
+    {
+        var ok = Queue.TryPeek(out var x);
         item = x;
         return ok;
     }

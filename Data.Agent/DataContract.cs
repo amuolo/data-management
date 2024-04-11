@@ -1,8 +1,9 @@
 ﻿using Data.Domain;
+using Enterprise.Agency;
 
 namespace Data.Agent;
 
-public interface IDataContract
+public interface IDataContract : IAgencyContract
 {
     /* in */
     Task<List<string>> ReadRequest();

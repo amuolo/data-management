@@ -8,10 +8,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Text.Json" Version="8.0.0" />
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\Data.Domain\Data.Domain.csproj" />
     <ProjectReference Include="..\Enterprise.Agency\Enterprise.Agency.csproj" />
   </ItemGroup>

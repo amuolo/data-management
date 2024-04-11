@@ -1,3 +1,5 @@
+using Data.Agent;
+using Data.Domain;
 using Enterprise.Agency;
 using Enterprise.MessageHub;
 using Microsoft.AspNetCore.ResponseCompression;
@@ -8,7 +10,9 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 
-builder.Services.AddHostedService<Recruiter>();
+builder.Services.AddHostedService<Manager>();
+
+builder.Services.AddSingleton(new[] { typeof(Agent<Model, DataHub, IDataContract>) });
 
 builder.Services.AddResponseCompression(opts =>
 {
@@ -33,4 +37,4 @@ app.MapHub<ServerHub>(Addresses.SignalR);
 
 app.MapFallbackToPage("/_Host");
 
-app.Run();
+await app.RunAsync();

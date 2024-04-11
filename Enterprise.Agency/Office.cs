@@ -1,5 +1,6 @@
 ﻿using Enterprise.MessageHub;
 using Enterprise.Utils;
+using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Linq.Expressions;
@@ -7,89 +8,91 @@ using System.Linq.Expressions;
 namespace Enterprise.Agency;
 
 public class Office<IContract> : MessageHub<IContract>
-    where IContract : class
+    where IContract : class, IAgencyContract
 {
-    public bool IsReady { get; private set; }
-
-    private List<(Type Agent, Type Hub)> Actors { get; } = [];
-
-    private Dictionary<string, IHost> Hosts { get; } = [];
+    private List<AgentInfo> Agents { get; } = [];
 
     private HostApplicationBuilder Builder { get; } = Host.CreateApplicationBuilder();
+
+    private IHost? PostService { get; set; } = default;
+
+    public Task PostTask { get; private set; } = Task.CompletedTask;
+
+    public Task ConnectionTask { get; private set; } = Task.CompletedTask;
 
     private Office() : base()
     {
     }
 
-    public static Office<IContract> Create()
-    {              
-        var office = new Office<IContract>();
-
-        office.Builder.Services.AddHostedService<Post>()
-                               .AddSingleton(office.Queue)
-                               .AddSingleton(office.Connection);
-
-        return office;
+    public override void Dispose()
+    {
+        PostService?.StopAsync();
+        base.Dispose();
     }
 
-    public Office<IContract> AddAgent<TState, THub, IHubContract>()
+    public static Office<IContract> Create() => new Office<IContract>();
+
+    public Office<IContract> WithCustomConnection(Uri uri)
+    {
+        Connection = new HubConnectionBuilder().WithUrl(uri).WithAutomaticReconnect().Build();
+        return this;
+    }
+
+    public Office<IContract> AddAgent<TState, THub, IAgentContract>()
             where TState : new()
-            where THub : MessageHub<IHubContract>, new()
-            where IHubContract : class
+            where THub : MessageHub<IAgentContract>, new()
+            where IAgentContract : class, IHubContract
     {
-        Actors.Add((typeof(Agent<TState, THub, IHubContract>), typeof(THub)));
+        var agentType = typeof(Agent<TState, THub, IAgentContract>);
+        var info = new AgentInfo(typeof(THub).Name, agentType.AssemblyQualifiedName!);
+        Agents.Add(info);
         return this;
     }
 
-    public Office<IContract> Run()
-    {
-        var host = Builder.Build();
-        host.RunAsync(Cancellation.Token);
-
-        Task.Run(async () =>
-        {
-            await InitializeConnectionAsync(Cancellation.Token).ConfigureAwait(false);
-            await MessageHub.Post.ConnectToActorAsync(Connection, Queue.Name, Addresses.Server, Cancellation.Token);
-            StartServiceHiringAgents(Cancellation.Token);
-        });
-
-        return this;
-    }
-
-    private void StartServiceHiringAgents(CancellationToken token)
-    {
-        Task.Run(async () =>
-        {
-            var timer = new PeriodicTimer(TimeSpans.HireAgentsPeriod);
-
-            do
-            {
-                PostWithResponse<object, object, string[]>(null, Messages.AgentsDiscovery, null, HireAgents);
-                await timer.WaitForNextTickAsync().ConfigureAwait(false);
-            }
-            while (!token.IsCancellationRequested);
-
-            // TODO: move recruitment to server-side to avoid over-production of agents
-            void HireAgents(string[] registeredAgents)
-            {
-                foreach (var actor in Actors.Where(x => !registeredAgents.Contains(x.Agent.Name)))
-                {
-                    LogPost($"Recruiting {TypeHelper.ExtractName(actor.Agent)}");
-                    Hosts[actor.Agent.Name] = Recruitment.Recruit(actor);
-                }
-            }
-        });
-    }
-
+    // TODO: improve this method adding compile time checks to the delegates
     public Office<IContract> Register<TReceived>(Expression<Func<IContract, Delegate>> predicate, Action<TReceived> action)
-    {       
+    {
         OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action));
         return this;
     }
 
+    // TODO: improve this method adding compile time checks to the delegates
     public Office<IContract> Register(Expression<Func<IContract, Delegate>> predicate, Action action)
     {
         OperationByPredicate.TryAdd(GetMessage(predicate), (null, action));
         return this;
     }
+
+    public Office<IContract> ReceiveLogs(Action<string, string, string> action)
+    {
+        IsLogger = true;
+        Connection.On(nameof(IHubContract.ReceiveLog), action);
+        return this;
+    }
+
+    public Office<IContract> Run()
+    {
+        Builder.Services.AddHostedService<Post>()
+                        .AddSingleton(new ActorInfo(Me, Queue, Connection));
+
+        PostService = Builder.Build();
+        
+        PostTask = PostService.RunAsync(Cancellation.Token);
+        
+        ConnectionTask = InitializeConnectionAsync(Cancellation.Token);
+
+        PostWithResponse(
+            nameof(ManagerHub), 
+            office => office.AgentsDiscoveryRequest, 
+            new AgentsDossier(Agents, Me),
+            (Action<ManagerResponse>)(response =>
+            {
+                if (!response.Status)
+                    LogPost($"Initial Agents Discovery request failed.");
+            }));
+
+        return this;
+    }
+
+    public Task GetRunningTask() => Task.WhenAll(PostTask, ConnectionTask);
 }

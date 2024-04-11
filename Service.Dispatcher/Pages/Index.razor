@@ -3,7 +3,7 @@
 @using Enterprise.Agency
 @using Enterprise.MessageHub
 @using Microsoft.AspNetCore.SignalR.Client
-@using System.Text.Json
+@using System.Collections.Concurrent
 
 @inject NavigationManager NavManager
 @implements IAsyncDisposable
@@ -32,88 +32,39 @@
 </ul>
 
 @code {
-    private string? ConnectionId => hubConnection?.ConnectionId;
-    private HubConnection? hubConnection;
+    private string? ConnectionId => office.Connection?.ConnectionId;
     private CancellationTokenSource TokenSource = new();
-    private Dictionary<string, DateTime> uptimeByActor = new();
     private List<string> messages = new();
     private string? userInput;
     private string? messageInput;
     private string server = nameof(server);
+    Office<IAgencyContract> office = Office<IAgencyContract>.Create();
+
+    public bool IsConnected => office.Connection?.State == HubConnectionState.Connected;
 
     protected override async Task OnInitializedAsync()
     {
-        hubConnection = new HubConnectionBuilder().WithUrl(NavManager.ToAbsoluteUri(Addresses.SignalR))
-                                                  .WithAutomaticReconnect()
-                                                  .Build();
-
-        hubConnection.On<string, string, string>(MessageTypes.ReceiveLog, (sender, senderId, message) =>
-        {
-            var formattedMessage = $"{sender}: {message}";
-            messages.Add(formattedMessage);
-            InvokeAsync(StateHasChanged);
-        });
-
-        hubConnection.On<string, string, string, string, string?>(MessageTypes.ReceiveMessage, async (sender, senderId, message, messageId, parcel) =>
-        {
-            if (message == Messages.AgentsDiscovery)
-            {
-                var responseParcel = JsonSerializer.Serialize(uptimeByActor.Keys);
-                await hubConnection.SendAsync(MessageTypes.SendResponse, server, ConnectionId, senderId, messageId, responseParcel).ConfigureAwait(false);
-                await hubConnection.SendAsync(MessageTypes.Log, server, ConnectionId, $"{MessageTypes.SendResponse} {Messages.AgentsDiscovery}");
-            }
-            else if (message.Contains(Messages.ConnectTo) && message.Contains(Addresses.Server))
-            {
-                await hubConnection.SendAsync(MessageTypes.EstablishConnection, server, ConnectionId, senderId, messageId).ConfigureAwait(false);
-            }
-
-            if (uptimeByActor.TryGetValue(sender, out var time))
-                time = DateTime.UtcNow;
-            else
-                uptimeByActor.TryAdd(sender, DateTime.UtcNow);
-        });
-
-        StartAgentsTimingsMachine();
-        await hubConnection.StartAsync();
+        office = office.WithCustomConnection(NavManager.ToAbsoluteUri(Addresses.SignalR))
+                       .ReceiveLogs((sender, senderId, message) =>
+                        {
+                            var formattedMessage = $"{sender}: {message}";
+                            messages.Add(formattedMessage);
+                            InvokeAsync(StateHasChanged);
+                        })
+                       .Run();
     }
 
     private async Task Send()
     {
-        var messageId = Guid.NewGuid();
-        var sender = userInput ?? "unknown user";
         var message = messageInput ?? "";
 
-        if (hubConnection is not null) {
-            await hubConnection.SendAsync(MessageTypes.Log, sender, ConnectionId, message);
-            await hubConnection.SendAsync(MessageTypes.SendMessage, sender, ConnectionId, null, message, messageId, null);
-        }
-    }
-
-    public bool IsConnected => hubConnection?.State == HubConnectionState.Connected;
-
-    private void StartAgentsTimingsMachine() 
-    {
-        Task.Run(async () =>
-        {
-            var timer = new PeriodicTimer(TimeSpans.HireAgentsPeriod);
-            while (await timer.WaitForNextTickAsync().ConfigureAwait(false) && !TokenSource.IsCancellationRequested)
-            {
-                foreach(var kvp in uptimeByActor)
-                {
-                    if (hubConnection is not null && IsConnected &&
-                        (DateTime.UtcNow - kvp.Value).TotalSeconds > TimeSpans.HireAgentsPeriod.TotalSeconds)
-                    {
-                        await hubConnection.SendAsync(MessageTypes.SendMessage, server, ConnectionId, kvp.Key, Messages.Delete, Guid.NewGuid(), null).ConfigureAwait(false);
-                        uptimeByActor.Remove(kvp.Key);
-                    }
-                }
-            }
-        });
+        if (userInput is null)
+            office.Post(message);
+        else
+            office.Post($"{userInput} says: {message}");
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (hubConnection is not null)
-            await hubConnection.DisposeAsync().ConfigureAwait(false);
     }
 }

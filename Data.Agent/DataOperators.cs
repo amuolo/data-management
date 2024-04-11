@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+﻿using Newtonsoft.Json;
 
 namespace Data.Agent;
 
@@ -6,12 +6,12 @@ public static class DataOperators
 {
     public static object? Load()
     {
-        return JsonSerializer.Deserialize<object>(File.ReadAllText("storage"));
+        return JsonConvert.DeserializeObject<object>(File.ReadAllText("storage"));
     }
 
     public static void Save(object data)
     {
-        File.WriteAllText("storage", JsonSerializer.Serialize(data));
+        File.WriteAllText("storage", JsonConvert.SerializeObject(data));
     }
 
     public static List<string> Import(FileInfo? file)
