@@ -11,6 +11,10 @@ public interface IHubContract
     Task LogReceived();
 
     Task<DeletionProcess> DeleteRequest();
+
+    Task ReceiveMessage();
+
+    Task ReceiveResponse();
 }
 
 public record DeletionProcess(bool Status);

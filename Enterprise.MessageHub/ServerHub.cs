@@ -12,14 +12,14 @@ public class ServerHub : Hub
     public Task SendMessage(string sender, string senderId, string? receiverId, string message, string messageId, string? package)
     {
         if (receiverId is not null)
-            return Clients.Client(receiverId).SendAsync(MessageTypes.ReceiveMessage, sender, senderId, message, messageId, package);
+            return Clients.Client(receiverId).SendAsync(nameof(IHubContract.ReceiveMessage), sender, senderId, message, messageId, package);
         else
-            return Clients.All.SendAsync(MessageTypes.ReceiveMessage, sender, senderId, message, messageId, package);
+            return Clients.All.SendAsync(nameof(IHubContract.ReceiveMessage), sender, senderId, message, messageId, package);
     }
 
     public Task SendResponse(string sender, string senderId, string receiverId, string messageId, string response)
     {
-        return Clients.Client(receiverId).SendAsync(MessageTypes.ReceiveResponse, sender, senderId, messageId, response);
+        return Clients.Client(receiverId).SendAsync(nameof(IHubContract.ReceiveResponse), sender, senderId, messageId, response);
     }
 
     public Task ConnectRequest(string sender, string senderId, string requestId, string target)

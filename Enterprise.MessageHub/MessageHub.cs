@@ -185,14 +185,14 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
     public async Task InitializeConnectionAsync(CancellationToken token, Action<string, string, string, string, string?> actionMessageReceived)
     {
-        Connection.On(MessageTypes.ReceiveMessage, actionMessageReceived);
+        Connection.On(nameof(IHubContract.ReceiveMessage), actionMessageReceived);
 
         await FinalizeConnectionAsync(token);
     }
 
     public async Task InitializeConnectionAsync(CancellationToken token, Func<string, string, string, string, string?, Task> actionMessageReceived)
     {
-        Connection.On<string, string, string, string, string?>(MessageTypes.ReceiveMessage,
+        Connection.On<string, string, string, string, string?>(nameof(IHubContract.ReceiveMessage),
             async (sender, senderId, message, messageId, package) =>
                 await actionMessageReceived(sender, senderId, message, messageId, package));
 
@@ -208,7 +208,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
                     await Connection.SendAsync(nameof(IHubContract.ConnectionEstablished), Id, senderId, requestId);
             });
 
-        Connection.On<string, string, string, string>(MessageTypes.ReceiveResponse, ActionResponseReceived);
+        Connection.On<string, string, string, string>(nameof(IHubContract.ReceiveResponse), ActionResponseReceived);
 
         string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
 
