@@ -10,6 +10,12 @@ public interface IHubContract
 
     Task LogReceived();
 
+    Task CreateRequest();
+
+    Task ReadRequest();
+
+    Task ReadResponse();
+
     Task<DeletionProcess> DeleteRequest();
 
     Task ReceiveMessage();

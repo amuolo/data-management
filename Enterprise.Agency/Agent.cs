@@ -48,15 +48,17 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         if (!IsInitialized)
         {
-            MessageHub.LogPost("Creating myself");
+            if (MethodsByName.TryGetValue(nameof(IHubContract.CreateRequest), out var create))
+            {
+                MessageHub.LogPost("Creating myself");
 
-            if (MethodsByName.TryGetValue(Messages.Create, out var create))
-                Job = await Job.WithStep(Messages.Create, async state =>
+                Job = await Job.WithStep(nameof(IHubContract.CreateRequest), async state =>
                 {
                     var init = create.Invoke(MessageHub, null);
                     if (init is not null) state.State = await (Task<TState>)init;
                 })
                 .Start();
+            }
 
             IsInitialized = true;
         }
@@ -64,18 +66,18 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? package)
     {
-        if (message == Messages.Delete && sender.Contains(nameof(ManagerHub)))
+        if (message == nameof(IHubContract.DeleteRequest) && sender.Contains(nameof(ManagerHub)))
         {
             Dispose();
             return;
         }
-        else if (message == Messages.ReadRequest)
+        else if (message == nameof(IHubContract.ReadRequest))
         {
             // TODO: generalizes read request response with agency contract
             // TODO: check whether this mechanism handles read requests in parallel
             await CreateAsync();
             MessageHub.LogPost($"processing {message}");
-            MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, Messages.ReadResponse));
+            MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, nameof(IHubContract.ReadResponse)));
             return;
         }
         else if (MethodsByName.TryGetValue(message, out var method))

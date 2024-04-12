@@ -5,7 +5,7 @@ namespace Data.Agent;
 
 public class DataHub : MessageHub<IDataContract>
 {
-    public async Task<Model> Create()
+    public async Task<Model> CreateRequest()
     {
         // TODO: finish
         await Task.CompletedTask;
