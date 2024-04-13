@@ -12,12 +12,8 @@ public class SmartStore<T>
 
     public SemaphoreSlim Semaphore { get; } = new(0, 1);
 
-    public string Name { get; set; }
-
-    public SmartStore(string name) 
+    public SmartStore() 
     {
-        Name = name;
-
         OnNewItem += () =>
         {
             if (Semaphore.CurrentCount == 0)

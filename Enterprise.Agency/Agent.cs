@@ -66,7 +66,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? package)
     {
-        if (message == nameof(IHubContract.DeleteRequest) && sender.Contains(nameof(ManagerHub)))
+        if (message == nameof(IHubContract.DeleteRequest) && sender == Addresses.Central)
         {
             Dispose();
             return;

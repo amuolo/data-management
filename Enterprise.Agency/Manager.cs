@@ -78,6 +78,7 @@ public class Manager : Agent<ManagerState, ManagerHub, IAgencyContract>
 
     public Manager(IHubContext<ServerHub> hubContext, Type[] agents) : base(hubContext)
     {
+        MessageHub.Me = Addresses.Central;
         Job.WithStep("", state => state.State.AgentTypes = agents).Start();
     }
 
@@ -98,7 +99,11 @@ public class Manager : Agent<ManagerState, ManagerHub, IAgencyContract>
     {
         return MessageHub.Connection.On(nameof(IHubContract.ConnectRequest),
             async (string sender, string senderId, string requestId, string target) =>
-                await RunAgentsDiscoveryAsync(nameof(IHubContract.ConnectRequest), sender));
+            {
+                await RunAgentsDiscoveryAsync(nameof(IHubContract.ConnectRequest), sender);
+                if (target == Me)
+                    await MessageHub.Connection.SendAsync(nameof(IHubContract.ConnectionEstablished), MessageHub.Id, senderId, requestId);
+            });  
     }
 
     protected async Task ManagerActionMessageReceived(string sender, string senderId, string message, string messageId, string? package)

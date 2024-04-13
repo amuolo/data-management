@@ -65,7 +65,7 @@ public class Office<IContract> : MessageHub<IContract>
 
     public Office<IContract> ReceiveLogs(Action<string, string, string> action)
     {
-        IsLogger = true;
+        Me = Addresses.Logger;
         Connection.On(nameof(IHubContract.ReceiveLog), action);
         return this;
     }
@@ -82,7 +82,7 @@ public class Office<IContract> : MessageHub<IContract>
         ConnectionTask = InitializeConnectionAsync(Cancellation.Token);
 
         PostWithResponse(
-            nameof(ManagerHub), 
+            Addresses.Central, 
             office => office.AgentsDiscoveryRequest, 
             new AgentsDossier(Agents, Me),
             (Action<ManagerResponse>)(response =>

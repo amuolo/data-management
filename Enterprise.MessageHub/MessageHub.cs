@@ -10,8 +10,6 @@ namespace Enterprise.Agency;
 
 public class MessageHub<IContract> where IContract : class, IHubContract
 {
-    protected bool IsLogger { get; set; } = false;
-
     protected CancellationTokenSource Cancellation { get; } = new();
 
     public SmartStore<Parcel> Queue { get; }
@@ -20,7 +18,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
     public string Id => Connection.ConnectionId?? throw new ArgumentNullException(nameof(HubConnection));
 
-    public string Me => IsLogger ? Addresses.Logger : GetType().ExtractName();
+    public string Me { get; set; }
 
     public ConcurrentDictionary<string, Action<string>> CallbacksById { get; } = new();
 
@@ -32,7 +30,8 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
     public MessageHub()
     {
-        Queue = new(Me);
+        Queue = new();
+        Me = GetType().ExtractName();
         ActionMessageReceived = StandardActionMessageReceivedAsync;
     }
 

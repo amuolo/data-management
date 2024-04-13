@@ -61,7 +61,9 @@ public class Post : BackgroundService
                     else if (parcel.Type == nameof(ServerHub.SendMessage))
                     {
                         var target = parcel.Target?.ToString();
-                        var targetId = target == null ? null : await ConnectToAsync(connection, me, id, target, token).ConfigureAwait(false);
+                        var targetId = target is null ? null : await ConnectToAsync(connection, me, id, target, token).ConfigureAwait(false);
+                        if (target is null) await ConnectToAsync(connection, me, id, Addresses.Central, token).ConfigureAwait(false);
+
                         var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;
                         LogPost(info, $"{parcel.Type} {parcel.Message}");
                         await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Message, parcel.Id, package).ConfigureAwait(false);
