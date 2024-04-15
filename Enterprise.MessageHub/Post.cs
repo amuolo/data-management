@@ -58,7 +58,7 @@ public class Post : BackgroundService
                     {
                         LogPost(info, "Issue with Outbox dequeuing");
                     }
-                    else if (parcel.Type == nameof(ServerHub.SendMessage))
+                    else if (parcel.Type == nameof(PostingHub.SendMessage))
                     {
                         var target = parcel.Target?.ToString();
                         var targetId = target is null ? null : await ConnectToAsync(connection, me, id, target, token).ConfigureAwait(false);
@@ -69,18 +69,18 @@ public class Post : BackgroundService
                         await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Message, parcel.Id, package).ConfigureAwait(false);
                         status = true;
                     }
-                    else if (parcel.Type == nameof(ServerHub.SendResponse))
+                    else if (parcel.Type == nameof(PostingHub.SendResponse))
                     {
                         var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;
                         LogPost(info, $"{parcel.Type} {parcel.Message}");
                         await connection.SendAsync(parcel.Type, me, id, parcel.TargetId, parcel.Id, package).ConfigureAwait(false);
                         status = true;
                     }
-                    else if (parcel.Type == nameof(ServerHub.Log))
+                    else if (parcel.Type == nameof(PostingHub.Log))
                     {
                         if(me != Addresses.Logger)
                             await ConnectToAsync(connection, me, id, Addresses.Logger, token).ConfigureAwait(false);
-                        await connection.SendAsync(nameof(ServerHub.Log), me, id, parcel.Message).ConfigureAwait(false);
+                        await connection.SendAsync(nameof(PostingHub.Log), me, id, parcel.Message).ConfigureAwait(false);
                         status = true;
                     }
                 }
@@ -101,7 +101,7 @@ public class Post : BackgroundService
     }
 
     public static void LogPost(ActorInfo info, string msg)
-        => info.SmartStore.Enqueue(new Parcel(default, default, default, msg) with { Type = nameof(ServerHub.Log) });
+        => info.SmartStore.Enqueue(new Parcel(default, default, default, msg) with { Type = nameof(PostingHub.Log) });
 
     public static async Task EstablishConnectionAsync(HubConnection connection, CancellationToken token)
     {
@@ -143,7 +143,7 @@ public class Post : BackgroundService
             if(++counter % 10 == 0)
             {
                 var msg = $"struggling to connect to {target}, attempt {++counter}";
-                await connection.SendAsync(nameof(ServerHub.Log), from, requestId, msg).ConfigureAwait(false);
+                await connection.SendAsync(nameof(PostingHub.Log), from, requestId, msg).ConfigureAwait(false);
                 // TODO: add log
             }
             await connection.SendAsync(nameof(IHubContract.ConnectRequest), from, fromId, requestId, target).ConfigureAwait(false);

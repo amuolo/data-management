@@ -2,7 +2,7 @@
 
 namespace Enterprise.MessageHub;
 
-public class ServerHub : Hub
+public class PostingHub : Hub
 {
     public Task Log(string sender, string senderId, string message)
     {

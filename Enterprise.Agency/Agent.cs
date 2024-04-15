@@ -12,7 +12,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     where THub : MessageHub<IContract>, new()
     where IContract : class, IHubContract
 {
-    protected IHubContext<ServerHub> ServerHub { get; }
+    protected IHubContext<PostingHub> ServerHub { get; }
     protected THub MessageHub { get; set; } = new();
     protected bool IsInitialized { get; set; }
     protected string Me => MessageHub.Me;
@@ -23,7 +23,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     protected Dictionary<string, MethodInfo> MethodsByName { get; } 
         = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
 
-    public Agent(IHubContext<ServerHub> hubContext)
+    public Agent(IHubContext<PostingHub> hubContext)
     {
         ServerHub = hubContext;        
     }
@@ -104,7 +104,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     await (Task)res;
                     var result = res.GetType().GetProperty("Result")?.GetValue(res);
                     MessageHub.Queue.Enqueue(new Parcel(sender, senderId, result, message) 
-                        with { Type = nameof(Enterprise.MessageHub.ServerHub.SendResponse), Id = messageId });
+                        with { Type = nameof(Enterprise.MessageHub.PostingHub.SendResponse), Id = messageId });
                 }
             })
             .Start();

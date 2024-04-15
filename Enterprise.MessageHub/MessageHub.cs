@@ -58,7 +58,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
     public void LogPost(string msg)
     {
         // TODO: add logging
-        var parcel = new Parcel(default, default, default, msg) with { Type = nameof(ServerHub.Log) };
+        var parcel = new Parcel(default, default, default, msg) with { Type = nameof(PostingHub.Log) };
         Queue.Enqueue(parcel);
     }
 

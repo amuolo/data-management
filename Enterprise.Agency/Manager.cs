@@ -75,7 +75,7 @@ public class Manager : Agent<ManagerState, ManagerHub, IAgencyContract>
 {
     private Task? DecommissionService { get; set; }
 
-    public Manager(IHubContext<ServerHub> hubContext, Type[] agents) : base(hubContext)
+    public Manager(IHubContext<PostingHub> hubContext, Type[] agents) : base(hubContext)
     {
         MessageHub.Me = Addresses.Central;
         Job.WithStep("", state => state.State.AgentTypes = agents).Start();

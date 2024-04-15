@@ -32,7 +32,7 @@ app.UseStaticFiles();
 app.UseRouting();
 app.MapBlazorHub();
 
-app.MapHub<ServerHub>(Addresses.SignalR);
+app.MapHub<PostingHub>(Addresses.SignalR);
 
 app.MapFallbackToPage("/_Host");
 
