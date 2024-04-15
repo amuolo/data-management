@@ -48,10 +48,26 @@ public class Office<IContract> : MessageHub<IContract>
         return this;
     }
 
-    public Office<IContract> Register(Expression<Func<IContract, Action>> predicate, Action action) { OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); return this; }
-    public Office<IContract> Register(Expression<Func<IContract, Func<Task>>> predicate, Action action) { OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); return this; }
-    public Office<IContract> Register<TReceived>(Expression<Func<IContract, Action<TReceived>>> predicate, Action<TReceived> action) { OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); return this; }
-    public Office<IContract> Register<TReceived>(Expression<Func<IContract, Func<TReceived, Task>>> predicate, Action<TReceived> action) { OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); return this; }
+    public Office<IContract> Register(Expression<Func<IContract, Action>> predicate, Action action) 
+    { 
+        OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); 
+        return this; 
+    }
+    public Office<IContract> Register(Expression<Func<IContract, Func<Task>>> predicate, Action action) 
+    { 
+        OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); 
+        return this; 
+    }
+    public Office<IContract> Register<TReceived>(Expression<Func<IContract, Action<TReceived>>> predicate, Action<TReceived> action) 
+    { 
+        OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); 
+        return this; 
+    }
+    public Office<IContract> Register<TReceived>(Expression<Func<IContract, Func<TReceived, Task>>> predicate, Action<TReceived> action) 
+    { 
+        OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); 
+        return this; 
+    }
 
     public Office<IContract> ReceiveLogs(Action<string, string, string> action)
     {
