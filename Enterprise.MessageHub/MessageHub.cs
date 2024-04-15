@@ -138,9 +138,10 @@ public class MessageHub<IContract> where IContract : class, IHubContract
     {
         if (!OperationByPredicate.TryGetValue(message, out var operation)) return;
 
+        LogPost($"processing {message}");
+
         if (operation.Type is null || !operation.Action.GetMethodInfo().GetParameters().Any())
         {
-            LogPost($"processing {message}");
             operation.Action.DynamicInvoke();
         }
         else
@@ -159,7 +160,6 @@ public class MessageHub<IContract> where IContract : class, IHubContract
                 return;
             }
 
-            LogPost($"processing {message}");
             operation.Action.DynamicInvoke(item);
         }
     }
