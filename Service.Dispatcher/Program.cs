@@ -12,6 +12,7 @@ builder.Services.AddSignalR();
 
 builder.Services.AddHostedService<Manager>();
 
+// TODO: improve agents declaration
 builder.Services.AddSingleton(new[] { typeof(Agent<Model, DataHub, IDataContract>) });
 
 builder.Services.AddResponseCompression(opts =>
