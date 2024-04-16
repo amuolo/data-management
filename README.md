@@ -4,11 +4,15 @@ This is a general-purpose configurable template web-application to tackle Data M
 
 ## Table Of Contents
 
-  * [Getting started](#getting-started)
+  * [Introduction](#intro)
+  * [Theory](#theory)
   * [Agency](#agency)
+  * [MessageHub](#message-hub)
   * [Job](#job)
+  * [Getting started](#getting-started)
 
-## Getting Started
+<a name="intro"></a>
+## Introduction
 
 The aim of this repo is to provide an infrastructure that allows developers to quickly setup a modern and scalable 
 web application based following the famous <a href="https://en.wikipedia.org/wiki/Actor_model" target="_blank">Actor Model</a>.
@@ -35,18 +39,45 @@ in real-time applications.
 
 </details>
 
-## Agency
+<a name="theory"></a>
+## Theory
 
-The project named "Agency" is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and offices.
-In this framework, the agents are actors which are handled by their managers and organized in offices.
-Agents are allowed to exchange only those messages that have been formalized in their own contract interfaces. 
+<a name="agency"></a>
+### Agency
 
-## Job
+The Agency project is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and offices.
+
+Aligned with the actor model, this framework empowers developers to swiftly configure numerous concurrent actors, referred to as <em>agents</em>. 
+These agents are not deployed immediately; instead, deployment occurs only when strictly necessary, managed by dedicated <em>managers</em>. 
+Additionally, the client front end can configure <em>offices</em>, which function as independent actors capable of communicating 
+with other agents seamlessly over the wire.
+
+> Agents are defined uniquely with <em>name</em>, <em>state</em>, and <em>contract</em>.
+
+Agents can exchange messages only through their own contract interface. Additionally, agents are stateful entities, 
+owning a specific state and processing CRUD operations based on the type of message they receive. 
+Since messages are handled sequentially, there is no need for a locking mechanism when multiple resources (agents) attempt to access the same resource.
+
+MessageHub...
+Job...
+
+<a name="message-hub"></a>
+### Message Hub
+
+About Message Hub project...
+
+<a name="job"></a>
+### Job
 
 The project named "Job" provides an abstraction layer to manage a state undergoing several steps. 
 Job is thread-safe and guarantees that each step is executed following the simple rule first-in-first-out (FIFO).
 Thanks to its clean and easy-to-use API, it helps the developer to quickly set up logging and visualize progress 
 for the given operation to be started.
+
+<a name="getting-started"></a>
+## Getting started
+
+TODO
 
 ---
 
