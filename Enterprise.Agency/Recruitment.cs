@@ -9,7 +9,7 @@ namespace Enterprise.Agency;
 
 internal static class Recruitment
 {
-    public static async Task RecruitAsync<IContract>(List<AgentInfo> hired, MessageHub<IContract> messageHub, Dictionary<string, IHost> hosts, Type[] agentTypes)
+    public static async Task RecruitAsync<IContract>(List<Curriculum> hired, MessageHub<IContract> messageHub, Dictionary<string, IHost> hosts, Type[] agentTypes)
     where IContract : class, IAgencyContract
     {
         foreach (var agent in hired)
@@ -24,7 +24,7 @@ internal static class Recruitment
             }
             else
             {
-                messageHub.LogPost($"agent type not found for: {agent.Name}.");
+                messageHub.LogPost($"agent curriculum not found for: {agent.Name}.");
             }
         }
     }

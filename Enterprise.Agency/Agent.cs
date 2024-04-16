@@ -39,7 +39,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     {
         await MessageHub.InitializeConnectionAsync(token, ActionMessageReceived);
 
-        var info = new ActorInfo(Me, MessageHub.Queue, MessageHub.Connection);
+        var info = new Equipment(Me, MessageHub.Queue, MessageHub.Connection);
 
         await Post.StartMessageServiceAsync(info, token);
     }

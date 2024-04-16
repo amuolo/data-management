@@ -9,7 +9,7 @@ namespace Enterprise.Agency;
 public class Office<IContract> : MessageHub<IContract>
     where IContract : class, IAgencyContract
 {
-    private List<AgentInfo> Agents { get; } = [];
+    private List<Curriculum> Agents { get; } = [];
 
     private HostApplicationBuilder Builder { get; } = Host.CreateApplicationBuilder();
 
@@ -43,7 +43,7 @@ public class Office<IContract> : MessageHub<IContract>
             where IAgentContract : class, IHubContract
     {
         var agentType = typeof(Agent<TState, THub, IAgentContract>);
-        var info = new AgentInfo(typeof(THub).Name, agentType.AssemblyQualifiedName!);
+        var info = new Curriculum(typeof(THub).Name, agentType.AssemblyQualifiedName!);
         Agents.Add(info);
         return this;
     }
@@ -79,7 +79,7 @@ public class Office<IContract> : MessageHub<IContract>
     public Office<IContract> Run()
     {
         Builder.Services.AddHostedService<Post>()
-                        .AddSingleton(new ActorInfo(Me, Queue, Connection));
+                        .AddSingleton(new Equipment(Me, Queue, Connection));
 
         PostService = Builder.Build();
         

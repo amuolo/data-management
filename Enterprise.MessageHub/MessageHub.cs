@@ -14,7 +14,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
     public SmartStore<Parcel> Queue { get; }
 
-    public HubConnection Connection { get; protected set; } = new HubConnectionBuilder().WithUrl(Addresses.Url).WithAutomaticReconnect().Build();
+    public HubConnection Connection { get; protected set; }
 
     public string Id => Connection.ConnectionId?? throw new ArgumentNullException(nameof(HubConnection));
 
@@ -33,6 +33,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
         Queue = new();
         Me = GetType().ExtractName();
         ActionMessageReceived = StandardActionMessageReceivedAsync;
+        Connection = new HubConnectionBuilder().WithUrl(Addresses.Url).WithAutomaticReconnect().Build();
     }
 
     public virtual void Dispose()
@@ -215,6 +216,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
         Connection.Reconnected += (id) => { LogPost("Reconnected to the server"); return Task.CompletedTask; };
         Connection.Closed += (exc) => { LogPost($"Connection Closed! {getMsg(exc)}"); return Task.CompletedTask; };
 
+        // TODO: protect this from throwing with re-connection and logs
         await Connection.StartAsync(token);
     }
 }

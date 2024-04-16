@@ -6,20 +6,11 @@ using System.Collections.Concurrent;
 
 namespace Enterprise.Agency;
 
-public class ManagerState
-{
-    public ConcurrentDictionary<string, List<(AgentInfo AgentInfo, DateTime Time, bool Active)>> DossierByActor { get; set; } = [];
-
-    public Dictionary<string, IHost> Hosts { get; set; } = [];
-
-    public Type[] AgentTypes { get; set; } = [];
-}
-
 public class ManagerHub : MessageHub<IAgencyContract>
 {
-    public async Task<ManagerResponse> AgentsDiscoveryRequest(AgentsDossier dossier, ManagerState state)
+    public async Task<ManagerResponse> AgentsDiscoveryRequest(AgentsDossier dossier, Workplace state)
     {
-        var hired = new List<AgentInfo>();
+        var hired = new List<Curriculum>();
 
         if (dossier.Agents is not null)
         {
@@ -51,9 +42,9 @@ public class ManagerHub : MessageHub<IAgencyContract>
         return new ManagerResponse(true);
     }
 
-    public async Task<ManagerResponse> AgentsDiscovery(string from, ManagerState state)
+    public async Task<ManagerResponse> AgentsDiscovery(string from, Workplace state)
     {
-        var hired = new List<AgentInfo>();
+        var hired = new List<Curriculum>();
 
         if (state.DossierByActor.TryGetValue(from, out var archive))
         {
@@ -71,14 +62,14 @@ public class ManagerHub : MessageHub<IAgencyContract>
     }
 }
 
-public class Manager : Agent<ManagerState, ManagerHub, IAgencyContract>
+public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 {
     private Task? DecommissionService { get; set; }
 
-    public Manager(IHubContext<PostingHub> hubContext, Type[] agents) : base(hubContext)
+    public Manager(IHubContext<PostingHub> hubContext, Workplace state) : base(hubContext)
     {
         MessageHub.Me = Addresses.Central;
-        Job.WithStep("", state => state.State.AgentTypes = agents).Start();
+        Job = Job.Initialize((null, state));
     }
 
     protected override async Task ExecuteAsync(CancellationToken token)
@@ -89,7 +80,7 @@ public class Manager : Agent<ManagerState, ManagerHub, IAgencyContract>
 
         var registration = RegisterActionConnectRequest();
 
-        var info = new ActorInfo(Me, MessageHub.Queue, MessageHub.Connection);
+        var info = new Equipment(Me, MessageHub.Queue, MessageHub.Connection);
 
         await Post.StartMessageServiceAsync(info, token);
     }
@@ -131,53 +122,60 @@ public class Manager : Agent<ManagerState, ManagerHub, IAgencyContract>
     protected async Task DecommissionAsync(CancellationToken token)
     {
         var state = Job.State.State;
-        var outerTimer = new PeriodicTimer(TimeSpan.FromSeconds(10));
+        var outerTimer = new PeriodicTimer(state.DecommissionerWaitingTime);
 
         while (!token.IsCancellationRequested)
         {
-            if (state is null || !state.DossierByActor.Any())
+            try
             {
-                await outerTimer.WaitForNextTickAsync();
-                continue;
-            }
-
-            using(var innerTimer = new PeriodicTimer(GetNextDecommission(state)))
-            {
-                await innerTimer.WaitForNextTickAsync();
-                foreach (var agent in GetFiredAgents(state))
+                if (state is null || !state.DossierByActor.Any())
                 {
-                    if (state.Hosts.TryGetValue(agent, out var host))
-                    {
-                        MessageHub.PostWithResponse(
-                            agent,
-                            manager => manager.DeleteRequest,
-                            (Action<DeletionProcess>)(async process =>
-                            {
-                                if (process.Status)
-                                    await host.StopAsync();
-                            }));
-                    }
-                    else
-                        MessageHub.LogPost($"Decommissioner failed to fire agent {agent}: not found.");
+                    await outerTimer.WaitForNextTickAsync();
+                    continue;
                 }
+
+                using (var innerTimer = new PeriodicTimer(GetNextDecommission(state)))
+                {
+                    await innerTimer.WaitForNextTickAsync();
+                    foreach (var agent in GetFiredAgents(state))
+                    {
+                        if (state.Hosts.TryGetValue(agent, out var host))
+                        {
+                            MessageHub.PostWithResponse(
+                                agent,
+                                manager => manager.DeleteRequest,
+                                (Action<DeletionProcess>)(async process =>
+                                {
+                                    if (process.Status)
+                                        await host.StopAsync();
+                                }));
+                        }
+                        else
+                            MessageHub.LogPost($"Decommissioner failed to fire agent {agent}: not found.");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageHub.LogPost(ex.Message);
             }
         }
     }
 
-    private TimeSpan GetNextDecommission(ManagerState state)
+    private TimeSpan GetNextDecommission(Workplace state)
     {
         var items = state.DossierByActor.SelectMany(x => x.Value.Select(y => DateTime.Now - y.Time)).OrderBy(x => x).ToArray();
 
-        var max = items.FirstOrDefault() - TimeSpans.HireAgentsPeriod;
+        var max = items.FirstOrDefault() - state.HireAgentsPeriod;
 
         return max.TotalSeconds < 0 ? -max : TimeSpan.FromSeconds(1);
     }
 
-    private string[] GetFiredAgents(ManagerState state)
+    private string[] GetFiredAgents(Workplace state)
     {
         var agents = state.DossierByActor.SelectMany(x => x.Value)
                                          .OrderBy(x => x.Time)
-                                         .Where(x => (DateTime.Now - x.Time) > TimeSpans.HireAgentsPeriod)
+                                         .Where(x => (DateTime.Now - x.Time) > state.HireAgentsPeriod)
                                          .Select(x => x.AgentInfo.Name)
                                          .ToArray();
 

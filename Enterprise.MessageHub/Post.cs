@@ -7,7 +7,7 @@ namespace Enterprise.MessageHub;
 
 public class Post : BackgroundService
 {
-    private ActorInfo ActorInfo { get; set; }
+    private Equipment Equipment { get; set; }
 
     public static async Task<string> GetIdAsync(HubConnection connection, CancellationToken token)
     {
@@ -25,17 +25,17 @@ public class Post : BackgroundService
         return connection.ConnectionId;
     }
 
-    public Post(ActorInfo info)
+    public Post(Equipment equipment)
     {
-        ActorInfo = info;
+        Equipment = equipment;
     }
 
     protected override async Task ExecuteAsync(CancellationToken token)
     {
-        await StartMessageServiceAsync(ActorInfo, token);
+        await StartMessageServiceAsync(Equipment, token);
     }
 
-    public static async Task StartMessageServiceAsync(ActorInfo info, CancellationToken token)
+    public static async Task StartMessageServiceAsync(Equipment info, CancellationToken token)
     {
         var me = info.Name;
         var store = info.SmartStore;
@@ -100,7 +100,7 @@ public class Post : BackgroundService
         await connection.DisposeAsync().ConfigureAwait(false);
     }
 
-    public static void LogPost(ActorInfo info, string msg)
+    public static void LogPost(Equipment info, string msg)
         => info.SmartStore.Enqueue(new Parcel(default, default, default, msg) with { Type = nameof(PostingHub.Log) });
 
     public static async Task EstablishConnectionAsync(HubConnection connection, CancellationToken token)

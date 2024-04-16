@@ -12,8 +12,15 @@ builder.Services.AddSignalR();
 
 builder.Services.AddHostedService<Manager>();
 
-// TODO: improve agents declaration
-builder.Services.AddSingleton(new[] { typeof(Agent<Model, DataHub, IDataContract>) });
+var workplace = new Workplace(Addresses.Url) with
+{
+    AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],
+    HireAgentsPeriod = TimeSpan.FromMinutes(30),
+    DecommissionerWaitingTime = TimeSpan.FromSeconds(10),
+    ActorConnectionAttemptPeriod = TimeSpan.FromSeconds(3)
+};
+
+builder.Services.AddSingleton(workplace);
 
 builder.Services.AddResponseCompression(opts =>
 {
