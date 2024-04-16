@@ -6,9 +6,9 @@ This is a general-purpose configurable template web-application to tackle Data M
 
   * [Introduction](#intro)
   * [Theory](#theory)
-  * [Agency](#agency)
-  * [MessageHub](#message-hub)
-  * [Job](#job)
+      * [Agency](#agency)
+      * [MessageHub](#message-hub)
+      * [Job](#job)
   * [Getting started](#getting-started)
 
 <a name="intro"></a>
@@ -45,7 +45,7 @@ in real-time applications.
 <a name="agency"></a>
 ### Agency
 
-The Agency project is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and offices.
+> The Agency project is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and offices.
 
 Aligned with the actor model, this framework empowers developers to swiftly configure numerous concurrent actors, referred to as <em>agents</em>. 
 These agents are not deployed immediately; instead, deployment occurs only when strictly necessary, managed by dedicated <em>managers</em>. 
