@@ -10,7 +10,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 
-var workplace = new Workplace(Addresses.Url) with
+var workplace = new Workplace("https://localhost:7158") with
 {
     AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],
     HireAgentsPeriod = TimeSpan.FromMinutes(30),

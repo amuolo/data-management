@@ -1,5 +1,4 @@
-﻿using Enterprise.Agency;
-using Microsoft.AspNetCore.SignalR.Client;
+﻿using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.Hosting;
 using Newtonsoft.Json;
 

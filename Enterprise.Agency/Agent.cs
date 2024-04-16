@@ -13,7 +13,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
     where IContract : class, IHubContract
 {
     protected IHubContext<PostingHub> ServerHub { get; }
-    protected THub MessageHub { get; set; } = new();
+    protected THub MessageHub { get; set; }
     protected bool IsInitialized { get; set; }
     protected string Me => MessageHub.Me;
 
@@ -23,8 +23,9 @@ public class Agent<TState, THub, IContract> : BackgroundService
     protected Dictionary<string, MethodInfo> MethodsByName { get; } 
         = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
 
-    public Agent(IHubContext<PostingHub> hubContext)
+    public Agent(IHubContext<PostingHub> hubContext, Workplace workplace)
     {
+        MessageHub = MessageHub<IContract>.Create<THub>(workplace.Url);
         ServerHub = hubContext;        
     }
 

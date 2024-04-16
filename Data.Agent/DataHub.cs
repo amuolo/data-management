@@ -1,5 +1,5 @@
 ﻿using Data.Domain;
-using Enterprise.Agency;
+using Enterprise.MessageHub;
 
 namespace Data.Agent;
 

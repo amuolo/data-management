@@ -1,8 +1,6 @@
 ﻿using Enterprise.MessageHub;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
-using Microsoft.Extensions.Hosting;
-using System.Collections.Concurrent;
 
 namespace Enterprise.Agency;
 
@@ -38,7 +36,7 @@ public class ManagerHub : MessageHub<IAgencyContract>
             LogPost($"dossier agents found null.");
         }
 
-        await Recruitment.RecruitAsync(hired, this, state.Hosts, state.AgentTypes);
+        await Recruitment.RecruitAsync(hired, this, state);
         return new ManagerResponse(true);
     }
 
@@ -57,7 +55,7 @@ public class ManagerHub : MessageHub<IAgencyContract>
             });
         }
 
-        await Recruitment.RecruitAsync(hired, this, state.Hosts, state.AgentTypes);
+        await Recruitment.RecruitAsync(hired, this, state);
         return new ManagerResponse(true);
     }
 }
@@ -66,10 +64,10 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 {
     private Task? DecommissionService { get; set; }
 
-    public Manager(IHubContext<PostingHub> hubContext, Workplace state) : base(hubContext)
+    public Manager(IHubContext<PostingHub> hubContext, Workplace workplace) : base(hubContext, workplace)
     {
         MessageHub.Me = Addresses.Central;
-        Job = Job.Initialize((null, state));
+        Job = Job.Initialize((null, workplace));
     }
 
     protected override async Task ExecuteAsync(CancellationToken token)

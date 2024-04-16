@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace Enterprise.Agency;
 
-public class Office<IContract> : MessageHub<IContract>
+public class Office<IContract>() : MessageHub<IContract>
     where IContract : class, IAgencyContract
 {
     private List<Curriculum> Agents { get; } = [];
@@ -19,23 +19,13 @@ public class Office<IContract> : MessageHub<IContract>
 
     public Task ConnectionTask { get; private set; } = Task.CompletedTask;
 
-    private Office() : base()
-    {
-    }
-
     public override void Dispose()
     {
         PostService?.StopAsync();
         base.Dispose();
     }
 
-    public static Office<IContract> Create() => new Office<IContract>();
-
-    public Office<IContract> WithCustomConnection(Uri uri)
-    {
-        Connection = new HubConnectionBuilder().WithUrl(uri).WithAutomaticReconnect().Build();
-        return this;
-    }
+    public static Office<IContract> Create(string baseUrl) => Create<Office<IContract>>(baseUrl);
 
     public Office<IContract> AddAgent<TState, THub, IAgentContract>()
             where TState : new()

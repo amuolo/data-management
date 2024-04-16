@@ -17,6 +17,8 @@ public record MainWindowState(string Path, DataWindow DataWindow, ProgressBar? P
 /// </summary>
 public partial class MainWindow : Window
 {
+    private string BaseUrl => "https://localhost:7158";
+
     private MainWindowState State { get; set; }
 
     private Office<IApp> Office { get; }
@@ -34,7 +36,7 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        Office = Office<IApp>.Create()
+        Office = Office<IApp>.Create(BaseUrl)
                              .Register(agent => agent.DataChangedEvent, DataUpdate)
                              .Register(agent => agent.ShowProgress, ShowProgress)
                              .Register(agent => agent.Display, Logger)

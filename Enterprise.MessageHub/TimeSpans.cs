@@ -1,4 +1,4 @@
-﻿namespace Enterprise.Agency;
+﻿namespace Enterprise.MessageHub;
 
 public class TimeSpans
 {

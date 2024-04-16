@@ -1,18 +1,17 @@
-﻿using Enterprise.MessageHub;
-using Enterprise.Utils;
+﻿using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
 using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
 
-namespace Enterprise.Agency;
+namespace Enterprise.MessageHub;
 
 public class MessageHub<IContract> where IContract : class, IHubContract
 {
     protected CancellationTokenSource Cancellation { get; } = new();
 
-    public SmartStore<Parcel> Queue { get; }
+    public SmartStore<Parcel> Queue { get; } = new();
 
     public HubConnection Connection { get; protected set; }
 
@@ -28,12 +27,26 @@ public class MessageHub<IContract> where IContract : class, IHubContract
                                                                           .SelectMany(i => i.GetMethods())
                                                                           .ToArray();
 
-    public MessageHub()
+    public static THub Create<THub> (string baseUrl) where THub : MessageHub<IContract>, new()
     {
-        Queue = new();
+        var r = new THub();
+        if (baseUrl is null || !baseUrl.Any()) return r;
+        var url = (baseUrl.LastOrDefault().Equals('/') ? baseUrl[..^1] : baseUrl) + Addresses.SignalR;
+        r.Connection = new HubConnectionBuilder().WithUrl(url).WithAutomaticReconnect().Build();
+        return r;
+    }
+
+    protected MessageHub() 
+    {
         Me = GetType().ExtractName();
         ActionMessageReceived = StandardActionMessageReceivedAsync;
-        Connection = new HubConnectionBuilder().WithUrl(Addresses.Url).WithAutomaticReconnect().Build();
+    }
+
+    public MessageHub(string baseUrl)
+    {
+        Me = GetType().ExtractName();
+        ActionMessageReceived = StandardActionMessageReceivedAsync;
+        Connection = new HubConnectionBuilder().WithUrl(baseUrl + Addresses.SignalR).WithAutomaticReconnect().Build();
     }
 
     public virtual void Dispose()
@@ -216,7 +229,21 @@ public class MessageHub<IContract> where IContract : class, IHubContract
         Connection.Reconnected += (id) => { LogPost("Reconnected to the server"); return Task.CompletedTask; };
         Connection.Closed += (exc) => { LogPost($"Connection Closed! {getMsg(exc)}"); return Task.CompletedTask; };
 
-        // TODO: protect this from throwing with re-connection and logs
-        await Connection.StartAsync(token);
+        using (var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod))
+        {
+            do
+            {
+                try
+                {
+                    await Connection.StartAsync(token);
+                }
+                catch (Exception e)
+                {
+                    LogPost(e.Message);
+                }
+                await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
+            }
+            while (Connection.State != HubConnectionState.Connected && !token.IsCancellationRequested);
+        }        
     }
 }

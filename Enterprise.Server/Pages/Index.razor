@@ -38,20 +38,20 @@
     private string? userInput;
     private string? messageInput;
     private string server = nameof(server);
-    Office<IAgencyContract> office = Office<IAgencyContract>.Create();
+    Office<IAgencyContract>? office;
 
-    public bool IsConnected => office.Connection?.State == HubConnectionState.Connected;
+    public bool IsConnected => office?.Connection?.State == HubConnectionState.Connected;
 
     protected override async Task OnInitializedAsync()
     {
-        office = office.WithCustomConnection(NavManager.ToAbsoluteUri(Addresses.SignalR))
-                       .ReceiveLogs((sender, senderId, message) =>
-                        {
-                            var formattedMessage = $"{sender}: {message}";
-                            messages.Add(formattedMessage);
-                            InvokeAsync(StateHasChanged);
-                        })
-                       .Run();
+        office = Office<IAgencyContract>.Create(NavManager.BaseUri)
+                                        .ReceiveLogs((sender, senderId, message) =>
+                                        {
+                                            var formattedMessage = $"{sender}: {message}";
+                                            messages.Add(formattedMessage);
+                                            InvokeAsync(StateHasChanged);
+                                        })
+                                        .Run();
     }
 
     private async Task Send()
@@ -59,13 +59,13 @@
         var message = messageInput ?? "";
 
         if (userInput is null)
-            office.Post(message);
+            office?.Post(message);
         else
-            office.Post($"{userInput} says: {message}");
+            office?.Post($"{userInput} says: {message}");
     }
 
     public async ValueTask DisposeAsync()
     {
-        office.Dispose();
+        office?.Dispose();
     }
 }
