@@ -104,7 +104,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     await (Task)res;
                     var result = res.GetType().GetProperty("Result")?.GetValue(res);
                     MessageHub.Queue.Enqueue(new Parcel(sender, senderId, result, message) 
-                        with { Type = nameof(Enterprise.MessageHub.PostingHub.SendResponse), Id = messageId });
+                        with { Type = nameof(PostingHub.SendResponse), Id = messageId });
                 }
             })
             .Start();

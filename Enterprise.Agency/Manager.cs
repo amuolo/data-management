@@ -108,7 +108,8 @@ public class Manager : Agent<ManagerState, ManagerHub, IAgencyContract>
     protected async Task ManagerActionMessageReceived(string sender, string senderId, string message, string messageId, string? package)
     {
         await ActionMessageReceived(sender, senderId, message, messageId, package);
-        await RunAgentsDiscoveryAsync(message, sender);
+        if (sender != Me)
+            await RunAgentsDiscoveryAsync(message, sender);
     }
 
     private async Task RunAgentsDiscoveryAsync(string message, string sender)
