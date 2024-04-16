@@ -15,7 +15,5 @@ public record Workplace(string Url)
 
     public TimeSpan DecommissionerWaitingTime { get; set; } = TimeSpan.FromSeconds(10);
 
-    public TimeSpan ActorConnectionAttemptPeriod { get; set; } = TimeSpan.FromSeconds(3);
-
     public Workplace() : this("") { }
 }

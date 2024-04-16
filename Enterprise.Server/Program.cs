@@ -10,17 +10,15 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 
-builder.Services.AddHostedService<Manager>();
-
 var workplace = new Workplace(Addresses.Url) with
 {
     AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],
     HireAgentsPeriod = TimeSpan.FromMinutes(30),
     DecommissionerWaitingTime = TimeSpan.FromSeconds(10),
-    ActorConnectionAttemptPeriod = TimeSpan.FromSeconds(3)
 };
 
-builder.Services.AddSingleton(workplace);
+builder.Services.AddHostedService<Manager>()
+                .AddSingleton(workplace);
 
 builder.Services.AddResponseCompression(opts =>
 {
