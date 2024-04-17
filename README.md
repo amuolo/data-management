@@ -1,6 +1,9 @@
-# data-management
+# Muoland Agency - Data Management
 
-This is a general-purpose configurable template web-application to tackle Data Management at any level.
+This library is a robust and versatile solution designed to facilitate system architecture. 
+Whether you’re building microservices, distributed applications, or event-driven systems, 
+this API provides the tools you need to design, construct, and maintain high-performance, 
+concurrent solutions using the actor concurrency model.
 
 ## Table Of Contents
 
