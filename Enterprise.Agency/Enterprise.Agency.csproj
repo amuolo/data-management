@@ -5,6 +5,19 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Enterprise.Agency</RootNamespace>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <PackageId>Muoland.Agency</PackageId>
+    <Title>Muoland.Agency</Title>
+    <Authors>Muoland</Authors>
+    <Description>The aim of this repo is to provide an infrastructure that allows developers to quickly setup a modern and scalable web application based following the famous Actor Model.</Description>
+    <PackageProjectUrl>https://github.com/amuolo/data-management</PackageProjectUrl>
+    <PackageIcon>cartoon-actors.jpg</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
+    <PackageTags>muoland, actor, model, concurrency, actors, distributed, scalable, data, management</PackageTags>
+    <Version>1.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -22,6 +35,21 @@
 
   <ItemGroup>
 	<FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\..\..\..\..\Pictures\cartoon-actors.jpg">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+    <None Include="..\README.md">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
   </ItemGroup>
 
 </Project>
