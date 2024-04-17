@@ -102,7 +102,7 @@ here the configuration of a different office with logging capabilities on a diff
                                          })
                                          .Run();
 
-and here an example of the IDataContract interface
+and here a draft of the IDataContract interface
 
      public interface IDataContract : IAgencyContract
      {
@@ -119,6 +119,9 @@ and here an example of the IDataContract interface
          Task Display(string message);
      }
 
+with the example of posting API from one client office
+
+     Office.Post(agent => agent.ImportRequest, GetSelectedFile());
 
 ---
 
