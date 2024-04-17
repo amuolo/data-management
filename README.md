@@ -91,7 +91,7 @@ Here below is how to configure one office on the WPF client side:
                               .Register(agent => agent.Display, Logger)
                               .AddAgent<Model, DataHub, IDataContract>().Run();
 
-and here below the configuration of a different office with logging capabilities on a different client
+here the configuration of a different office with logging capabilities on a different client
 
      var office = Office<IAgencyContract>.Create(NavManager.BaseUri)
                                          .ReceiveLogs((sender, senderId, message) =>
@@ -102,6 +102,22 @@ and here below the configuration of a different office with logging capabilities
                                          })
                                          .Run();
 
+and here an example of the IDataContract interface
+
+     public interface IDataContract : IAgencyContract
+     {
+         /* in */
+         Task<List<string>> ReadRequest();
+
+         Task ImportRequest(string fileName);
+
+         /* out */
+         Task DataChangedEvent();
+
+         Task ShowProgress(double progress);
+
+         Task Display(string message);
+     }
 
 
 ---
