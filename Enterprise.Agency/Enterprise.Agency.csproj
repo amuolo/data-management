@@ -9,7 +9,7 @@
     <PackageId>Muoland.Agency</PackageId>
     <Title>Muoland.Agency</Title>
     <Authors>Muoland</Authors>
-    <Description>The aim of this repo is to provide an infrastructure that allows developers to quickly setup a modern and scalable web application based following the famous Actor Model.</Description>
+    <Description>The Muoland.Agency toolkit empowers developers to create robust scalable web applications with ease. By abstracting complex concurrency models and providing essential APIs, it enables seamless communication between components following the actor model.</Description>
     <PackageProjectUrl>https://github.com/amuolo/data-management</PackageProjectUrl>
     <PackageIcon>cartoon-actors.jpg</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
@@ -21,16 +21,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Components.WebView.Wpf" Version="8.0.3" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.3" />
     <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Enterprise.JobFactory\Enterprise.JobFactory.csproj" />
-    <ProjectReference Include="..\Enterprise.MessageHub\Enterprise.MessageHub.csproj" />
-    <ProjectReference Include="..\Enterprise.Utils\Enterprise.Utils.csproj" />
+    <ProjectReference Include="..\Enterprise.JobFactory\Enterprise.JobFactory.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Enterprise.MessageHub\Enterprise.MessageHub.csproj" PrivateAssets="All" />
+    <ProjectReference Include="..\Enterprise.Utils\Enterprise.Utils.csproj" PrivateAssets="All" />
   </ItemGroup>
 
   <ItemGroup>
@@ -51,5 +50,38 @@
       <PackagePath>\</PackagePath>
     </None>
   </ItemGroup>
+
+  <PropertyGroup>
+    <TargetsForTfmSpecificBuildOutput> $(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
+    <Copyright>GNU General Public License v3.0</Copyright>
+    <PackageReleaseNotes>
+		
+Release Note: Concurrency Model Package v1.0
+
+Introducing our new Concurrency Model Package! 🚀
+
+Purpose: This package simplifies concurrent programming by providing robust abstractions for managing parallel execution.
+Key Features:
+Agents: Easily configure and manage concurrent actors (agents) with their own contract interfaces.
+Stateful Entities: Agents maintain state and process CRUD operations based on incoming messages.
+Sequential Message Handling: No need for locking mechanisms; messages are processed sequentially.
+
+Upgrade your concurrency game with our powerful package! Get started today. 🌟
+
+    </PackageReleaseNotes>
+    <Product>Muoland.Agency</Product>
+  </PropertyGroup>
+
+  <!-- The following blocks allow to pack the dependent project together with this one -->
+	
+  <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">
+	<ItemGroup>
+	  <_ReferenceCopyLocalPaths Include="@(ReferenceCopyLocalPaths-&gt;WithMetadataValue('ReferenceSourceTarget', 'ProjectReference')-&gt;WithMetadataValue('PrivateAssets', 'All'))" />
+	</ItemGroup>
+
+    <ItemGroup>
+	  <BuildOutputInPackage Include="@(_ReferenceCopyLocalPaths)" TargetPath="%(_ReferenceCopyLocalPaths.DestinationSubDirectory)" />
+    </ItemGroup>
+  </Target>
 
 </Project>
