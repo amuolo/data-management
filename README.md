@@ -55,29 +55,68 @@ with other agents seamlessly over the wire.
 > Agents are defined uniquely with <em>name</em>, <em>state</em>, and <em>contract</em>.
 
 Agents can exchange messages only through their own contract interface. Additionally, agents are stateful entities, 
-owning a specific state and processing CRUD operations based on the type of message they receive. 
+owning a specific state and processing CRUD operations when handling the messages they receive. 
 Since messages are handled sequentially, there is no need for a locking mechanism when multiple resources (agents) attempt to access the same resource.
 
-MessageHub...
-Job...
+While Message hub is the project storing all structures and APIs to deal with message handling, Job is the dedicated state handler.
 
 <a name="message-hub"></a>
 ### Message Hub
 
-About Message Hub project...
+While the Agency uses the structures defined in the Message Hub project, this can also be used as standalone.
+It provides the <em>MessageHub</em> class to handle message posting with and without response, a background service <em>Post</em> to process messages in the 
+outbox queue sequentially and safely, the <em>PostingHub</em> defining all the methods invokable on the SignalR server, and a series of static stateless 
+methods that are generally usable to configure the SignalR hub connection with both default and dedicated functionalities.
+
+Together, the class, the service, the server hub, and the configuration methods, give a generalized mechanism to deal with a wide range of scenarios. 
+The developer can freely decide when to rely on the request-response pattern and when to simply broadcast streams of events (messages) to all the connected clients.
+This flexibility was from the beginning enforced on the design of this library to broaden the range of applications and facilitate its adoption.
 
 <a name="job"></a>
 ### Job
 
-The project named "Job" provides an abstraction layer to manage a state undergoing several steps. 
-Job is thread-safe and guarantees that each step is executed following the simple rule first-in-first-out (FIFO).
+The project named "Job" provides an abstraction layer to manage a state undergoing several updates in a step-by-step approach. 
+Job is thread-safe and guarantees that each step is executed following the simple first-in-first-out (FIFO) rule.
 Thanks to its clean and easy-to-use API, it helps the developer to quickly set up logging and visualize progress 
 for the given operation to be started.
 
 <a name="getting-started"></a>
 ## Getting started
 
-TODO
+This is a typical configuration of the Program: 
+
+     builder.Services.AddSignalR();
+
+     var workplace = new Workplace("https://localhost:7158") with
+     {
+         AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],
+         HireAgentsPeriod = TimeSpan.FromMinutes(30),
+         DecommissionerWaitingTime = TimeSpan.FromSeconds(10),
+     };
+
+     builder.Services.AddHostedService<Manager>()
+                     .AddSingleton(workplace);
+
+Here below is how to configure one office on the WPF client side:
+
+     var office = Office<IApp>.Create(BaseUrl)
+                              .Register(agent => agent.DataChangedEvent, DataUpdate)
+                              .Register(agent => agent.ShowProgress, ShowProgress)
+                              .Register(agent => agent.Display, Logger)
+                              .AddAgent<Model, DataHub, IDataContract>().Run();
+
+and here below the configuration of a different office with logging capabilities on a different client
+
+     var office = Office<IAgencyContract>.Create(NavManager.BaseUri)
+                                         .ReceiveLogs((sender, senderId, message) =>
+                                         {
+                                             var formattedMessage = $"{sender}: {message}";
+                                             messages.Add(formattedMessage);
+                                             InvokeAsync(StateHasChanged);
+                                         })
+                                         .Run();
+
+
 
 ---
 
