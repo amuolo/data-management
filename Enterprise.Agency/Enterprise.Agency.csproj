@@ -11,13 +11,13 @@
     <Authors>Muoland</Authors>
     <Description>The Muoland.Agency toolkit empowers developers to create robust scalable web applications with ease. By abstracting complex concurrency models and providing essential APIs, it enables seamless communication between components following the actor model.</Description>
     <PackageProjectUrl>https://github.com/amuolo/data-management</PackageProjectUrl>
-    <PackageIcon>cartoon-actors.jpg</PackageIcon>
+    <PackageIcon>robinx.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageTags>muoland, actor, model, concurrency, actors, distributed, scalable, data, management</PackageTags>
-    <Version>1.0.0</Version>
+    <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application</PackageTags>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -37,10 +37,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\..\..\..\Pictures\cartoon-actors.jpg">
-      <Pack>True</Pack>
-      <PackagePath>\</PackagePath>
-    </None>
     <None Include="..\LICENSE">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
@@ -51,24 +47,35 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Assets\img\robinx.png">
+      <Pack>True</Pack>
+      <PackagePath>\</PackagePath>
+    </None>
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetsForTfmSpecificBuildOutput> $(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
     <Copyright>GNU General Public License v3.0</Copyright>
     <PackageReleaseNotes>
+
+		17 Apr 2024 Release Note: Concurrency Model Package v1.0.1
 		
-Release Note: Concurrency Model Package v1.0
+		Fix readme visualization on nuget.org
 
-Introducing our new Concurrency Model Package! 🚀
+		17 Apr 2024 Release Note: Concurrency Model Package v1.0.0
 
-Purpose: This package simplifies concurrent programming by providing robust abstractions for managing parallel execution.
-Key Features:
-Agents: Easily configure and manage concurrent actors (agents) with their own contract interfaces.
-Stateful Entities: Agents maintain state and process CRUD operations based on incoming messages.
-Sequential Message Handling: No need for locking mechanisms; messages are processed sequentially.
+		Introducing our new Concurrency Model Package! 🚀
 
-Upgrade your concurrency game with our powerful package! Get started today. 🌟
+		Purpose: This package simplifies concurrent programming by providing robust abstractions for managing parallel execution.
+		Key Features:
+		Agents: Easily configure and manage concurrent actors (agents) with their own contract interfaces.
+		Stateful Entities: Agents maintain state and process CRUD operations based on incoming messages.
+		Sequential Message Handling: No need for locking mechanisms; messages are processed sequentially.
 
-    </PackageReleaseNotes>
+		Upgrade your concurrency game with our powerful package! Get started today. 🌟
+
+	</PackageReleaseNotes>
     <Product>Muoland.Agency</Product>
   </PropertyGroup>
 
