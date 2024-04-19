@@ -59,19 +59,19 @@ public class Post : BackgroundService
                     }
                     else if (parcel.Type == nameof(PostingHub.SendMessage))
                     {
+                        LogPost(info, $"{parcel.Type} {parcel.Message}");
                         var target = parcel.Target?.ToString();
                         var targetId = target is null ? null : await ConnectToAsync(connection, me, id, target, token).ConfigureAwait(false);
-                        if (target is null) await ConnectToAsync(connection, me, id, Addresses.Central, token).ConfigureAwait(false);
-
-                        var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;
-                        LogPost(info, $"{parcel.Type} {parcel.Message}");
+                        if (targetId is null) await ConnectToAsync(connection, me, id, Addresses.Central, token).ConfigureAwait(false);
+                        var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;      
                         await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Message, parcel.Id, package).ConfigureAwait(false);
                         status = true;
                     }
                     else if (parcel.Type == nameof(PostingHub.SendResponse))
                     {
-                        var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;
                         LogPost(info, $"{parcel.Type} {parcel.Message}");
+                        var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;
+                        await ConnectToAsync(connection, me, id, Addresses.Central, token).ConfigureAwait(false);
                         await connection.SendAsync(parcel.Type, me, id, parcel.TargetId, parcel.Id, package).ConfigureAwait(false);
                         status = true;
                     }
@@ -102,28 +102,30 @@ public class Post : BackgroundService
     public static void LogPost(Equipment info, string msg)
         => info.SmartStore.Enqueue(new Parcel(default, default, default, msg) with { Type = nameof(PostingHub.Log) });
 
-    public static async Task EstablishConnectionAsync(HubConnection connection, CancellationToken token)
+    public static async Task<HubConnection> EstablishConnectionAsync(HubConnection connection, CancellationToken token)
     {
         var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
 
-        while ((connection is null || connection?.State != HubConnectionState.Connected) && !token.IsCancellationRequested)
+        while (connection.State != HubConnectionState.Connected && !token.IsCancellationRequested)
         {
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
             // TODO: add log
         }
+
+        return connection;
     }
 
     public static async Task<string> ConnectToAsync(HubConnection connection, string from, string fromId, string target, CancellationToken token)
     {
-        await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
+        connection = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
 
         var counter = 0;
         var targetId = "";
-        var requestId = Guid.NewGuid().ToString();
         var connected = false;
+        var requestId = Guid.NewGuid().ToString();
         var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
 
-        var subscription = connection.On(nameof(IHubContract.ConnectionEstablished) + requestId, 
+        var subscription = connection.On(nameof(PostingHub.ConnectionEstablished) + requestId, 
             (string senderId, string messageId) => {
                 if (messageId == requestId)
                 {
@@ -133,19 +135,19 @@ public class Post : BackgroundService
                 }
                 else
                 {
-                    throw new Exception("connection established failed.");
+                    throw new Exception("Failing to establish safe connection.");
                 }
         });
 
         do
         {
-            if(++counter % 10 == 0)
+            if (++counter % 10 == 0)
             {
-                var msg = $"struggling to connect to {target}, attempt {++counter}";
+                var msg = $"Struggling to connect to {target}, attempt {++counter}";
                 await connection.SendAsync(nameof(PostingHub.Log), from, requestId, msg).ConfigureAwait(false);
                 // TODO: add log
             }
-            await connection.SendAsync(nameof(IHubContract.ConnectRequest), from, fromId, requestId, target).ConfigureAwait(false);
+            await connection.SendAsync(nameof(PostingHub.ConnectRequest), from, fromId, requestId, target).ConfigureAwait(false);
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
         }
         while (!token.IsCancellationRequested && !connected);

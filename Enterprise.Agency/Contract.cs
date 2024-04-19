@@ -4,11 +4,11 @@ namespace Enterprise.Agency;
 
 public interface IAgencyContract : IHubContract
 {
-    Task<ManagerResponse> AgentsDiscoveryRequest(AgentsDossier dossier);
+    Task<ManagerResponse> AgentsRegistrationRequest(AgentsDossier dossier);
 }
 
 public record AgentsDossier(List<Curriculum> Agents, string From);
 
-public record ManagerResponse(bool Status);
+public record ManagerResponse(bool Status, List<Curriculum> Hired);
 
 

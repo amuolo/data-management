@@ -11,13 +11,13 @@
     <Authors>Muoland</Authors>
     <Description>The Muoland.Agency toolkit empowers developers to create robust scalable web applications with ease. By abstracting complex concurrency models and providing essential APIs, it enables seamless communication between components following the actor model.</Description>
     <PackageProjectUrl>https://github.com/amuolo/data-management</PackageProjectUrl>
-    <PackageIcon>robinx.png</PackageIcon>
+    <PackageIcon>Assets/img/robinx.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application</PackageTags>
-    <Version>1.0.1</Version>
+    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <ItemGroup>

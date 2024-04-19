@@ -4,65 +4,17 @@ using Microsoft.AspNetCore.SignalR.Client;
 
 namespace Enterprise.Agency;
 
-public class ManagerHub : MessageHub<IAgencyContract>
-{
-    public async Task<ManagerResponse> AgentsDiscoveryRequest(AgentsDossier dossier, Workplace state)
-    {
-        var hired = new List<Curriculum>();
-
-        if (dossier.Agents is not null)
-        {
-            var agents = dossier.Agents.Where(x => x is not null).ToList()!;
-
-            if (state.DossierByActor.TryGetValue(dossier.From, out var archive))
-            {
-                agents.ForEach(agent =>
-                {
-                    if (!archive.Any(x => x.AgentInfo.Name == agent.Name))
-                    {
-                        archive.Add((agent, DateTime.Now, true));
-                        hired.Add(agent);
-                    }
-                });
-            }
-            else
-            {
-                state.DossierByActor[dossier.From] = agents.Select(x => (x, DateTime.Now, true)).ToList();
-                hired = agents;
-            }
-        }
-        else
-        {
-            LogPost($"dossier agents found null.");
-        }
-
-        await Recruitment.RecruitAsync(hired, this, state);
-        return new ManagerResponse(true);
-    }
-
-    public async Task<ManagerResponse> AgentsDiscovery(string from, Workplace state)
-    {
-        var hired = new List<Curriculum>();
-
-        if (state.DossierByActor.TryGetValue(from, out var archive))
-        {
-            archive.ForEach(x =>
-            {
-                if (!x.Active)
-                    hired.Add(x.AgentInfo);
-                x.Active = true;
-                x.Time = DateTime.Now;
-            });
-        }
-
-        await Recruitment.RecruitAsync(hired, this, state);
-        return new ManagerResponse(true);
-    }
-}
-
 public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 {
-    private Task? DecommissionService { get; set; }
+    private Task? OffBoardingService { get; set; }
+
+    private Task? OnBoardingService { get; set; }
+
+    private SemaphoreSlim OnBoardingProcess { get; set; } = new(0, 1);
+
+    private ManagerResponse ManagerResponse { get; set; }
+
+    private Func<Task> PostAction { get; set; } = () => Task.CompletedTask;
 
     public Manager(IHubContext<PostingHub> hubContext, Workplace workplace) : base(hubContext, workplace)
     {
@@ -72,33 +24,25 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 
     protected override async Task ExecuteAsync(CancellationToken token)
     {
-        DecommissionService = DecommissionAsync(token);
+        OffBoardingService = OffBoardingAsync(token);
+        OnBoardingService = OnBoardingAsync(token);
 
-        await MessageHub.InitializeConnectionAsync(token, ManagerActionMessageReceived);
-
-        var registration = RegisterActionConnectRequest();
-
+        await MessageHub.InitializeConnectionAsync(token, ActionMessageReceived);
+        var onConnect = OnConnectRequest();
         var info = new Equipment(Me, MessageHub.Queue, MessageHub.Connection);
 
         await Post.StartMessageServiceAsync(info, token);
     }
 
-    protected IDisposable RegisterActionConnectRequest()
+    protected IDisposable OnConnectRequest()
     {
-        return MessageHub.Connection.On(nameof(IHubContract.ConnectRequest),
+        return MessageHub.Connection.On(nameof(PostingHub.ConnectRequest),
             async (string sender, string senderId, string requestId, string target) =>
             {
-                await RunAgentsDiscoveryAsync(nameof(IHubContract.ConnectRequest), sender);
+                await RunAgentsDiscoveryAsync(nameof(PostingHub.ConnectRequest), sender);
                 if (target == Me)
-                    await MessageHub.Connection.SendAsync(nameof(IHubContract.ConnectionEstablished), MessageHub.Id, senderId, requestId);
+                    PostAction = async () => await MessageHub.Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, MessageHub.Id, senderId, requestId);
             });  
-    }
-
-    protected async Task ManagerActionMessageReceived(string sender, string senderId, string message, string messageId, string? package)
-    {
-        await ActionMessageReceived(sender, senderId, message, messageId, package);
-        if (sender != Me)
-            await RunAgentsDiscoveryAsync(message, sender);
     }
 
     private async Task RunAgentsDiscoveryAsync(string message, string sender)
@@ -107,7 +51,9 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
         {
             try
             {
-                var managerResponse = await MessageHub.AgentsDiscovery(sender, state.State);
+                ManagerResponse = await MessageHub.AgentsDiscovery(sender, state.State);
+                OnBoardingProcess.Release();
+                await PostAction();
             }
             catch (Exception ex)
             {
@@ -117,10 +63,32 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
         .Start();
     }
 
-    protected async Task DecommissionAsync(CancellationToken token)
+    protected async Task OnBoardingAsync(CancellationToken token)
+    {
+        while (!token.IsCancellationRequested)
+        {
+            await OnBoardingProcess.WaitAsync(token);
+
+            try
+            {
+                foreach (var agent in ManagerResponse.Hired)
+                {
+                    await Post.ConnectToAsync(MessageHub.Connection, MessageHub.Me, MessageHub.Id, agent.Name, default);
+                }
+                ManagerResponse.Hired.Clear();
+            }
+            catch (Exception ex)
+            {
+                MessageHub.LogPost(ex.Message);
+            }
+        }
+    }
+
+
+    protected async Task OffBoardingAsync(CancellationToken token)
     {
         var state = Job.State.State;
-        var outerTimer = new PeriodicTimer(state.DecommissionerWaitingTime);
+        var outerTimer = new PeriodicTimer(state.OffBoardingWaitingTime);
 
         while (!token.IsCancellationRequested)
         {

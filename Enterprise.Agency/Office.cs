@@ -79,7 +79,7 @@ public class Office<IContract>() : MessageHub<IContract>
 
         PostWithResponse(
             Addresses.Central, 
-            office => office.AgentsDiscoveryRequest, 
+            office => office.AgentsRegistrationRequest, 
             new AgentsDossier(Agents, Me),
             (Action<ManagerResponse>)(response =>
             {

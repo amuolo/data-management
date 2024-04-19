@@ -214,11 +214,11 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
     private async Task FinalizeConnectionAsync(CancellationToken token)
     {
-        Connection.On(nameof(IHubContract.ConnectRequest),
+        Connection.On(nameof(PostingHub.ConnectRequest),
             async (string sender, string senderId, string requestId, string target) =>
             {
                 if (target == Me)
-                    await Connection.SendAsync(nameof(IHubContract.ConnectionEstablished), Id, senderId, requestId);
+                    await Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, Id, senderId, requestId);
             });
 
         Connection.On<string, string, string, string>(nameof(IHubContract.ReceiveResponse), ActionResponseReceived);

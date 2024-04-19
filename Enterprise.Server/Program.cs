@@ -14,7 +14,8 @@ var workplace = new Workplace("https://localhost:7158") with
 {
     AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],
     HireAgentsPeriod = TimeSpan.FromMinutes(30),
-    DecommissionerWaitingTime = TimeSpan.FromSeconds(10),
+    OnBoardingWaitingTime = TimeSpan.FromSeconds(1),
+    OffBoardingWaitingTime = TimeSpan.FromSeconds(1),
 };
 
 builder.Services.AddHostedService<Manager>()

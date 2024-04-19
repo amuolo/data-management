@@ -13,7 +13,9 @@ public record Workplace(string Url)
 
     public TimeSpan HireAgentsPeriod { get; set; } = TimeSpan.FromMinutes(30);
 
-    public TimeSpan DecommissionerWaitingTime { get; set; } = TimeSpan.FromSeconds(10);
+    public TimeSpan OnBoardingWaitingTime { get; set; } = TimeSpan.FromSeconds(1);
+
+    public TimeSpan OffBoardingWaitingTime { get; set; } = TimeSpan.FromSeconds(1);
 
     public Workplace() : this("") { }
 }

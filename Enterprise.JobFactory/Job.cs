@@ -58,10 +58,22 @@ public record Job<TState>()
         return this; 
     }
 
+    public Job<TState> WithStep(string name, Func<TState, Task> step)
+    {
+        Steps.Enqueue((name, step));
+        return this;
+    }
+
     public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, TResult> step) where TPrevious : TState
     { 
         Steps.Enqueue((name, step));
         return New<TState, TResult>(this); 
+    }
+
+    public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, Task<TResult>> step) where TPrevious : TState
+    {
+        Steps.Enqueue((name, step));
+        return New<TState, TResult>(this);
     }
 
     public Task<Job<TState>> Start(CancellationToken token = new())
@@ -80,10 +92,10 @@ public record Job<TState>()
 
                     if (!ok) throw new Exception("Issue with job dequeuing");
 
-                    await Execute(step.Name, step.Func).ConfigureAwait(false);
+                    await ExecuteAsync(step.Name, step.Func).ConfigureAwait(false);
 
                     foreach (var post in PostActions)
-                        await Execute(post.Name, post.Func).ConfigureAwait(false);
+                        await ExecuteAsync(post.Name, post.Func).ConfigureAwait(false);
 
                     if (Configuration.ShowProgress) Configuration.ProgressBarUpdate();
                 }
@@ -118,19 +130,46 @@ public record Job<TState>()
 
     protected ConcurrentQueue<(string Name, Delegate Func)> Steps { get; set; } = new();
 
-    protected async Task<bool> Execute(string name, Delegate func)
+    protected async Task<bool> ExecuteAsync(string name, Delegate func)
     {
-        Stopwatch timer = new();
+        var err = $"Failed Job execution: return type does not match with result of function invocation for step {name}.";
+        var methodInfo = func.GetMethodInfo();
+        var returnType = methodInfo.ReturnType;
+        var timer = new Stopwatch();
         CurrentStep = name;
         timer.Start();
 
-        var res = await Task.Run(() => func.GetMethodInfo().GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke());
-        if(func.GetMethodInfo().ReturnType != typeof(void)) State = (TState?)res;
+        // TODO: support case with different state types
+        if (returnType == typeof(Task))
+        {
+            var f = (Func<TState, Task>)func;
+            await f(State!);
+        }
+        else if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        {
+            var res = methodInfo.GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke();
+            if (res is null)
+                throw new Exception(err);
+            await (Task)res;
+            var result = res.GetType().GetProperty("Result")?.GetValue(res);
+            State = (TState?)result;
+        }
+        else if (returnType != typeof(void))
+        {
+            var f = (Func<TState, TState>)func;
+            State = f(State!);
+        }
+        else if (returnType == typeof(void))
+        {
+            var f = (Action<TState>)func;
+            f(State!);
+        }
 
         timer.Stop();
-        var log = $"{name} took {timer.ElapsedMilliseconds} ms";
-        Configuration.Logger?.Invoke(log);
-        Configuration.AsyncLogger?.Invoke(log);
+        var msg = $"{name} took {timer.ElapsedMilliseconds} ms";
+        Configuration.Logger?.Invoke(msg);
+        var log = Configuration.AsyncLogger?.Invoke(msg);
+        if (log is not null) await log;
         return true;
     }
 

@@ -53,7 +53,9 @@ public class Agent<TState, THub, IContract> : BackgroundService
             {
                 MessageHub.LogPost("Creating myself");
 
-                Job = await Job.WithStep(nameof(IHubContract.CreateRequest), async state =>
+                Job = await Job
+                    .WithOptions(o => o.WithLogs(MessageHub.LogPost))
+                    .WithStep(nameof(IHubContract.CreateRequest), async state =>
                 {
                     var init = create.Invoke(MessageHub, null);
                     if (init is not null) state.State = await (Task<TState>)init;
@@ -93,15 +95,20 @@ public class Agent<TState, THub, IContract> : BackgroundService
                                     (package is not null ? JsonConvert.DeserializeObject(package, p.ParameterType) : null)).ToArray();
 
                 var res = method.Invoke(MessageHub, parameters);
+                var returnType = method.ReturnType;
+                var err = $"Inconsistent return type found when agent {Me} processed {message}";
 
-                if (res is null) return;
-
-                if (method.ReturnType == typeof(Task))
+                // TODO: handle return types different than tasks
+                if (returnType == typeof(Task))
                 {
+                    if (res is null)
+                        throw new Exception(err);
                     await (Task)res;
                 }
-                else if (method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
+                else if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
                 {
+                    if (res is null)
+                        throw new Exception(err);
                     await (Task)res;
                     var result = res.GetType().GetProperty("Result")?.GetValue(res);
                     MessageHub.Queue.Enqueue(new Parcel(sender, senderId, result, message) 

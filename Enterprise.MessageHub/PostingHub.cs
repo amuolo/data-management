@@ -4,31 +4,32 @@ namespace Enterprise.MessageHub;
 
 public class PostingHub : Hub
 {
-    public Task Log(string sender, string senderId, string message)
+    public async Task Log(string sender, string senderId, string message)
     {
-        return Clients.All.SendAsync(nameof(IHubContract.ReceiveLog), sender, senderId, message);
+        await Clients.All.SendAsync(nameof(IHubContract.ReceiveLog), sender, senderId, message);
     }
 
-    public Task SendMessage(string sender, string senderId, string? receiverId, string message, string messageId, string? package)
+    public async Task SendMessage(string sender, string senderId, string? receiverId, string message, string messageId, string? package)
     {
         if (receiverId is not null)
-            return Clients.Client(receiverId).SendAsync(nameof(IHubContract.ReceiveMessage), sender, senderId, message, messageId, package);
+            await Clients.Client(receiverId).SendAsync(nameof(IHubContract.ReceiveMessage), sender, senderId, message, messageId, package);
         else
-            return Clients.All.SendAsync(nameof(IHubContract.ReceiveMessage), sender, senderId, message, messageId, package);
+            await Clients.All.SendAsync(nameof(IHubContract.ReceiveMessage), sender, senderId, message, messageId, package);
     }
 
-    public Task SendResponse(string sender, string senderId, string receiverId, string messageId, string response)
+    public async Task SendResponse(string sender, string senderId, string receiverId, string messageId, string response)
     {
-        return Clients.Client(receiverId).SendAsync(nameof(IHubContract.ReceiveResponse), sender, senderId, messageId, response);
+        await Clients.Client(receiverId).SendAsync(nameof(IHubContract.ReceiveResponse), sender, senderId, messageId, response);
     }
 
-    public Task ConnectRequest(string sender, string senderId, string requestId, string target)
+    public async Task ConnectRequest(string sender, string senderId, string requestId, string target)
     {
-        return Clients.All.SendAsync(nameof(IHubContract.ConnectRequest), sender, senderId, requestId, target);
+        await Clients.All.SendAsync(nameof(ConnectRequest), sender, senderId, requestId, target);
     }
 
-    public Task ConnectionEstablished(string senderId, string receiverId, string requestId)
+    public async Task ConnectionEstablished(string sender, string senderId, string receiverId, string requestId)
     {
-        return Clients.Client(receiverId).SendAsync(nameof(IHubContract.ConnectionEstablished) + requestId, senderId, requestId);
+        await Clients.Client(receiverId).SendAsync(nameof(ConnectionEstablished) + requestId, senderId, requestId);
     }
 }
+
