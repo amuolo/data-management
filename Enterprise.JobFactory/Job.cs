@@ -154,10 +154,15 @@ public record Job<TState>()
             var result = res.GetType().GetProperty("Result")?.GetValue(res);
             State = (TState?)result;
         }
-        else if (returnType != typeof(void))
+        else if (methodInfo.GetParameters().Any() && returnType != typeof(void))
         {
             var f = (Func<TState, TState>)func;
             State = f(State!);
+        }
+        else if (!methodInfo.GetParameters().Any() && returnType != typeof(void))
+        {
+            var f = (Func<TState>)func;
+            State = f();
         }
         else if (returnType == typeof(void))
         {
