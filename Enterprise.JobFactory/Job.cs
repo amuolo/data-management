@@ -64,13 +64,13 @@ public record Job<TState>()
         return this;
     }
 
-    public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, TResult> step) where TPrevious : TState
+    public Job<TResult> WithStep<TResult>(string name, Func<TState, TResult> step)
     { 
         Steps.Enqueue((name, step));
         return New<TState, TResult>(this); 
     }
 
-    public Job<TResult> WithStep<TPrevious, TResult>(string name, Func<TPrevious, Task<TResult>> step) where TPrevious : TState
+    public Job<TResult> WithStep<TResult>(string name, Func<TState, Task<TResult>> step)
     {
         Steps.Enqueue((name, step));
         return New<TState, TResult>(this);
