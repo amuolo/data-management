@@ -59,12 +59,11 @@
     <Copyright>GNU General Public License v3.0</Copyright>
     <PackageReleaseNotes>
 
-		19 Apr 2024 Release Note: Concurrency Model Package v1.0.2
+		21 Apr 2024 Release Note v1.0.3
 
-		Bug fix: Asynchronous message handling has been rectified! 
-		This necessitated a revamp of the manager recruitment process 
-		to sequentially process incoming messages, while guaranteeing 
-		the safe and automatic initiation of agents. 🚀
+		Several bug fixes and general performance improvements in the job factory engine. 🚀
+
+		<!-- 🚀 -->
 
 	</PackageReleaseNotes>
     <Product>Muoland.Agency</Product>
