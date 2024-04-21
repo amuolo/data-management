@@ -17,10 +17,10 @@ concurrent solutions using the actor concurrency model.
 ## Introduction
 
 The aim of this repo is to provide an infrastructure that allows developers to quickly setup a modern and scalable 
-web application based following the famous [Actor Model]("https://en.wikipedia.org/wiki/Actor_model").
+web application based following the famous [Actor Model](https://en.wikipedia.org/wiki/Actor_model).
 
 The application can be configured freely following your favourite tools and architecture, and depends almost solely 
-on the [SignalR]("https://en.wikipedia.org/wiki/SignalR") library.
+on the [SignalR](https://en.wikipedia.org/wiki/SignalR) library.
 
 In its essence, this repo intends to promote modularity and scalability, helping developers to build parallel 
 and distributed applications.
