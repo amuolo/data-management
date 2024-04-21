@@ -19,8 +19,8 @@ concurrent solutions using the actor concurrency model.
 The aim of this repo is to provide an infrastructure that allows developers to quickly setup a modern and scalable 
 web application based following the famous [Actor Model]("https://en.wikipedia.org/wiki/Actor_model").
 
-The application can be configured both following the WPF or the Blazor patterns, and relies strongly on the 
-[SignalR]("https://en.wikipedia.org/wiki/SignalR").
+The application can be configured freely following your favourite tools and architecture, and depends almost solely 
+on the [SignalR]("https://en.wikipedia.org/wiki/SignalR") library.
 
 In its essence, this repo intends to promote modularity and scalability, helping developers to build parallel 
 and distributed applications.
@@ -30,7 +30,7 @@ and distributed applications.
 > to exchange messages with any other actor asynchronously. 
 
 > SignalR is a real-time communication library for web applications, enabling bi-directional communication 
-> between servers and clients. It allows the exchange of messages and ensures a dynamic and responsibe interaction
+> between servers and clients. It allows the exchange of messages and ensures a dynamic and responsible interaction
 > in real-time applications.
 
 ## Theory
