@@ -27,13 +27,25 @@ public record Job : Job<Task>
 {
     public Job WithStep(string name, Action step)
     {
-        Steps.Enqueue((name, step));
+        Steps.Enqueue((name, step, null, null));
+        return this;
+    }
+
+    public Job WithStep(string name, Func<Task> step)
+    {
+        Steps.Enqueue((name, step, null, typeof(Task)));
         return this;
     }
 
     public Job<TResult> WithStep<TResult>(string name, Func<TResult> step)
     {
-        Steps.Enqueue((name, step));
+        Steps.Enqueue((name, step, null, typeof(TResult)));
+        return New<Task, TResult>(this);
+    }
+
+    public Job<TResult> WithStep<TResult>(string name, Func<Task<TResult>> step)
+    {
+        Steps.Enqueue((name, step, null, typeof(Task<TResult>)));
         return New<Task, TResult>(this);
     }
 
@@ -46,6 +58,8 @@ public record Job<TState>()
 
     public TState? State { get; set; }
 
+    private object? TmpState { get; set; }
+
     public Job<TState> Initialize(TState? state) => this with { State = state };
 
     public Job<TState> WithPostActions(string name, Action<TState> action) => this with { PostActions = PostActions.Add((name, action)) };
@@ -54,25 +68,37 @@ public record Job<TState>()
 
     public Job<TState> WithStep(string name, Action<TState> step) 
     {
-        Steps.Enqueue((name, step));
+        Steps.Enqueue((name, step, typeof(TState), null));
         return this; 
     }
 
     public Job<TState> WithStep(string name, Func<TState, Task> step)
     {
-        Steps.Enqueue((name, step));
+        Steps.Enqueue((name, step, typeof(TState), typeof(Task)));
+        return this;
+    }
+
+    public Job<TState> WithStep(string name, Func<TState, TState> step)
+    {
+        Steps.Enqueue((name, step, typeof(TState), typeof(TState)));
+        return this;
+    }
+
+    public Job<TState> WithStep(string name, Func<TState, Task<TState>> step)
+    {
+        Steps.Enqueue((name, step, typeof(TState), typeof(Task<TState>)));
         return this;
     }
 
     public Job<TResult> WithStep<TResult>(string name, Func<TState, TResult> step)
     { 
-        Steps.Enqueue((name, step));
+        Steps.Enqueue((name, step, typeof(TState), typeof(TResult)));
         return New<TState, TResult>(this); 
     }
 
     public Job<TResult> WithStep<TResult>(string name, Func<TState, Task<TResult>> step)
     {
-        Steps.Enqueue((name, step));
+        Steps.Enqueue((name, step, typeof(TState), typeof(Task<TResult>)));
         return New<TState, TResult>(this);
     }
 
@@ -92,10 +118,10 @@ public record Job<TState>()
 
                     if (!ok) throw new Exception("Issue with job dequeuing");
 
-                    await ExecuteAsync(step.Name, step.Func).ConfigureAwait(false);
+                    await ExecuteAsync(step.Name, step.Func, step.TOrigin, step.TDestination).ConfigureAwait(false);
 
                     foreach (var post in PostActions)
-                        await ExecuteAsync(post.Name, post.Func).ConfigureAwait(false);
+                        await ExecuteAsync(post.Name, post.Func, typeof(TState), null).ConfigureAwait(false);
 
                     if (Configuration.ShowProgress) Configuration.ProgressBarUpdate();
                 }
@@ -128,46 +154,101 @@ public record Job<TState>()
 
     protected ImmutableList<(string Name, Delegate Func)> PostActions { get; set; } = ImmutableList<(string, Delegate)>.Empty;
 
-    protected ConcurrentQueue<(string Name, Delegate Func)> Steps { get; set; } = new();
+    protected ConcurrentQueue<(string Name, Delegate Func, Type? TOrigin, Type? TDestination)> Steps { get; set; } = new();
 
-    protected async Task<bool> ExecuteAsync(string name, Delegate func)
+    protected async Task<bool> ExecuteAsync(string name, Delegate func, Type? TOrigin, Type? TDestination)
     {
         var err = $"Failed Job execution: return type does not match with result of function invocation for step {name}.";
-        var methodInfo = func.GetMethodInfo();
-        var returnType = methodInfo.ReturnType;
         var timer = new Stopwatch();
         CurrentStep = name;
         timer.Start();
 
-        // TODO: support case with different state types
-        if (returnType == typeof(Task))
+        var isGenericTask = (TDestination?.IsGenericType?? false) && TDestination.GetGenericTypeDefinition() == typeof(Task<>);
+
+        if (TOrigin is null)
         {
-            var f = (Func<TState, Task>)func;
-            await f(State!);
+            if (TDestination is null)
+            {
+                ((Action)func)();
+            }
+            else if (TDestination == typeof(Task))
+            {
+                await ((Func<Task>)func)();
+            }
+            else if (TDestination == typeof(TState))
+            {
+                State = ((Func<TState>)func)();
+            }
+            else if (TDestination == typeof(Task<TState>))
+            {
+                State = await ((Func<Task<TState>>)func)();
+            }
+            else
+            {
+                TmpState = func.DynamicInvoke();
+                if (isGenericTask)
+                {
+                    if (TmpState is null)
+                        throw new Exception(err);
+                    await (Task)TmpState;
+                    TmpState = TmpState.GetType().GetProperty("Result")?.GetValue(TmpState);
+                }
+            }
         }
-        else if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+        else 
         {
-            var res = methodInfo.GetParameters().Any() ? func.DynamicInvoke(State) : func.DynamicInvoke();
-            if (res is null)
-                throw new Exception(err);
-            await (Task)res;
-            var result = res.GetType().GetProperty("Result")?.GetValue(res);
-            State = (TState?)result;
-        }
-        else if (methodInfo.GetParameters().Any() && returnType != typeof(void))
-        {
-            var f = (Func<TState, TState>)func;
-            State = f(State!);
-        }
-        else if (!methodInfo.GetParameters().Any() && returnType != typeof(void))
-        {
-            var f = (Func<TState>)func;
-            State = f();
-        }
-        else if (returnType == typeof(void))
-        {
-            var f = (Action<TState>)func;
-            f(State!);
+            if (TDestination is null)
+            {
+                if (TOrigin == typeof(TState))
+                    ((Action<TState>)func)(State);
+                else
+                    func.DynamicInvoke(TmpState);
+            }
+            else if (TDestination == typeof(Task))
+            {
+                if (TOrigin == typeof(TState))
+                    await ((Func<TState, Task>)func)(State);
+                else
+                {
+                    var r = func.DynamicInvoke(TmpState);
+                    if (r is null)
+                        throw new Exception(err);
+                    await (Task)r;
+                }
+            }
+            else if (TDestination == typeof(TState))
+            {
+                if (TOrigin == typeof(TState))
+                    State = ((Func<TState, TState>)func)(State);
+                else
+                    State = (TState?)func.DynamicInvoke(TmpState);
+            }
+            else if (TDestination == typeof(Task<TState>))
+            {
+                if (TOrigin == typeof(TState))
+                    State = await ((Func<TState, Task<TState>>)func)(State);
+                else
+                {
+                    var r = (Task<TState?>?)func.DynamicInvoke(TmpState);
+                    if (r is null)
+                        throw new Exception(err);
+                    State = await r;
+                }
+            }
+            else
+            {
+                if (TOrigin == typeof(TState))
+                    TmpState = func.DynamicInvoke(State);
+                else
+                    TmpState = func.DynamicInvoke(TmpState);
+                if (isGenericTask)
+                {
+                    if (TmpState is null)
+                        throw new Exception(err);
+                    await (Task)TmpState;
+                    TmpState = TmpState.GetType().GetProperty("Result")?.GetValue(TmpState);
+                }
+            }
         }
 
         timer.Stop();
@@ -181,6 +262,7 @@ public record Job<TState>()
     protected static Job<TResult> New<TOrigin, TResult>(Job<TOrigin> job)
         => new Job<TResult>() with
         {
+            TmpState = job.State,
             Configuration = job.Configuration,
             CurrentStep = job.CurrentStep,
             PostActions = job.PostActions,

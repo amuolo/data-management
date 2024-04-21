@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application</PackageTags>
+    <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application, parallel, concurrent</PackageTags>
     <Version>1.0.3</Version>
   </PropertyGroup>
 
