@@ -17,7 +17,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application, parallel, concurrent</PackageTags>
-    <Version>1.0.3</Version>
+    <Version>1.0.4</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -59,9 +59,9 @@
     <Copyright>GNU General Public License v3.0</Copyright>
     <PackageReleaseNotes>
 
-		21 Apr 2024 Release Note v1.0.3
+		21 Apr 2024 Release Note v1.0.4
 
-		Several bug fixes and general performance improvements in the job factory engine. 🚀
+		Some fixes in the readme file. 🚀
 
 		<!-- 🚀 -->
 
