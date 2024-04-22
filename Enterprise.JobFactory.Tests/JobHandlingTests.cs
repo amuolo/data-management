@@ -51,10 +51,12 @@ public class TestsJobMachine
             .WithStep($"s4", async n3 => { await Task.Delay(10); return n3; })
             .WithStep($"s5", async n4 => { await Task.Delay(10); return $"{n4}"; })
             .WithStep($"s6", n5 => "." + n5)
+            .WithStep($"s7", _ => Task.Delay(10))
+            .WithStep($"s8", async _ => await Task.Delay(10))
             .Start();
 
         Assert.AreEqual(".9.9", r.State);
-        Assert.AreEqual(6, Logs.Count);
+        Assert.AreEqual(8, Logs.Count);
     }
 
     [TestMethod]
