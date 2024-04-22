@@ -11,7 +11,7 @@ concurrent solutions using the actor concurrency model.
   * [Theory](#theory)
       * [Agency](#agency)
       * [Message Hub](#message-hub)
-      * [Job](#job)
+      * [Job Factory](#job-factory)
   * [Getting started](#getting-started)
 
 ## Introduction
@@ -63,7 +63,7 @@ Together, the class, the service, the server hub, and the configuration methods,
 The developer can freely decide when to rely on the request-response pattern and when to simply broadcast streams of events (messages) to all the connected clients.
 This flexibility was from the beginning enforced on the design of this library to broaden the range of applications and facilitate its adoption.
 
-### Job
+### Job Factory
 
 The project named "Job" provides an abstraction layer to manage a state undergoing several updates in a step-by-step approach. 
 Job is thread-safe and guarantees that each step is executed following the simple first-in-first-out (FIFO) rule.
