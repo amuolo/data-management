@@ -18,15 +18,13 @@ public record JobConfiguration()
 
     /* Internal */
 
-    internal Action<string> Logger { get; set; } = delegate { };
+    internal Action<string>? Logger { get; set; }
 
-    internal Func<string, Task> AsyncLogger { get; set; } = _ => Task.CompletedTask;
-
-    internal bool ShowProgress => ProgressBarEnable != null;
+    internal Func<string, Task>? AsyncLogger { get; set; }
 
     internal Action<int>? ProgressBarEnable { get; set; }
 
-    internal Action ProgressBarUpdate { get; set; } = delegate() { };
+    internal Action? ProgressBarUpdate { get; set; }
 
-    internal Action ProgressBarClose { get; set; } = delegate() { };
+    internal Action? ProgressBarClose { get; set; }
 }

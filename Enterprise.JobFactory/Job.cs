@@ -110,7 +110,8 @@ public record Job<TState>()
             {
                 await Semaphore.WaitAsync(token).ConfigureAwait(false);
 
-                if (Configuration.ShowProgress) Configuration.ProgressBarEnable?.DynamicInvoke(Steps.Count);
+                if (Configuration.ProgressBarEnable is not null) 
+                    Configuration.ProgressBarEnable(Steps.Count);
 
                 while (!Steps.IsEmpty && !token.IsCancellationRequested)
                 {
@@ -123,12 +124,12 @@ public record Job<TState>()
                     foreach (var post in PostActions)
                         await ExecuteAsync(post.Name, post.Func, typeof(TState), null).ConfigureAwait(false);
 
-                    if (Configuration.ShowProgress) Configuration.ProgressBarUpdate();
+                    if (Configuration.ProgressBarUpdate is not null) Configuration.ProgressBarUpdate();
                 }
             }
             catch (Exception ex)
             {
-                var msg = $"Exception caught when executing '{CurrentStep}': {ex.InnerException?.Message?? ex.Message}";
+                var msg = $"Exception caught when executing '{CurrentStep}': {ex.Message}: {ex.InnerException?.Message?? ""}";
                 if (Configuration.Logger is not null)
                     Configuration.Logger.Invoke(msg);
                 if (Configuration.AsyncLogger is not null)
@@ -138,7 +139,7 @@ public record Job<TState>()
             }
             finally
             {
-                if (Configuration.ShowProgress) Configuration.ProgressBarClose();
+                if (Configuration.ProgressBarClose is not null) Configuration.ProgressBarClose();
                 Semaphore.Release();
             }
 

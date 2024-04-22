@@ -86,6 +86,21 @@ public class TestsJobMachine
             .Start();
 
         Assert.AreEqual(1, Logs.Count);
-        Assert.AreEqual("Exception caught when executing 's1': bla", Logs[0]);
+        Assert.AreEqual("Exception caught when executing 's1': Exception has been thrown by the target of an invocation.: bla", Logs[0]);
+
+        try
+        {
+            r = await JobFactory.New()
+                .WithStep("s1", _ => { throw new Exception("bla"); return 1; })
+                .WithStep("s2", _ => 2)
+                .Start();
+        }
+        catch (Exception e)
+        {
+            Logs.Add(e.Message);
+        }
+
+        Assert.AreEqual(2, Logs.Count);
+        Assert.AreEqual("Exception has been thrown by the target of an invocation.", Logs[1]);
     }
 }
