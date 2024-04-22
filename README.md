@@ -113,7 +113,7 @@ and here a draft of the IDataContract interface
      public interface IDataContract : IAgencyContract
      {
          /* in */
-         Task<List<string>> ReadRequest();
+         Task<MyData> ReadRequest();
 
          Task ImportRequest(string fileName);
 
@@ -127,7 +127,7 @@ and here a draft of the IDataContract interface
 
 with the example of posting API from one client office
 
-     Office.Post(agent => agent.ImportRequest, GetSelectedFile());
+     office.Post(agent => agent.ImportRequest, fileName);
 
 ---
 
