@@ -74,6 +74,9 @@ for the given operation to be started.
 
 This is a typical configuration of the Program: 
 
+     using Enterprise.Agency;
+     using Enterprise.MessageHub;
+
      builder.Services.AddSignalR();
 
      var workplace = new Workplace("https://localhost:7158") with

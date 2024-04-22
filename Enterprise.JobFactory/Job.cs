@@ -129,10 +129,12 @@ public record Job<TState>()
             catch (Exception ex)
             {
                 var msg = $"Exception caught when executing '{CurrentStep}': {ex.InnerException?.Message?? ex.Message}";
-                if(Configuration.Logger is not null)
+                if (Configuration.Logger is not null)
                     Configuration.Logger.Invoke(msg);
-                if(Configuration.AsyncLogger is not null)
+                if (Configuration.AsyncLogger is not null)
                     await Configuration.AsyncLogger.Invoke(msg).ConfigureAwait(false);
+                if (Configuration.Logger is null && Configuration.AsyncLogger is null)
+                    throw;
             }
             finally
             {

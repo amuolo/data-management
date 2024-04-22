@@ -75,4 +75,17 @@ public class TestsJobMachine
         Assert.AreEqual(3, nSteps);
         Assert.AreEqual(1, nClose);
     }
+
+    [TestMethod]
+    public async Task ThrowWithLogger()
+    {
+        var r = await JobFactory.New()
+            .WithOptions(o => o.WithLogs(Logger))
+            .WithStep("s1", _ => { throw new Exception("bla"); return 1; })
+            .WithStep("s2", _ => 2)
+            .Start();
+
+        Assert.AreEqual(1, Logs.Count);
+        Assert.AreEqual("Exception caught when executing 's1': bla", Logs[0]);
+    }
 }
