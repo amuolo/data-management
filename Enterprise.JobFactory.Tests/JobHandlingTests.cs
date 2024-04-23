@@ -9,6 +9,10 @@ public class TestsJobMachine
 
     Action<string> Logger => s => Logs.Add(s);
 
+    public record MyTypeA(int X, int Y);
+
+    public record MyTypeB(double T, double W);
+
     [TestMethod]
     public async Task SimpleStateManipulations()
     {
@@ -145,5 +149,21 @@ public class TestsJobMachine
         Assert.AreEqual(-1, nTot);
         Assert.AreEqual(0, nSteps);
         Assert.AreEqual(-1, nClose);
+    }
+
+    [TestMethod]
+    public async Task ObjectManipulation()
+    {
+        var r = await JobFactory.New()
+            .WithStep($"s1", async () => await Task.Delay(5))
+            .WithStep($"s2", async () => { await Task.Delay(5); return new MyTypeA(1, 1); })
+            .WithStep($"s3", a => a.X)
+            .WithStep($"s4", x => new MyTypeA(x, 2))
+            .WithStep($"s5", x => (double)x.Y)
+            .WithStep($"s6", async y => { await Task.Delay(5); return new MyTypeB(0.19, y); })
+            .WithStep($"s7", b => new MyTypeB(b.W, b.T))
+            .Start();
+
+        Assert.AreEqual(new MyTypeB(2, 0.19), r.State);
     }
 }
