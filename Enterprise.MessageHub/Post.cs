@@ -27,6 +27,7 @@ public class Post : BackgroundService
         while (!token.IsCancellationRequested)
         {
             await store.Semaphore.WaitAsync(token).ConfigureAwait(false);
+            if (token.IsCancellationRequested) break;
 
             while (!store.IsEmpty && !token.IsCancellationRequested)
             {

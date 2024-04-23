@@ -69,6 +69,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
         while (!token.IsCancellationRequested)
         {
             await OnBoardingProcess.WaitAsync(token);
+            if (token.IsCancellationRequested) break;
 
             try
             {
@@ -83,13 +84,10 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
                     else
                     {
                         foreach (var agent in task.Response.Hired)
-                        {
                             await Post.ConnectToAsync(MessageHub.Connection, MessageHub.Me, agent.Name, default);
-                        }
                         task.Response.Hired.Clear();
-                    }
-
-                    await task.PostAction();
+                        await task.PostAction();
+                    }                   
                 }
             }
             catch (Exception ex)
