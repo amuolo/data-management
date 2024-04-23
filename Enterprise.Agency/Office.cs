@@ -118,4 +118,14 @@ public class Office<IContract>() : MessageHub<IContract>
     }
 
     public Task GetRunningTask() => Task.WhenAll(PostTask, ConnectionTask);
+
+    public async Task WaitAwakeningAsync(CancellationToken cancellation = new())
+    {
+        await MessageHub.Post.EstablishConnectionAsync(Connection, cancellation);
+    }
+
+    public async Task ConnectToAsync(string target, CancellationToken cancellation = new())
+    {
+        await MessageHub.Post.ConnectToAsync(Connection, Me, target, cancellation);
+    }
 }

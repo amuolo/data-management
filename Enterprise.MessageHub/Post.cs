@@ -8,22 +8,6 @@ public class Post : BackgroundService
 {
     private Equipment Equipment { get; set; }
 
-    public static async Task<string> GetIdAsync(HubConnection connection, CancellationToken token)
-    {
-        if (connection is null)
-        { 
-            // TODO: add log
-            throw new ArgumentNullException(nameof(connection));
-        }
-        else if (connection.ConnectionId is null)
-        {
-            while(connection.ConnectionId is null)
-                await EstablishConnectionAsync(connection, token);
-        }
-            
-        return connection.ConnectionId;
-    }
-
     public Post(Equipment equipment)
     {
         Equipment = equipment;
@@ -43,7 +27,6 @@ public class Post : BackgroundService
         while (!token.IsCancellationRequested)
         {
             await store.Semaphore.WaitAsync(token).ConfigureAwait(false);
-            await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
 
             while (!store.IsEmpty && !token.IsCancellationRequested)
             {
@@ -51,7 +34,7 @@ public class Post : BackgroundService
                 try
                 {
                     var ok = store.TryPeek(out var parcel);
-                    var id = await GetIdAsync(connection, token);
+                    var id = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
 
                     if (!ok || parcel is null)
                     {
@@ -61,8 +44,8 @@ public class Post : BackgroundService
                     {
                         LogPost(info, $"{parcel.Type} {parcel.Message}");
                         var target = parcel.Target?.ToString();
-                        var targetId = target is null ? null : await ConnectToAsync(connection, me, id, target, token).ConfigureAwait(false);
-                        if (targetId is null) await ConnectToAsync(connection, me, id, Addresses.Central, token).ConfigureAwait(false);
+                        var targetId = target is null ? null : await ConnectToAsync(connection, me, target, token).ConfigureAwait(false);
+                        if (targetId is null) await ConnectToAsync(connection, me, Addresses.Central, token).ConfigureAwait(false);
                         var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;      
                         await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Message, parcel.Id, package).ConfigureAwait(false);
                         status = true;
@@ -71,14 +54,14 @@ public class Post : BackgroundService
                     {
                         LogPost(info, $"{parcel.Type} {parcel.Message}");
                         var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;
-                        await ConnectToAsync(connection, me, id, Addresses.Central, token).ConfigureAwait(false);
+                        await ConnectToAsync(connection, me, Addresses.Central, token).ConfigureAwait(false);
                         await connection.SendAsync(parcel.Type, me, id, parcel.TargetId, parcel.Id, package).ConfigureAwait(false);
                         status = true;
                     }
                     else if (parcel.Type == nameof(PostingHub.Log))
                     {
                         if(me != Addresses.Logger)
-                            await ConnectToAsync(connection, me, id, Addresses.Logger, token).ConfigureAwait(false);
+                            await ConnectToAsync(connection, me, Addresses.Logger, token).ConfigureAwait(false);
                         await connection.SendAsync(nameof(PostingHub.Log), me, id, parcel.Message).ConfigureAwait(false);
                         status = true;
                     }
@@ -102,22 +85,23 @@ public class Post : BackgroundService
     public static void LogPost(Equipment info, string msg)
         => info.SmartStore.Enqueue(new Parcel(default, default, default, msg) with { Type = nameof(PostingHub.Log) });
 
-    public static async Task<HubConnection> EstablishConnectionAsync(HubConnection connection, CancellationToken token)
+    public static async Task<string> EstablishConnectionAsync(HubConnection connection, CancellationToken token)
     {
-        var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
-
-        while (connection.State != HubConnectionState.Connected && !token.IsCancellationRequested)
+        using (var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod))
         {
-            await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
-            // TODO: add log
+            while ((connection is null || connection.State != HubConnectionState.Connected || connection.ConnectionId is null) && !token.IsCancellationRequested)
+            {
+                await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
+                // TODO: add log
+            }
         }
 
-        return connection;
+        return connection!.ConnectionId!;
     }
 
-    public static async Task<string> ConnectToAsync(HubConnection connection, string from, string fromId, string target, CancellationToken token)
+    public static async Task<string> ConnectToAsync(HubConnection connection, string from, string target, CancellationToken token)
     {
-        connection = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
+        var id = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
 
         var counter = 0;
         var targetId = "";
@@ -147,7 +131,7 @@ public class Post : BackgroundService
                 await connection.SendAsync(nameof(PostingHub.Log), from, requestId, msg).ConfigureAwait(false);
                 // TODO: add log
             }
-            await connection.SendAsync(nameof(PostingHub.ConnectRequest), from, fromId, requestId, target).ConfigureAwait(false);
+            await connection.SendAsync(nameof(PostingHub.ConnectRequest), from, id, requestId, target).ConfigureAwait(false);
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
         }
         while (!token.IsCancellationRequested && !connected);

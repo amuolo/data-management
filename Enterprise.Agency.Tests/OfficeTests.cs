@@ -56,6 +56,13 @@ public class OfficeTests
         var office2 = Office<IContractExample2>.Create(TestFramework.Url)
                         .Run();
 
+        await logger.WaitAwakeningAsync();
+        await office1.WaitAwakeningAsync();
+        await office2.WaitAwakeningAsync();
+
+        await office2.ConnectToAsync(office1.Me);
+        await office2.ConnectToAsync(logger.Me);
+
         office2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
 
         await semaphore.WaitAsync();

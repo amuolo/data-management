@@ -16,7 +16,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
     public HubConnection Connection { get; protected set; }
 
-    public string Id => Connection.ConnectionId?? throw new ArgumentNullException(nameof(HubConnection));
+    public string Id => Connection.ConnectionId?? "";
 
     public string Me { get; set; }
 
@@ -254,6 +254,6 @@ public class MessageHub<IContract> where IContract : class, IHubContract
                 await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
             }
             while (Connection.State != HubConnectionState.Connected && !token.IsCancellationRequested);
-        }        
+        }
     }
 }
