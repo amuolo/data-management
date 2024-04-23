@@ -97,7 +97,7 @@ Here below is how to configure one office on the WPF client side:
                               .Register(agent => agent.Display, Logger)
                               .AddAgent<Model, DataHub, IDataContract>().Run();
 
-here the configuration of a different office with logging capabilities on a different client
+and here the configuration of a different office with logging capabilities on a different client
 
      var office = Office<IAgencyContract>.Create(NavManager.BaseUri)
                                          .ReceiveLogs((sender, senderId, message) =>
@@ -108,7 +108,17 @@ here the configuration of a different office with logging capabilities on a diff
                                          })
                                          .Run();
 
-and here a draft of the IDataContract interface
+From the Program configuration we learn there is going to be one agent (actor) deployed when needed. 
+This is a simple data agent owning some 'Model' and performing some operation, e.g. import, update, deletion.
+Moreover, from the API we learn that the first office will be using this agent, that is, the client 
+defining this office will eventually need to access the data Model. 
+
+Within this framework, the team responsible of architecting the data agent would need to set up 
+both the contract and the hub. While the former defines all possible incoming or outgoing requests
+that this agent can handle, the latter provides the corresponding methods that will be called 
+automatically when each given request is processed. 
+
+An example of the IDataContract interface is the following:
 
      public interface IDataContract : IAgencyContract
      {
@@ -125,7 +135,54 @@ and here a draft of the IDataContract interface
          Task Display(string message);
      }
 
-with the example of posting API from one client office
+whereas the corresponding DataHub reads
+
+     public class DataHub : MessageHub<IDataContract>
+     {
+         public async Task<Model> CreateRequest(Model model)
+         {
+            await model.Database.ReadAllAsync();
+            return model;
+         }
+
+         public async Task<List<string>> ReadRequest(Model model)
+         {
+            return model.GetPrintable();
+         }
+
+         public async Task ImportRequest(string fileName, Model model)
+         {
+             if (fileName is null || fileName is "")
+             {
+                Post(agent => agent.Display, $"Cannot process null or empty fileName");
+                return;
+             }
+
+             var dirInfo = new DirectoryInfo(".");
+             var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
+             var file = files.FirstOrDefault(x => x.FullName.Contains(fileName));
+
+             Post(agent => agent.ShowProgress, 1d/3);
+
+             model.Update(DataOperators.Import(file));
+
+             Post(agent => agent.Display, $"File {fileName} imported");
+             Post(agent => agent.ShowProgress, 2d/3);
+
+             model.Process();
+
+             Post(agent => agent.Display, $"Data has been processed");
+             Post(agent => agent.ShowProgress, 3d/3);
+             Post(agent => agent.DataChangedEvent);
+         }
+     }
+
+Note the usage of outgoing messages 'ShowProgress', 'Display', and 'DataChangedEvent'
+to signal the state of the process and any eventual change on the data. 
+Clients can subscribe to these messages providing the corresponding handler.
+
+From the client side the kick off of an Import Request is achievable with the following 
+simple API:
 
      office.Post(agent => agent.ImportRequest, fileName);
 
