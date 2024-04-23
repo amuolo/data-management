@@ -1,6 +1,7 @@
 ﻿using Enterprise.MessageHub;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.AspNetCore.SignalR.Client;
+using System.Collections.Concurrent;
 
 namespace Enterprise.Agency;
 
@@ -12,9 +13,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 
     private SemaphoreSlim OnBoardingProcess { get; set; } = new(0, 1);
 
-    private ManagerResponse ManagerResponse { get; set; }
-
-    private Func<Task> PostAction { get; set; } = () => Task.CompletedTask;
+    private ConcurrentQueue<(ManagerResponse Response, Func<Task> PostAction)> Tasks { get; set; } = [];
 
     public Manager(IHubContext<PostingHub> hubContext, Workplace workplace) : base(hubContext, workplace)
     {
@@ -39,21 +38,23 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
         return MessageHub.Connection.On(nameof(PostingHub.ConnectRequest),
             async (string sender, string senderId, string requestId, string target) =>
             {
-                await RunAgentsDiscoveryAsync(nameof(PostingHub.ConnectRequest), sender);
-                if (target == Me)
-                    PostAction = async () => await MessageHub.Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, MessageHub.Id, senderId, requestId);
+                Func<Task> postAction = target == Me 
+                    ? async () => await MessageHub.Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, MessageHub.Id, senderId, requestId) 
+                    : () => Task.CompletedTask;
+
+                await RunAgentsDiscoveryAsync(nameof(PostingHub.ConnectRequest), sender, postAction);
             });  
     }
 
-    private async Task RunAgentsDiscoveryAsync(string message, string sender)
+    private async Task RunAgentsDiscoveryAsync(string message, string sender, Func<Task> postAction)
     {
         await Job.WithStep($"{message}", async state =>
         {
             try
             {
-                ManagerResponse = await MessageHub.AgentsDiscovery(sender, state.State);
-                OnBoardingProcess.Release();
-                await PostAction();
+                Tasks.Enqueue((await MessageHub.AgentsDiscovery(sender, state.State), postAction));
+                if(OnBoardingProcess.CurrentCount == 0)
+                    OnBoardingProcess.Release();
             }
             catch (Exception ex)
             {
@@ -71,11 +72,25 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 
             try
             {
-                foreach (var agent in ManagerResponse.Hired)
+                while (!Tasks.IsEmpty)
                 {
-                    await Post.ConnectToAsync(MessageHub.Connection, MessageHub.Me, MessageHub.Id, agent.Name, default);
+                    var ok = Tasks.TryDequeue(out var task);
+
+                    if (!ok)
+                    {
+                        MessageHub.LogPost("Issue with Tasks dequeuing");
+                    }
+                    else
+                    {
+                        foreach (var agent in task.Response.Hired)
+                        {
+                            await Post.ConnectToAsync(MessageHub.Connection, MessageHub.Me, MessageHub.Id, agent.Name, default);
+                        }
+                        task.Response.Hired.Clear();
+                    }
+
+                    await task.PostAction();
                 }
-                ManagerResponse.Hired.Clear();
             }
             catch (Exception ex)
             {
