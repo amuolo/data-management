@@ -126,7 +126,7 @@ public class Office<IContract>() : MessageHub<IContract>
 
     public Task GetRunningTask() => Task.WhenAll(PostTask, ConnectionTask);
 
-    public async Task WaitAwakeningAsync(CancellationToken cancellation = new())
+    public async Task EstablishConnectionAsync(CancellationToken cancellation = new())
     {
         await MessageHub.Post.EstablishConnectionAsync(Connection, cancellation);
     }
