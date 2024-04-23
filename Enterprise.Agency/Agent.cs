@@ -85,6 +85,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
         }
         else if (MethodsByName.TryGetValue(message, out var method))
         {
+            // TODO: consider re-using the office registration pattern instead of inventing a new one here
             await CreateAsync();
             MessageHub.LogPost($"processing {message}");
 

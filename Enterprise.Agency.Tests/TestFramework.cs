@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Enterprise.Agency.Tests;
 
-public static class TestFrameworkSetup
+public static class TestFramework
 {
     public const string Url = "https://localhost:7158";
 

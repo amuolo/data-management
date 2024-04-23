@@ -4,6 +4,7 @@ using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Reflection.Metadata.Ecma335;
 
 namespace Enterprise.MessageHub;
 
@@ -39,13 +40,11 @@ public class MessageHub<IContract> where IContract : class, IHubContract
     protected MessageHub() 
     {
         Me = GetType().ExtractName();
-        ActionMessageReceived = StandardActionMessageReceivedAsync;
     }
 
     public MessageHub(string baseUrl)
     {
         Me = GetType().ExtractName();
-        ActionMessageReceived = StandardActionMessageReceivedAsync;
         Connection = new HubConnectionBuilder().WithUrl(baseUrl + Addresses.SignalR).WithAutomaticReconnect().Build();
     }
 
@@ -146,17 +145,18 @@ public class MessageHub<IContract> where IContract : class, IHubContract
     /**********************
             Actions 
      **********************/
-    public Action<string, string, string, string, string?> ActionMessageReceived { get; set; }
-
-    protected void StandardActionMessageReceivedAsync(string sender, string senderId, string message, string messageId, string? package)
+    protected async Task StandardActionMessageReceivedAsync(string sender, string senderId, string message, string messageId, string? package)
     {
         if (!OperationByPredicate.TryGetValue(message, out var operation)) return;
 
         LogPost($"processing {message}");
+        object? r;
 
+        // TODO: improve this type checking mechanism
+        
         if (operation.Type is null || !operation.Action.GetMethodInfo().GetParameters().Any())
         {
-            operation.Action.DynamicInvoke();
+            r = operation.Action.DynamicInvoke();
         }
         else
         {
@@ -174,7 +174,24 @@ public class MessageHub<IContract> where IContract : class, IHubContract
                 return;
             }
 
-            operation.Action.DynamicInvoke(item);
+            r = operation.Action.DynamicInvoke(item);
+        }
+
+        var returnType = operation.Action.Method.ReturnType;
+        if (returnType != typeof(void) || returnType != typeof(Task))
+        {
+            if(r is null)
+            {
+                LogPost($"Warning: null result found for {message}");
+                return;
+            }
+            if (returnType.IsGenericType && returnType.GetGenericTypeDefinition() == typeof(Task<>))
+            {
+                await (Task)r;
+                r = r.GetType().GetProperty("Result")?.GetValue(r);
+            }
+            Queue.Enqueue(new Parcel(sender, senderId, r, message)
+                with { Type = nameof(PostingHub.SendResponse), Id = messageId });
         }
     }
 
@@ -194,20 +211,13 @@ public class MessageHub<IContract> where IContract : class, IHubContract
        Initialize Connection 
      *************************/
     public async Task InitializeConnectionAsync(CancellationToken token)
-        => await InitializeConnectionAsync(token, ActionMessageReceived);
+        => await InitializeConnectionAsync(token, StandardActionMessageReceivedAsync);
 
-    public async Task InitializeConnectionAsync(CancellationToken token, Action<string, string, string, string, string?> actionMessageReceived)
-    {
-        Connection.On(nameof(IHubContract.ReceiveMessage), actionMessageReceived);
-
-        await FinalizeConnectionAsync(token);
-    }
-
-    public async Task InitializeConnectionAsync(CancellationToken token, Func<string, string, string, string, string?, Task> actionMessageReceived)
+    public async Task InitializeConnectionAsync(CancellationToken token, Func<string, string, string, string, string?, Task> actionMessageReceivedAsync)
     {
         Connection.On<string, string, string, string, string?>(nameof(IHubContract.ReceiveMessage),
             async (sender, senderId, message, messageId, package) =>
-                await actionMessageReceived(sender, senderId, message, messageId, package));
+                await actionMessageReceivedAsync(sender, senderId, message, messageId, package));
 
         await FinalizeConnectionAsync(token);
     }

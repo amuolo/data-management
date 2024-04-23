@@ -43,20 +43,47 @@ public class Office<IContract>() : MessageHub<IContract>
         OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); 
         return this; 
     }
+
     public Office<IContract> Register(Expression<Func<IContract, Func<Task>>> predicate, Action action) 
     { 
         OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); 
         return this; 
     }
+
     public Office<IContract> Register<TReceived>(Expression<Func<IContract, Action<TReceived>>> predicate, Action<TReceived> action) 
     { 
         OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); 
         return this; 
     }
+
     public Office<IContract> Register<TReceived>(Expression<Func<IContract, Func<TReceived, Task>>> predicate, Action<TReceived> action) 
     { 
         OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); 
         return this; 
+    }
+
+    public Office<IContract> Register<TResponse>(Expression<Func<IContract, Func<TResponse>>> predicate, Func<TResponse> action)
+    {
+        OperationByPredicate.TryAdd(GetMessage(predicate), (null, action));
+        return this;
+    }
+
+    public Office<IContract> Register<TResponse>(Expression<Func<IContract, Func<Task<TResponse>>>> predicate, Func<Task<TResponse>> action)
+    {
+        OperationByPredicate.TryAdd(GetMessage(predicate), (null, action));
+        return this;
+    }
+
+    public Office<IContract> Register<TReceived, TResponse>(Expression<Func<IContract, Func<TReceived, TResponse>>> predicate, Func<TReceived, TResponse> action)
+    {
+        OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action));
+        return this;
+    }
+
+    public Office<IContract> Register<TReceived, TResponse>(Expression<Func<IContract, Func<TReceived, Task<TResponse>>>> predicate, Func<TReceived, Task<TResponse>> action)
+    {
+        OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action));
+        return this;
     }
 
     public Office<IContract> ReceiveLogs(Action<string, string, string> action)
