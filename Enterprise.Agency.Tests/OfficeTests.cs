@@ -32,8 +32,6 @@ public class OfficeTests
         await semaphore.WaitAsync();
 
         Assert.AreEqual(10, n1);
-
-        await server.DisposeAsync();
     }
 
     [TestMethod]
@@ -56,10 +54,6 @@ public class OfficeTests
         var office2 = Office<IContractExample2>.Create(TestFramework.Url)
                         .Run();
 
-        await logger.EstablishConnectionAsync();
-        await office1.EstablishConnectionAsync();
-        await office2.EstablishConnectionAsync();
-
         await office2.ConnectToAsync(office1.Me);
         await office2.ConnectToAsync(logger.Me);
 
@@ -69,7 +63,13 @@ public class OfficeTests
 
         Assert.AreEqual("ok", text);
 
-        await server.DisposeAsync();
+        text = "";
+
+        office2.PostWithResponse<string, string>(office1.Me, o => o.RequestText, s => { text = s; semaphore.Release(); });
+
+        await semaphore.WaitAsync();
+
+        Assert.AreEqual("ok", text);
     }
 }
 
