@@ -1,6 +1,4 @@
-﻿using Enterprise.Job;
-
-namespace Tests.JobMachine;
+﻿namespace Enterprise.JobFactory.Tests;
 
 [TestClass]
 public class TestsJobMachine
@@ -16,7 +14,7 @@ public class TestsJobMachine
     [TestMethod]
     public async Task SimpleStateManipulations()
     {
-        var r = await JobFactory.New(-1)
+        var r = await Job.JobFactory.New(-1)
             .WithOptions(o => o.WithLogs(Logger))
             .WithStep($"s1", n0 => 1)
             .WithStep($"s2", n1 => n1 + 10)
@@ -31,7 +29,7 @@ public class TestsJobMachine
     [TestMethod]
     public async Task ChangeOfStateFromNull()
     {
-        var r = await JobFactory.New()
+        var r = await Job.JobFactory.New()
             .WithOptions(o => o.WithLogs(Logger))
             .WithStep($"s0", () => Logger("a"))
             .WithStep($"s1", () => 1)
@@ -47,7 +45,7 @@ public class TestsJobMachine
     [TestMethod]
     public async Task DifferentChangeOfStates()
     {
-        var r = await JobFactory.New()
+        var r = await Job.JobFactory.New()
             .WithOptions(o => o.WithLogs(Logger))
             .WithStep($"s1", () => 1)
             .WithStep($"s2", n1 => $"{n1+2}")
@@ -68,7 +66,7 @@ public class TestsJobMachine
     {
         int nTot = -1, nSteps = 0, nClose = -1;
 
-        var r = await JobFactory.New()
+        var r = await Job.JobFactory.New()
             .WithOptions(o => o.WithLogs(Logger).WithProgress(n => nTot = n, () => nSteps++, () => nClose = 1))
             .WithStep("s1", _ => 1)
             .WithStep("s2", _ => 2)
@@ -95,7 +93,7 @@ public class TestsJobMachine
     [TestMethod]
     public async Task ThrowWithLogger()
     {
-        var r = await JobFactory.New()
+        var r = await Job.JobFactory.New()
             .WithOptions(o => o.WithLogs(Logger))
             .WithStep("s1", _ => { throw new Exception("bla"); return 1; })
             .WithStep("s2", _ => 2)
@@ -136,7 +134,7 @@ public class TestsJobMachine
     {
         int nTot = -1, nSteps = 0, nClose = -1;
 
-        var r = await JobFactory.New()
+        var r = await Job.JobFactory.New()
             .WithOptions(o => o.WithLogs(Logger).WithProgress(n => nTot = n, () => nSteps++, () => nClose = 1))
             .WithOptions(o => o.Clear())
             .WithStep("s1", _ => 1)
@@ -154,7 +152,7 @@ public class TestsJobMachine
     [TestMethod]
     public async Task ObjectManipulation()
     {
-        var r = await JobFactory.New()
+        var r = await Job.JobFactory.New()
             .WithStep($"s1", async () => await Task.Delay(5))
             .WithStep($"s2", async () => { await Task.Delay(5); return new MyTypeA(1, 1); })
             .WithStep($"s3", a => a.X)
