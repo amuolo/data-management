@@ -8,6 +8,13 @@ public record JobConfiguration()
 
     public JobConfiguration WithAsyncLogs(Func<string, Task> logger) => this with { AsyncLogger = logger };
 
+    public JobConfiguration ClearLogs()
+        => this with
+        {
+            Logger = null, 
+            AsyncLogger = null
+        };
+
     public JobConfiguration WithProgress(Action<int> enable, Action update, Action close)
         => this with 
         {
@@ -15,6 +22,16 @@ public record JobConfiguration()
             ProgressBarUpdate = update, 
             ProgressBarClose = close 
         };
+
+    public JobConfiguration ClearProgress()
+        => this with
+        {
+            ProgressBarEnable = null,
+            ProgressBarUpdate = null,
+            ProgressBarClose = null,
+        };
+
+    public JobConfiguration Clear() => ClearLogs().ClearProgress();
 
     /* Internal */
 

@@ -26,7 +26,7 @@ public class TestsJobMachine
 
     [TestMethod]
     public async Task ChangeOfStateFromNull()
-    { 
+    {
         var r = await JobFactory.New()
             .WithOptions(o => o.WithLogs(Logger))
             .WithStep($"s0", () => Logger("a"))
@@ -76,6 +76,16 @@ public class TestsJobMachine
         Assert.AreEqual(3, nTot);
         Assert.AreEqual(3, nSteps);
         Assert.AreEqual(1, nClose);
+
+        r = await r.WithOptions(o => o.ClearProgress())
+                   .WithStep("p1", n => n + 1)
+                   .Start();
+
+        Assert.AreEqual(4, r.State);
+        Assert.AreEqual(4, Logs.Count);
+        Assert.AreEqual(3, nTot);
+        Assert.AreEqual(3, nSteps);
+        Assert.AreEqual(1, nClose);
     }
 
     [TestMethod]
@@ -90,19 +100,50 @@ public class TestsJobMachine
         Assert.AreEqual(1, Logs.Count);
         Assert.AreEqual("Exception caught when executing 's1': Exception has been thrown by the target of an invocation.: bla", Logs[0]);
 
+        await r.Start();
+
+        Assert.AreEqual(2, Logs.Count);
+        Assert.AreEqual(2, r.State);
+
+        r = await r.WithOptions(o => o.ClearLogs())
+                   .WithStep("s1", n => n + 1)
+                   .Start();
+
+        Assert.AreEqual(3, r.State);
+        Assert.AreEqual(2, Logs.Count);
+
         try
         {
-            r = await JobFactory.New()
-                .WithStep("s1", _ => { throw new Exception("bla"); return 1; })
-                .WithStep("s2", _ => 2)
-                .Start();
+            r = await r.WithStep("s1", _ => { throw new Exception("bla"); return 1; })
+                       .WithStep("s2", _ => 2)
+                       .Start();
         }
         catch (Exception e)
         {
             Logs.Add(e.Message);
         }
 
-        Assert.AreEqual(2, Logs.Count);
-        Assert.AreEqual("Exception has been thrown by the target of an invocation.", Logs[1]);
+        Assert.AreEqual(3, Logs.Count);
+        Assert.AreEqual("bla", Logs[2]);
+    }
+
+    [TestMethod]
+    public async Task ClearAllOptions()
+    {
+        int nTot = -1, nSteps = 0, nClose = -1;
+
+        var r = await JobFactory.New()
+            .WithOptions(o => o.WithLogs(Logger).WithProgress(n => nTot = n, () => nSteps++, () => nClose = 1))
+            .WithOptions(o => o.Clear())
+            .WithStep("s1", _ => 1)
+            .WithStep("s2", _ => 2)
+            .WithStep("s3", _ => 3)
+            .Start();
+
+        Assert.AreEqual(3, r.State);
+        Assert.AreEqual(0, Logs.Count);
+        Assert.AreEqual(-1, nTot);
+        Assert.AreEqual(0, nSteps);
+        Assert.AreEqual(-1, nClose);
     }
 }
