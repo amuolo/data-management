@@ -109,13 +109,15 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
             {
                 if (state is null || !state.DossierByActor.Any())
                 {
-                    await outerTimer.WaitForNextTickAsync();
+                    await outerTimer.WaitForNextTickAsync(token);
                     continue;
                 }
 
                 using (var innerTimer = new PeriodicTimer(GetNextDecommission(state)))
                 {
-                    await innerTimer.WaitForNextTickAsync();
+                    await innerTimer.WaitForNextTickAsync(token);
+                    if (token.IsCancellationRequested) break;
+
                     foreach (var agent in GetFiredAgents(state))
                     {
                         if (state.Hosts.TryGetValue(agent, out var host))

@@ -66,6 +66,7 @@
 
     public async ValueTask DisposeAsync()
     {
-        //office?.Dispose();
+        if (office is not null)
+            await office.DisposeAsync();
     }
 }

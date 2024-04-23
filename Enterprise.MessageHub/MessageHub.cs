@@ -4,7 +4,6 @@ using Newtonsoft.Json;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Reflection.Metadata.Ecma335;
 
 namespace Enterprise.MessageHub;
 
@@ -48,11 +47,17 @@ public class MessageHub<IContract> where IContract : class, IHubContract
         Connection = new HubConnectionBuilder().WithUrl(baseUrl + Addresses.SignalR).WithAutomaticReconnect().Build();
     }
 
-    public virtual void Dispose()
+    public virtual Task Dispose()
     {
+        Connection.Remove(nameof(IHubContract.ReceiveMessage));
+        Connection.Remove(nameof(IHubContract.ReceiveResponse));
+        Connection.Remove(nameof(PostingHub.ConnectRequest));
         Cancellation.Cancel();
+        return Connection.StopAsync();
     }
-    
+
+    public virtual async Task DisposeAsync() => await Dispose();
+
     protected string GetMessage<TExpression>(TExpression predicate) where TExpression : Expression
     {
         // TODO: improve this mechanism with which name is retrieved from delegate in expression

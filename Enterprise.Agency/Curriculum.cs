@@ -1,6 +1,4 @@
-﻿
-
-namespace Enterprise.Agency;
+﻿namespace Enterprise.Agency;
 
 public record Curriculum (string Name, string AgentTypeName)
 {

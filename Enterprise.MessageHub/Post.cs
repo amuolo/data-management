@@ -92,8 +92,9 @@ public class Post : BackgroundService
         {
             while ((connection is null || connection.State != HubConnectionState.Connected || connection.ConnectionId is null) && !token.IsCancellationRequested)
             {
-                await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
+                await timerReconnection.WaitForNextTickAsync(token).ConfigureAwait(false);
                 // TODO: add log
+                if (token.IsCancellationRequested) break;
             }
         }
 
