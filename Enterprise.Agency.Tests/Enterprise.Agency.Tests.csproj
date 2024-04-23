@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Enterprise.Agency\Enterprise.Agency.csproj" />
+    <ProjectReference Include="..\Enterprise.MessageHub\Enterprise.MessageHub.csproj" />
   </ItemGroup>
 
   <ItemGroup>

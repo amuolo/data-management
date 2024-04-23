@@ -3,9 +3,9 @@
 [TestClass]
 public class TestsJobMachine
 {
-    List<string> Logs { get; set; } = [];
+    List<string> Storage { get; set; } = [];
 
-    Action<string> Logger => s => Logs.Add(s);
+    Action<string> Log => Storage.Add;
 
     public record MyTypeA(int X, int Y);
 
@@ -15,7 +15,7 @@ public class TestsJobMachine
     public async Task SimpleStateManipulations()
     {
         var r = await Job.JobFactory.New(-1)
-            .WithOptions(o => o.WithLogs(Logger))
+            .WithOptions(o => o.WithLogs(Log))
             .WithStep($"s1", n0 => 1)
             .WithStep($"s2", n1 => n1 + 10)
             .WithStep($"s3", n2 => n2 + 20)
@@ -23,30 +23,30 @@ public class TestsJobMachine
             .Start();
 
         Assert.AreEqual(31, r.State);
-        Assert.AreEqual(4, Logs.Count);
+        Assert.AreEqual(4, Storage.Count);
     }
 
     [TestMethod]
     public async Task ChangeOfStateFromNull()
     {
         var r = await Job.JobFactory.New()
-            .WithOptions(o => o.WithLogs(Logger))
-            .WithStep($"s0", () => Logger("a"))
+            .WithOptions(o => o.WithLogs(Log))
+            .WithStep($"s0", () => Log("a"))
             .WithStep($"s1", () => 1)
             .WithStep($"s2", n1 => n1 + 2)
             .WithStep($"s3", n2 => n2 + 3)
-            .WithStep($"s4", n3 => Logger("b"))
+            .WithStep($"s4", n3 => Log("b"))
             .Start();
 
         Assert.AreEqual(6, r.State);
-        Assert.AreEqual(7, Logs.Count);
+        Assert.AreEqual(7, Storage.Count);
     }
 
     [TestMethod]
     public async Task DifferentChangeOfStates()
     {
         var r = await Job.JobFactory.New()
-            .WithOptions(o => o.WithLogs(Logger))
+            .WithOptions(o => o.WithLogs(Log))
             .WithStep($"s1", () => 1)
             .WithStep($"s2", n1 => $"{n1+2}")
             .WithStep($"s3", n2 => int.Parse(n2) + 6.9)
@@ -58,7 +58,7 @@ public class TestsJobMachine
             .Start();
 
         Assert.AreEqual(".9.9", r.State);
-        Assert.AreEqual(8, Logs.Count);
+        Assert.AreEqual(8, Storage.Count);
     }
 
     [TestMethod]
@@ -67,14 +67,14 @@ public class TestsJobMachine
         int nTot = -1, nSteps = 0, nClose = -1;
 
         var r = await Job.JobFactory.New()
-            .WithOptions(o => o.WithLogs(Logger).WithProgress(n => nTot = n, () => nSteps++, () => nClose = 1))
+            .WithOptions(o => o.WithLogs(Log).WithProgress(n => nTot = n, () => nSteps++, () => nClose = 1))
             .WithStep("s1", _ => 1)
             .WithStep("s2", _ => 2)
             .WithStep("s3", _ => 3)
             .Start();
 
         Assert.AreEqual(3, r.State);
-        Assert.AreEqual(3, Logs.Count);
+        Assert.AreEqual(3, Storage.Count);
         Assert.AreEqual(3, nTot);
         Assert.AreEqual(3, nSteps);
         Assert.AreEqual(1, nClose);
@@ -84,7 +84,7 @@ public class TestsJobMachine
                    .Start();
 
         Assert.AreEqual(4, r.State);
-        Assert.AreEqual(4, Logs.Count);
+        Assert.AreEqual(4, Storage.Count);
         Assert.AreEqual(3, nTot);
         Assert.AreEqual(3, nSteps);
         Assert.AreEqual(1, nClose);
@@ -94,17 +94,17 @@ public class TestsJobMachine
     public async Task ThrowWithLogger()
     {
         var r = await Job.JobFactory.New()
-            .WithOptions(o => o.WithLogs(Logger))
+            .WithOptions(o => o.WithLogs(Log))
             .WithStep("s1", _ => { throw new Exception("bla"); return 1; })
             .WithStep("s2", _ => 2)
             .Start();
 
-        Assert.AreEqual(1, Logs.Count);
-        Assert.AreEqual("Exception caught when executing 's1': Exception has been thrown by the target of an invocation.: bla", Logs[0]);
+        Assert.AreEqual(1, Storage.Count);
+        Assert.AreEqual("Exception caught when executing 's1': Exception has been thrown by the target of an invocation.: bla", Storage[0]);
 
         await r.Start();
 
-        Assert.AreEqual(2, Logs.Count);
+        Assert.AreEqual(2, Storage.Count);
         Assert.AreEqual(2, r.State);
 
         r = await r.WithOptions(o => o.ClearLogs())
@@ -112,7 +112,7 @@ public class TestsJobMachine
                    .Start();
 
         Assert.AreEqual(3, r.State);
-        Assert.AreEqual(2, Logs.Count);
+        Assert.AreEqual(2, Storage.Count);
 
         try
         {
@@ -122,11 +122,11 @@ public class TestsJobMachine
         }
         catch (Exception e)
         {
-            Logs.Add(e.Message);
+            Storage.Add(e.Message);
         }
 
-        Assert.AreEqual(3, Logs.Count);
-        Assert.AreEqual("bla", Logs[2]);
+        Assert.AreEqual(3, Storage.Count);
+        Assert.AreEqual("bla", Storage[2]);
     }
 
     [TestMethod]
@@ -135,7 +135,7 @@ public class TestsJobMachine
         int nTot = -1, nSteps = 0, nClose = -1;
 
         var r = await Job.JobFactory.New()
-            .WithOptions(o => o.WithLogs(Logger).WithProgress(n => nTot = n, () => nSteps++, () => nClose = 1))
+            .WithOptions(o => o.WithLogs(Log).WithProgress(n => nTot = n, () => nSteps++, () => nClose = 1))
             .WithOptions(o => o.Clear())
             .WithStep("s1", _ => 1)
             .WithStep("s2", _ => 2)
@@ -143,7 +143,7 @@ public class TestsJobMachine
             .Start();
 
         Assert.AreEqual(3, r.State);
-        Assert.AreEqual(0, Logs.Count);
+        Assert.AreEqual(0, Storage.Count);
         Assert.AreEqual(-1, nTot);
         Assert.AreEqual(0, nSteps);
         Assert.AreEqual(-1, nClose);
