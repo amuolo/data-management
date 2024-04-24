@@ -103,13 +103,12 @@ public class Post : BackgroundService
 
     public static async Task<string> ConnectToAsync(HubConnection connection, string from, string target, CancellationToken token)
     {
-        var id = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
-
         var counter = 0;
         var targetId = "";
         var connected = false;
         var requestId = Guid.NewGuid().ToString();
         var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
+        var id = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
 
         var subscription = connection.On(nameof(PostingHub.ConnectionEstablished) + requestId, 
             (string senderId, string messageId) => {

@@ -48,17 +48,18 @@ public class OfficeTests
                         .Run();
 
         var office1 = Office<IContractExample1>.Create(TestFramework.Url)
-                        .Register(o => o.RequestText, async () => "ok")
+                        .Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; })
                         .Run();
 
         var office2 = Office<IContractExample2>.Create(TestFramework.Url)
                         .Run();
 
+        await office1.ConnectToAsync(office2.Me);
         await office2.ConnectToAsync(office1.Me);
         await office2.ConnectToAsync(logger.Me);
 
         office2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
-
+        
         await semaphore.WaitAsync();
 
         Assert.AreEqual("ok", text);

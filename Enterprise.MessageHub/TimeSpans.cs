@@ -2,5 +2,5 @@
 
 public class TimeSpans
 {
-    public static readonly TimeSpan ActorConnectionAttemptPeriod = TimeSpan.FromSeconds(5);
+    public static readonly TimeSpan ActorConnectionAttemptPeriod = TimeSpan.FromSeconds(3);
 }
