@@ -3,31 +3,19 @@
 [TestClass]
 public class OfficeTests
 {
-    public record Log (string Sender, string Message);
-
-    List<Log> Storage { get; set; } = [];
+    List<TestFramework.Log> Storage { get; set; } = [];
 
     [TestMethod]
-    public async Task BasicOfficePosting()
+    public async Task BasicPosting()
     {
-        var server = TestFramework.StartServer();
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
 
         var n1 = 0;
-
         var semaphore = new SemaphoreSlim(0, 1);
 
-        var logger = Office<IAgencyContract>.Create(TestFramework.Url)
-                        .ReceiveLogs((sender, senderId, message) => Storage.Add(new Log(sender, message)))
-                        .Run();
+        Office1.Register<int>(o => o.RequestA, n => { n1 += n; semaphore.Release(); });
 
-        var office1 = Office<IContractExample1>.Create(TestFramework.Url)
-                        .Register<int>(o => o.RequestA, n => { n1 += n; semaphore.Release(); })
-                        .Run();
-
-        var office2 = Office<IContractExample2>.Create(TestFramework.Url)
-                        .Run();
-
-        office2.Post(o => o.RequestA, 10);
+        Office2.Post(o => o.RequestA, 10);
 
         await semaphore.WaitAsync();
 
@@ -35,38 +23,49 @@ public class OfficeTests
     }
 
     [TestMethod]
-    public async Task OfficePostingWithResponse()
+    public async Task PostingWithResponse()
     {
-        var server = TestFramework.StartServer();
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
 
         var text = "";
+        var semaphore = new SemaphoreSlim(0, 1);      
 
-        var semaphore = new SemaphoreSlim(0, 1);
+        Office1.Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; });
 
-        var logger = Office<IAgencyContract>.Create(TestFramework.Url)
-                        .ReceiveLogs((sender, senderId, message) => Storage.Add(new Log(sender, message)))
-                        .Run();
+        Office2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
 
-        var office1 = Office<IContractExample1>.Create(TestFramework.Url)
-                        .Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; })
-                        .Run();
-
-        var office2 = Office<IContractExample2>.Create(TestFramework.Url)
-                        .Run();
-
-        await office1.ConnectToAsync(office2.Me);
-        await office2.ConnectToAsync(office1.Me);
-        await office2.ConnectToAsync(logger.Me);
-
-        office2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
-        
         await semaphore.WaitAsync();
 
         Assert.AreEqual("ok", text);
 
         text = "";
 
-        office2.PostWithResponse<string, string>(office1.Me, o => o.RequestText, s => { text = s; semaphore.Release(); });
+        Office2.PostWithResponse<string, string>(Office1.Me, o => o.RequestText, s => { text = s; semaphore.Release(); });
+
+        await semaphore.WaitAsync();
+
+        Assert.AreEqual("ok", text);
+    }
+
+    [TestMethod]
+    public async Task SynchronousPosting()
+    {
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
+
+        var text = "";
+        var semaphore = new SemaphoreSlim(0, 1);
+
+        Office1.Register(o => o.RequestTextSync, () => "ok");
+
+        Office2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
+
+        await semaphore.WaitAsync();
+
+        Assert.AreEqual("ok", text);
+
+        text = "";
+
+        Office2.PostWithResponse<string, string>(Office1.Me, o => o.RequestText, s => { text = s; semaphore.Release(); });
 
         await semaphore.WaitAsync();
 

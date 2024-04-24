@@ -5,6 +5,8 @@ public interface IContractExample1 : IAgencyContract
     /* in */
     Task<string> RequestText();
 
+    string RequestTextSync();
+
     Task RequestA(int a);
 
     Task RequestB(int b);
