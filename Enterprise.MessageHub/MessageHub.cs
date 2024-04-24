@@ -21,7 +21,7 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
     public ConcurrentDictionary<string, Action<string>> CallbacksById { get; } = new();
 
-    public ConcurrentDictionary<string, (Type? Type, Delegate Action)> OperationByPredicate { get; } = new();
+    public ConcurrentDictionary<string, (Type? Type, Delegate Delegate)> OperationByPredicate { get; } = new();
 
     private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
                                                                           .SelectMany(i => i.GetMethods())
@@ -156,12 +156,10 @@ public class MessageHub<IContract> where IContract : class, IHubContract
 
         LogPost($"processing {message}");
         object? r;
-
-        // TODO: improve this type checking mechanism
-        
-        if (operation.Type is null || !operation.Action.GetMethodInfo().GetParameters().Any())
+       
+        if (operation.Type is null)
         {
-            r = operation.Action.DynamicInvoke();
+            r = operation.Delegate.DynamicInvoke();
         }
         else
         {
@@ -179,10 +177,10 @@ public class MessageHub<IContract> where IContract : class, IHubContract
                 return;
             }
 
-            r = operation.Action.DynamicInvoke(item);
+            r = operation.Delegate.DynamicInvoke(item);
         }
 
-        var returnType = operation.Action.Method.ReturnType;
+        var returnType = operation.Delegate.Method.ReturnType;
         if (returnType != typeof(void) || returnType != typeof(Task))
         {
             if(r is null)
