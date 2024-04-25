@@ -7,7 +7,7 @@ using System.Reflection;
 
 namespace Enterprise.MessageHub;
 
-public class MessageHub<IContract> where IContract : class, IHubContract
+public class MessageHub<IContract> : IDisposable where IContract : class, IHubContract
 {
     protected CancellationTokenSource Cancellation { get; } = new();
 
@@ -47,16 +47,14 @@ public class MessageHub<IContract> where IContract : class, IHubContract
         Connection = new HubConnectionBuilder().WithUrl(baseUrl + Addresses.SignalR).WithAutomaticReconnect().Build();
     }
 
-    public virtual Task Dispose()
+    public virtual void Dispose()
     {
         Connection.Remove(nameof(IHubContract.ReceiveMessage));
         Connection.Remove(nameof(IHubContract.ReceiveResponse));
-        Connection.Remove(nameof(PostingHub.ConnectRequest));
+        Connection.Remove(nameof(PostingHub.ConnectRequest));        
+        Connection.StopAsync();
         Cancellation.Cancel();
-        return Connection.StopAsync();
     }
-
-    public virtual async Task DisposeAsync() => await Dispose();
 
     protected string GetMessage<TExpression>(TExpression predicate) where TExpression : Expression
     {

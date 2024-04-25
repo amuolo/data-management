@@ -19,17 +19,10 @@ public class Office<IContract>() : MessageHub<IContract>
 
     public Task ConnectionTask { get; private set; } = Task.CompletedTask;
 
-    public override Task Dispose()
+    public override void Dispose()
     {
         PostService?.StopAsync();
-        return base.Dispose();        
-    }
-
-    public override async Task DisposeAsync()
-    {
-        await base.Dispose();
-        if (PostService is not null)
-            await PostService.StopAsync();
+        base.Dispose();        
     }
 
     public static Office<IContract> Create(string baseUrl) => Create<Office<IContract>>(baseUrl);
