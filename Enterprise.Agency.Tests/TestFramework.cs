@@ -6,8 +6,6 @@ namespace Enterprise.Agency.Tests;
 
 public static class TestFramework
 {
-    public record Log(string Sender, string Message);
-
     public static async Task<string> GetFreeUrlAsync()
     {
         /*
@@ -39,7 +37,7 @@ public static class TestFramework
         return "https://localhost:" + new Random().Next(1, 9999).ToString();
     }
 
-    public static async Task<WebApplication> StartServerAsync()
+    public static async Task<WebApplication> StartServerAsync(Type[]? agents)
     {
         var url = await GetFreeUrlAsync();
         var builder = WebApplication.CreateBuilder();
@@ -48,6 +46,7 @@ public static class TestFramework
                
         var workplace = new Workplace(url) with
         {
+            AgentTypes = agents?? [],
             HireAgentsPeriod = TimeSpan.FromMinutes(30),
             OnBoardingWaitingTime = TimeSpan.FromSeconds(1),
             OffBoardingWaitingTime = TimeSpan.FromSeconds(1),
@@ -66,9 +65,9 @@ public static class TestFramework
     }
 
     public static async Task<(WebApplication Server, Office<IAgencyContract> Logger, Office<IContractExample1> Office1, Office<IContractExample2> Office2)>
-    SetupThreeBodyProblemAsync(List<Log> storage)
+    SetupThreeBodyProblemAsync(List<Log> storage, Type[]? agents = null)
     {
-        var server = await StartServerAsync();
+        var server = await StartServerAsync(agents);
         var url = server.Urls.First();
 
         var logger = Office<IAgencyContract>.Create(url)

@@ -1,14 +1,11 @@
-﻿using static System.Net.Mime.MediaTypeNames;
-using System.Threading;
-
-namespace Enterprise.Agency.Tests;
+﻿namespace Enterprise.Agency.Tests;
 
 [TestClass]
 public class OfficeTests
 {
     readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
-    List<TestFramework.Log> Storage { get; set; } = [];
+    List<Log> Storage { get; set; } = [];
 
     [TestMethod]
     public async Task BasicPosting()

@@ -18,3 +18,22 @@ public interface IContractExample1 : IAgencyContract
 public interface IContractExample2 : IContractExample1
 {
 }
+
+public interface IContractAgentX : IAgencyContract
+{
+    /* in */
+    XModel GetRequest();
+
+    XModel GetRequestAsync();
+
+    void ImportRequest(string fileName);
+
+    Task ImportRequestAsync(string fileName);
+
+    /* out */
+    Task DataChangedEvent();
+
+    Task ShowProgress(double progress);
+
+    Task Display(string message);
+}
