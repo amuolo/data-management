@@ -11,6 +11,12 @@ public class TestsJobMachine
 
     public record MyTypeB(double T, double W);
 
+    public record MyTypeC
+    {
+        public string? S1 { get; set; }
+        public string? S2 { get; set; }
+    }
+
     [TestMethod]
     public async Task SimpleStateManipulations()
     {
@@ -163,5 +169,31 @@ public class TestsJobMachine
             .Start();
 
         Assert.AreEqual(new MyTypeB(2, 0.19), r.State);
+    }
+
+    [TestMethod]
+    public async Task MutableObjectManipulation()
+    {
+        var r = await Job.JobFactory.New()
+            .WithStep($"s1", async () => { await Task.Delay(5); return new MyTypeC { S1 = "a" }; })
+            .WithStep($"s2", c => { c.S1 += "b"; })
+            .WithStep($"s3", c => { c.S2 = "c"; })
+            .Start();
+
+        Assert.AreEqual("ab", r.State?.S1?? "");
+        Assert.AreEqual("c", r.State?.S2?? "");
+    }
+
+    [TestMethod]
+    public async Task ValueTupleObjectManipulation()
+    {
+        var r = await Job.JobFactory.New()
+            .WithStep($"s1", async () => { await Task.Delay(5); return ("a", "b"); })
+            .WithStep($"s2", c => { c.Item1 += "b"; })
+            .WithStep($"s3", c => { c.Item2 = "c"; })
+            .Start();
+
+        Assert.AreEqual("a", r.State.Item1?? "");
+        Assert.AreEqual("b", r.State.Item2?? "");
     }
 }

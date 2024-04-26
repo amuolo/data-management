@@ -12,13 +12,18 @@ public class Agent<TState, THub, IContract> : BackgroundService
     where THub : MessageHub<IContract>, new()
     where IContract : class, IHubContract
 {
+    protected record Core
+    {
+        public object? Package { get; set; }
+        public TState State { get; set; } = new();
+    }
+
     protected IHubContext<PostingHub> ServerHub { get; }
     protected THub MessageHub { get; set; }
     protected bool IsInitialized { get; set; }
     protected string Me => MessageHub.Me;
 
-    protected Job<(object? Package, TState State)> Job { get; set; }
-        = JobFactory.New<(object? Package, TState State)>(initialState: (null, new()));
+    protected Job<Core> Job { get; set; } = JobFactory.New<Core>(initialState: new());
 
     protected Dictionary<string, MethodInfo> MethodsByName { get; } 
         = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
@@ -52,13 +57,29 @@ public class Agent<TState, THub, IContract> : BackgroundService
             if (MethodsByName.TryGetValue(nameof(IHubContract.CreateRequest), out var create))
             {
                 MessageHub.LogPost("Creating myself");
+                var returnType = create.ReturnType;
 
                 Job = await Job
                     .WithOptions(o => o.WithLogs(MessageHub.LogPost))
                     .WithStep(nameof(IHubContract.CreateRequest), async state =>
                 {
-                    var init = create.Invoke(MessageHub, null);
-                    if (init is not null) state.State = await (Task<TState>)init;
+                    var r = create.Invoke(MessageHub, null);
+                    if (r is null)
+                    {
+                        MessageHub.LogPost($"null state retrieved after creation.");
+                    }
+                    else if (create.ReturnType == typeof(Task<TState>))
+                    {
+                        state.State = await (Task<TState>)r;
+                    }
+                    else if (create.ReturnType == typeof(TState))
+                    {
+                        state.State = (TState)r;
+                    }
+                    else
+                    {
+                        MessageHub.LogPost($"Incorrect Return Type method {nameof(IHubContract.CreateRequest)}");
+                    }
                 })
                 .Start();
             }

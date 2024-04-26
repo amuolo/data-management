@@ -58,8 +58,8 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
 
     protected string GetMessage<TExpression>(TExpression predicate) where TExpression : Expression
     {
-        // TODO: improve this mechanism with which name is retrieved from delegate in expression
-        var msg = Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name))?.Name;
+        // TODO: improve this mechanism
+        var msg = Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name + "("))?.Name;
         if (msg is null)
         {
             LogPost($"MessageHub delegate resolution failed for: {predicate}.");

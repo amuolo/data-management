@@ -1,4 +1,6 @@
-﻿namespace Enterprise.Agency.Tests;
+﻿using Enterprise.Utils;
+
+namespace Enterprise.Agency.Tests;
 
 [TestClass]
 public class AgentsTests
@@ -22,16 +24,18 @@ public class AgentsTests
                         .Run();
 
         await office.ConnectToAsync(logger.Me);
+        await office.ConnectToAsync(typeof(XHub).ExtractName());
 
         var x = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
         office.PostWithResponse<XModel>(agent => agent.GetRequestAsync, model => { x = model.Name + model.Surname; semaphore.Release(); });
 
+        //await semaphore.WaitAsync();
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
-        Assert.AreEqual("Paolo Rossi", x);
+        Assert.AreEqual("PaoloRossi", x);
     }
 }
 

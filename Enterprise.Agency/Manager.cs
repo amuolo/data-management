@@ -18,7 +18,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
     public Manager(IHubContext<PostingHub> hubContext, Workplace workplace) : base(hubContext, workplace)
     {
         MessageHub.Me = Addresses.Central;
-        Job = Job.Initialize((null, workplace));
+        Job = Job.Initialize(new Core { Package = null, State = workplace });
     }
 
     protected override async Task ExecuteAsync(CancellationToken token)
