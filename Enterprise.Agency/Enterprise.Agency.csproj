@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net8.0, net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <RootNamespace>Enterprise.Agency</RootNamespace>
@@ -16,7 +16,7 @@
     <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application, parallel, concurrent</PackageTags>
+    <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application, parallel, concurrent, governance, cloud, performance, threading, queues, jobs, background, long-running, AspNetCore, AspNet, NetCore, MVC, WPF, Razor, Blazor</PackageTags>
     <Version>1.0.5</Version>
   </PropertyGroup>
 
