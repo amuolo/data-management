@@ -73,7 +73,7 @@ public class OfficeTests
 
         Office1.Register(o => o.RequestTextSync, () => "ok");
 
-        Office2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
+        Office2.PostWithResponse<string>(o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
@@ -92,7 +92,7 @@ public class OfficeTests
 
         Office1.Register(o => o.RequestTextSync, () => "ok");
 
-        Office2.PostWithResponse<string, string>(Office1.Me, o => o.RequestText, s => { text = s; semaphore.Release(); });
+        Office2.PostWithResponse<string, string>(Office1.Me, o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
