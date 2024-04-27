@@ -59,6 +59,8 @@ public record Job<TState>()
 
     private object? TmpState { get; set; }
 
+    private Task<Job<TState>>? Work { get; set; }
+
     public Job<TState> Initialize(TState? state) => this with { State = state };
 
     public Job<TState> WithPostActions(string name, Action<TState> action) => this with { PostActions = PostActions.Add((name, action)) };
@@ -103,47 +105,51 @@ public record Job<TState>()
 
     public Task<Job<TState>> Start(CancellationToken token = new())
     {
-        return Task.Run(async () =>
+        if (Work is null || Semaphore.CurrentCount == 1)
         {
-            try
+            Work = Task.Run(async () =>
             {
-                await Semaphore.WaitAsync(token).ConfigureAwait(false);
-
-                if (Configuration.ProgressBarEnable is not null) 
-                    Configuration.ProgressBarEnable(Steps.Count);
-
-                while (!Steps.IsEmpty && !token.IsCancellationRequested)
+                try
                 {
-                    var ok = Steps.TryDequeue(out var step);
+                    await Semaphore.WaitAsync(token).ConfigureAwait(false);
 
-                    if (!ok) throw new Exception("Issue with job dequeuing");
+                    if (Configuration.ProgressBarEnable is not null)
+                        Configuration.ProgressBarEnable(Steps.Count);
 
-                    await ExecuteAsync(step.Name, step.Func, step.TOrigin, step.TDestination).ConfigureAwait(false);
+                    while (!Steps.IsEmpty && !token.IsCancellationRequested)
+                    {
+                        var ok = Steps.TryDequeue(out var step);
 
-                    foreach (var post in PostActions)
-                        await ExecuteAsync(post.Name, post.Func, typeof(TState), null).ConfigureAwait(false);
+                        if (!ok) throw new Exception("Issue with job dequeuing");
 
-                    if (Configuration.ProgressBarUpdate is not null) Configuration.ProgressBarUpdate();
+                        await ExecuteAsync(step.Name, step.Func, step.TOrigin, step.TDestination).ConfigureAwait(false);
+
+                        foreach (var post in PostActions)
+                            await ExecuteAsync(post.Name, post.Func, typeof(TState), null).ConfigureAwait(false);
+
+                        if (Configuration.ProgressBarUpdate is not null) Configuration.ProgressBarUpdate();
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                var msg = $"Exception caught when executing '{CurrentStep}': {ex.Message}: {ex.InnerException?.Message?? ""}";
-                if (Configuration.Logger is not null)
-                    Configuration.Logger.Invoke(msg);
-                if (Configuration.AsyncLogger is not null)
-                    await Configuration.AsyncLogger.Invoke(msg).ConfigureAwait(false);
-                if (Configuration.Logger is null && Configuration.AsyncLogger is null)
-                    throw;
-            }
-            finally
-            {
-                if (Configuration.ProgressBarClose is not null) Configuration.ProgressBarClose();
-                Semaphore.Release();
-            }
+                catch (Exception ex)
+                {
+                    var msg = $"Exception caught when executing '{CurrentStep}': {ex.Message}: {ex.InnerException?.Message?? ""}";
+                    if (Configuration.Logger is not null)
+                        Configuration.Logger.Invoke(msg);
+                    if (Configuration.AsyncLogger is not null)
+                        await Configuration.AsyncLogger.Invoke(msg).ConfigureAwait(false);
+                    if (Configuration.Logger is null && Configuration.AsyncLogger is null)
+                        throw;
+                }
+                finally
+                {
+                    if (Configuration.ProgressBarClose is not null) Configuration.ProgressBarClose();
+                    Semaphore.Release();
+                }
 
-            return this;
-        });
+                return this;
+            });
+        }
+        return Work;
     }
 
     /* Private */
