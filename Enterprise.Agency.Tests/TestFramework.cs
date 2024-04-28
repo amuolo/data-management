@@ -1,4 +1,5 @@
 ﻿using Enterprise.MessageHub;
+using Enterprise.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -87,5 +88,26 @@ public static class TestFramework
         await office2.ConnectToAsync(office1.Me);
 
         return (server, logger, office1, office2);
+    }
+
+    public static async Task<(WebApplication server, Office<IAgencyContract> logger, Office<IContractAgentX> office, string agent)> 
+    SetupLoggerOfficeAgentAsync(List<Log> storage)
+    {
+        var server = await StartServerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
+        var url = server.Urls.First();
+        var agentName = typeof(XHub).ExtractName();
+
+        var logger = Office<IAgencyContract>.Create(url)
+                        .ReceiveLogs((sender, senderId, message) => storage.Add(new Log(sender, message)))
+                        .Run();
+
+        var office = Office<IContractAgentX>.Create(url)
+                        .AddAgent<XModel, XHub, IContractAgentX>()
+                        .Run();
+
+        await office.ConnectToAsync(logger.Me);
+        await office.ConnectToAsync(agentName);
+
+        return (server, logger, office, agentName);
     }
 }

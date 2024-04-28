@@ -1,4 +1,5 @@
-﻿using Enterprise.Utils;
+﻿using Enterprise.MessageHub;
+using Enterprise.Utils;
 
 namespace Enterprise.Agency.Tests;
 
@@ -12,30 +13,42 @@ public class AgentsTests
     [TestMethod]
     public async Task BasicAsyncMessageHandling()
     {
-        var server = await TestFramework.StartServerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
-        var url = server.Urls.First();
-
-        var logger = Office<IAgencyContract>.Create(url)
-                        .ReceiveLogs((sender, senderId, message) => Storage.Add(new Log(sender, message)))
-                        .Run();
-
-        var office = Office<IContractAgentX>.Create(url)
-                        .AddAgent<XModel, XHub, IContractAgentX>()
-                        .Run();
-
-        await office.ConnectToAsync(logger.Me);
-        await office.ConnectToAsync(typeof(XHub).ExtractName());
+        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
 
         var x = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
-        office.PostWithResponse<XModel>(agent => agent.GetRequestAsync, model => { x = model.Name + model.Surname; semaphore.Release(); });
+        office.PostWithResponse<XModel>(
+            agent => agent.GetRequestAsync, 
+            model => { x = model.Name + model.Surname; semaphore.Release(); });
 
-        //await semaphore.WaitAsync();
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", x);
+
+        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+    }
+
+    [TestMethod]
+    public async Task BasicAsyncMessageHandlingWithTarget()
+    {
+        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+
+        var x = "";
+        var semaphore = new SemaphoreSlim(0, 1);
+
+        office.PostWithResponse<string, XModel>(
+            agentName, 
+            agent => agent.GetRequestAsync, 
+            model => { x = model.Name + model.Surname; semaphore.Release(); });
+
+        var semaphoreState = await semaphore.WaitAsync(Timeout);
+
+        Assert.IsTrue(semaphoreState);
+        Assert.AreEqual("PaoloRossi", x);
+
+        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 }
 
