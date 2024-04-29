@@ -49,7 +49,7 @@ public class TestsJobMachine
     }
 
     [TestMethod]
-    public async Task DifferentChangeOfStates()
+    public async Task SeveralChangesOfStates()
     {
         var r = await Job.JobFactory.New()
             .WithOptions(o => o.WithLogs(Log))
@@ -65,6 +65,33 @@ public class TestsJobMachine
 
         Assert.AreEqual(".9.9", r.State);
         Assert.AreEqual(8, Storage.Count);
+    }
+
+    [TestMethod]
+    public async Task TrickyChangesOfStates()
+    {
+        var r = await Job.JobFactory.New()
+            .WithOptions(o => o.WithLogs(Log))
+            .WithStep($"s1", () => 2)
+            .WithStep($"s2", n1 => n1 + 0.1)
+            .WithStep($"s3", n2 => (int)Math.Ceiling(n2))
+            .Start();
+
+        Assert.AreEqual(3, r.State);
+        Assert.AreEqual(3, Storage.Count);
+    }
+
+    [TestMethod]
+    public async Task SelectedChangesOfStates()
+    {
+        var r = await Job.JobFactory.New(2)
+            .WithOptions(o => o.WithLogs(Log))
+            .WithStep($"s1", n => n.ToString() + "hello")
+            .WithStep($"s2", n1 => int.Parse(n1.First().ToString()) + 2)
+            .Start();
+
+        Assert.AreEqual(4, r.State);
+        Assert.AreEqual(2, Storage.Count);
     }
 
     [TestMethod]

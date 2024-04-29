@@ -57,7 +57,7 @@ public record Job<TState>()
 
     public TState? State { get; set; }
 
-    private object? TmpState { get; set; }
+    private object? Substitute { get; set; }
 
     private Task<Job<TState>>? Work { get; set; }
 
@@ -144,6 +144,7 @@ public record Job<TState>()
                 {
                     if (Configuration.ProgressBarClose is not null) Configuration.ProgressBarClose();
                     Semaphore.Release();
+                    Substitute = null;
                 }
 
                 return this;
@@ -186,20 +187,22 @@ public record Job<TState>()
             else if (TDestination == typeof(TState))
             {
                 State = ((Func<TState>)func)();
+                Substitute = null;
             }
             else if (TDestination == typeof(Task<TState>))
             {
                 State = await ((Func<Task<TState>>)func)();
+                Substitute = null;
             }
             else
             {
-                TmpState = func.DynamicInvoke();
+                Substitute = func.DynamicInvoke();
                 if (isGenericTask)
                 {
-                    if (TmpState is null)
+                    if (Substitute is null)
                         throw new Exception(err);
-                    await (Task)TmpState;
-                    TmpState = TmpState.GetType().GetProperty("Result")?.GetValue(TmpState);
+                    await (Task)Substitute;
+                    Substitute = Substitute.GetType().GetProperty("Result")?.GetValue(Substitute);
                 }
             }
         }
@@ -207,18 +210,18 @@ public record Job<TState>()
         {
             if (TDestination is null)
             {
-                if (TOrigin == typeof(TState))
+                if (TOrigin == typeof(TState) && Substitute == null)
                     ((Action<TState>)func)(State);
                 else
-                    func.DynamicInvoke(TmpState);
+                    func.DynamicInvoke(Substitute);
             }
             else if (TDestination == typeof(Task))
             {
-                if (TOrigin == typeof(TState))
+                if (TOrigin == typeof(TState) && Substitute == null)
                     await ((Func<TState, Task>)func)(State);
                 else
                 {
-                    var r = func.DynamicInvoke(TmpState);
+                    var r = func.DynamicInvoke(Substitute);
                     if (r is null)
                         throw new Exception(err);
                     await (Task)r;
@@ -226,35 +229,37 @@ public record Job<TState>()
             }
             else if (TDestination == typeof(TState))
             {
-                if (TOrigin == typeof(TState))
+                if (TOrigin == typeof(TState) && Substitute == null)
                     State = ((Func<TState, TState>)func)(State);
                 else
-                    State = (TState?)func.DynamicInvoke(TmpState);
+                    State = (TState?)func.DynamicInvoke(Substitute);
+                Substitute = null;
             }
             else if (TDestination == typeof(Task<TState>))
             {
-                if (TOrigin == typeof(TState))
+                if (TOrigin == typeof(TState) && Substitute == null)
                     State = await ((Func<TState, Task<TState>>)func)(State);
                 else
                 {
-                    var r = (Task<TState?>?)func.DynamicInvoke(TmpState);
+                    var r = (Task<TState?>?)func.DynamicInvoke(Substitute);
                     if (r is null)
                         throw new Exception(err);
                     State = await r;
                 }
+                Substitute = null;
             }
             else
             {
-                if (TOrigin == typeof(TState))
-                    TmpState = func.DynamicInvoke(State);
+                if (TOrigin == typeof(TState) && Substitute == null)
+                    Substitute = func.DynamicInvoke(State);
                 else
-                    TmpState = func.DynamicInvoke(TmpState);
+                    Substitute = func.DynamicInvoke(Substitute);
                 if (isGenericTask)
                 {
-                    if (TmpState is null)
+                    if (Substitute is null)
                         throw new Exception(err);
-                    await (Task)TmpState;
-                    TmpState = TmpState.GetType().GetProperty("Result")?.GetValue(TmpState);
+                    await (Task)Substitute;
+                    Substitute = Substitute.GetType().GetProperty("Result")?.GetValue(Substitute);
                 }
             }
         }
@@ -270,7 +275,7 @@ public record Job<TState>()
     protected static Job<TResult> New<TOrigin, TResult>(Job<TOrigin> job)
         => new Job<TResult>() with
         {
-            TmpState = job.State,
+            Substitute = job.State is not null ? job.State : job.Substitute,
             Configuration = job.Configuration,
             CurrentStep = job.CurrentStep,
             PostActions = job.PostActions,
