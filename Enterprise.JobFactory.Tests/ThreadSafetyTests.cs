@@ -17,15 +17,15 @@ public class ThreadSafetyTests
 
         job.Start();
 
-        Enumerable.Range(0, 10).ToList().ForEach(i =>
+        Enumerable.Range(0, 100).ToList().ForEach(i =>
         {
             Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).Start());
         });
 
         await job.Start();
 
-        Assert.AreEqual(+10, job.State?.X);
-        Assert.AreEqual(-10, job.State?.Y);
+        Assert.AreEqual(+100, job.State?.X);
+        Assert.AreEqual(-100, job.State?.Y);
     }
 
     [TestMethod]
@@ -36,15 +36,15 @@ public class ThreadSafetyTests
 
         job.Start();
 
-        Enumerable.Range(0, 10).ToList().ForEach(i =>
+        Enumerable.Range(0, 100).ToList().ForEach(i =>
         {
-            Task.Run(() => job.WithStep($"x{i}", async s => { await Task.Delay(10); s.X++; s.Y--; }).Start());
+            Task.Run(() => job.WithStep($"x{i}", async s => { await Task.Delay(1); s.X++; s.Y--; }).Start());
         });
 
         await job.Start();
 
-        Assert.AreEqual(+10, job.State?.X);
-        Assert.AreEqual(-10, job.State?.Y);
+        Assert.AreEqual(+100, job.State?.X);
+        Assert.AreEqual(-100, job.State?.Y);
     }
 
     [TestMethod]
@@ -55,14 +55,13 @@ public class ThreadSafetyTests
 
         job.Start();
 
-        Enumerable.Range(0, 10).ToList().AsParallel().ForAll(i =>
+        Enumerable.Range(0, 100).ToList().AsParallel().ForAll(i =>
         {
-            job.WithStep($"x{i}", async n => { await Task.Delay(10); return n++; }).Start();
+            job.WithStep($"x{i}", async n => { await Task.Delay(10); return ++n; }).Start();
         });
 
         await job.Start();
 
-        // TODO: check if intended behavior, i.e. if use case exists for implementing state update for value types
-        Assert.AreEqual(0, job.State);
+        Assert.AreEqual(100, job.State);
     }
 }
