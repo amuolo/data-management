@@ -223,4 +223,17 @@ public class TestsJobMachine
         Assert.AreEqual("a", r.State.Item1?? "");
         Assert.AreEqual("b", r.State.Item2?? "");
     }
+
+    [TestMethod]
+    public async Task ValueTupleObjectManipulationWithReturn()
+    {
+        var r = await Job.JobFactory.New()
+            .WithStep($"s1", async () => { await Task.Delay(5); return ("a", "b"); })
+            .WithStep($"s2", c => { c.Item1 += "b"; return c; })
+            .WithStep($"s3", c => { c.Item2 = "c"; return c; })
+            .Start();
+
+        Assert.AreEqual("ab", r.State.Item1?? "");
+        Assert.AreEqual("c", r.State.Item2?? "");
+    }
 }
