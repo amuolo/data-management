@@ -1,11 +1,13 @@
-﻿namespace Enterprise.Agency.Tests;
+﻿using System.Collections.Concurrent;
+
+namespace Enterprise.Agency.Tests;
 
 [TestClass]
 public class OfficeTests
 {
     readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
-    List<Log> Storage { get; set; } = [];
+    ConcurrentBag<Log> Storage { get; set; } = [];
 
     [TestMethod]
     public async Task BasicPosting()

@@ -1,5 +1,6 @@
 ﻿using Enterprise.MessageHub;
 using Enterprise.Utils;
+using System.Collections.Concurrent;
 
 namespace Enterprise.Agency.Tests;
 
@@ -8,7 +9,7 @@ public class AgentsTests
 {
     readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
-    List<Log> Storage { get; set; } = [];
+    ConcurrentBag<Log> Storage { get; set; } = [];
 
     [TestMethod]
     public async Task BasicAsyncMessageHandling()

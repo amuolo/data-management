@@ -2,6 +2,7 @@
 using Enterprise.Utils;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Concurrent;
 
 namespace Enterprise.Agency.Tests;
 
@@ -66,7 +67,7 @@ public static class TestFramework
     }
 
     public static async Task<(WebApplication Server, Office<IAgencyContract> Logger, Office<IContractExample1> Office1, Office<IContractExample2> Office2)>
-    SetupThreeBodyProblemAsync(List<Log> storage, Type[]? agents = null)
+    SetupThreeBodyProblemAsync(ConcurrentBag<Log> storage, Type[]? agents = null)
     {
         var server = await StartServerAsync(agents);
         var url = server.Urls.First();
@@ -91,7 +92,7 @@ public static class TestFramework
     }
 
     public static async Task<(WebApplication server, Office<IAgencyContract> logger, Office<IContractAgentX> office, string agent)> 
-    SetupLoggerOfficeAgentAsync(List<Log> storage)
+    SetupLoggerOfficeAgentAsync(ConcurrentBag<Log> storage)
     {
         var server = await StartServerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
         var url = server.Urls.First();
