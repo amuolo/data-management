@@ -11,13 +11,13 @@
     <Authors>Muoland</Authors>
     <Description>The Muoland.Agency toolkit empowers developers to create robust scalable web applications with ease. By abstracting complex concurrency models and providing essential APIs, it enables seamless communication between components following the actor model.</Description>
     <PackageProjectUrl>https://github.com/amuolo/data-management</PackageProjectUrl>
-    <PackageIcon>Assets/img/robinx.png</PackageIcon>
+    <PackageIcon>Assets\img\logox.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application, parallel, concurrent, governance, cloud, performance, threading, queues, jobs, background, long-running, AspNetCore, AspNet, NetCore, MVC, WPF, Razor, Blazor</PackageTags>
-    <Version>1.0.6</Version>
+    <Version>1.0.7</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -48,7 +48,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="Assets\img\robinx.png">
+    <None Update="Assets\img\logox.png">
       <Pack>True</Pack>
       <PackagePath>\</PackagePath>
     </None>
@@ -59,12 +59,10 @@
     <Copyright>GNU General Public License v3.0</Copyright>
     <PackageReleaseNotes>
 
-		26 Apr 2024 Release Note v1.0.6 🚀
+		30 Apr 2024 Release Note v1.0.7 
 
-		- fix bug hindering message recognition from predicates
-		- fix inner agent state
-		- Introduce disposability for message hubs
-		- Greatly improve test coverage
+		- fix bugs in job state machine and step handling
+		- performance optimization with parallel job executions
 
 		<!-- 🚀 -->
 

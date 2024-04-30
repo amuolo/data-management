@@ -1,3 +1,8 @@
+### 30 Apr 2024 Release Note v1.0.7 ###
+
+- fix bugs in job state machine and step handling
+- performance optimization with parallel job executions
+
 ### 26 Apr 2024 Release Note v1.0.6 🚀 ### 
 
 - fix bug hindering message recognition from predicates
