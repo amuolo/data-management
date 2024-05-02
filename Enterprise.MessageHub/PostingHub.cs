@@ -7,6 +7,8 @@ public class PostingHub : Hub
     public const string ReceiveLog = nameof(ReceiveLog);
     public const string ReceiveMessage = nameof(ReceiveMessage);
     public const string ReceiveResponse = nameof(ReceiveResponse);
+    public const string ReceiveConnectRequest = nameof(ReceiveConnectRequest);
+    public const string ReceiveConnectionEstablished = nameof(ReceiveConnectionEstablished);
 
     public async Task Log(string sender, string senderId, string message)
     {

@@ -4,10 +4,6 @@ public interface IHubContract
 {  
     Task CreateRequest();
 
-    Task ReadRequest();
-
-    Task ReadResponse();
-
     Task<DeletionProcess> DeleteRequest();
 }
 

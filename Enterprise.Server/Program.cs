@@ -10,6 +10,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 
+// TODO: change Workplace to AgencyCulture for v2.0.0
 var workplace = new Workplace("https://localhost:7158") with
 {
     AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],

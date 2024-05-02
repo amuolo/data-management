@@ -95,15 +95,15 @@ public class Agent<TState, THub, IContract> : BackgroundService
             Dispose();
             return;
         }
-        else if (message == nameof(IHubContract.ReadRequest))
-        {
-            // TODO: generalizes read request response with agency contract
-            // TODO: check whether this mechanism handles read requests in parallel
-            await CreateAsync();
-            MessageHub.LogPost($"processing {message}");
-            MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, nameof(IHubContract.ReadResponse)));
-            return;
-        }
+        //else if (message == nameof(IHubContract.ReadRequest))
+        //{
+        //    // TODO: generalizes read request response with agency contract
+        //    // TODO: check whether this mechanism handles read requests in parallel
+        //    await CreateAsync();
+        //    MessageHub.LogPost($"processing {message}");
+        //    MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, nameof(IHubContract.ReadResponse)));
+        //    return;
+        //}
         else if (MethodsByName.TryGetValue(message, out var method))
         {
             // TODO: consider re-using the office registration pattern instead of inventing a new one here
