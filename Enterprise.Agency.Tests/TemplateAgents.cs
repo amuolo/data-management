@@ -29,7 +29,7 @@ public class XHub : MessageHub<IContractAgentX>
             return;
         }
 
-        model = model with { Name = name };
+        model.Name = name;
 
         Post(agent => agent.Display, $"Data has been processed");
         Post(agent => agent.DataChangedEvent);

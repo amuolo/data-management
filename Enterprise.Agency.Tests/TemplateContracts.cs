@@ -26,9 +26,9 @@ public interface IContractAgentX : IAgencyContract
 
     XModel GetRequestAsync();
 
-    void ImportRequest(string fileName);
+    void UpdateRequest(string fileName);
 
-    Task ImportRequestAsync(string fileName);
+    Task UpdateRequestAsync(string fileName);
 
     /* out */
     Task DataChangedEvent();

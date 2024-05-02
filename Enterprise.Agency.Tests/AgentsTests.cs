@@ -12,80 +12,138 @@ public class AgentsTests
     ConcurrentBag<Log> Storage { get; set; } = [];
 
     [TestMethod]
-    public async Task BasicMessageHandling()
+    public async Task MessageResponse()
     {
         var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
 
-        var x = "";
+        var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
         office.PostWithResponse<XModel>(
             agent => agent.GetRequest,
-            model => { x = model.Name + model.Surname; semaphore.Release(); });
+            model => { state = model.Name + model.Surname; semaphore.Release(); });
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
-        Assert.AreEqual("PaoloRossi", x);
+        Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
-    public async Task BasicMessageHandlingWithTarget()
+    public async Task MessageResponseWithTarget()
     {
         var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
 
-        var x = "";
+        var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
         office.PostWithResponse<string, XModel>(
             agentName,
             agent => agent.GetRequest,
-            model => { x = model.Name + model.Surname; semaphore.Release(); });
+            model => { state = model.Name + model.Surname; semaphore.Release(); });
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
-        Assert.AreEqual("PaoloRossi", x);
+        Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
-    public async Task BasicAsyncMessageHandling()
+    public async Task AsyncMessageResponse()
     {
         var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
 
-        var x = "";
+        var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
         office.PostWithResponse<XModel>(
             agent => agent.GetRequestAsync, 
-            model => { x = model.Name + model.Surname; semaphore.Release(); });
+            model => { state = model.Name + model.Surname; semaphore.Release(); });
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
-        Assert.AreEqual("PaoloRossi", x);
+        Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
-    public async Task BasicAsyncMessageHandlingWithTarget()
+    public async Task AsyncMessageResponseWithTarget()
     {
         var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
 
-        var x = "";
+        var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
         office.PostWithResponse<string, XModel>(
             agentName, 
             agent => agent.GetRequestAsync, 
-            model => { x = model.Name + model.Surname; semaphore.Release(); });
+            model => { state = model.Name + model.Surname; semaphore.Release(); });
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
-        Assert.AreEqual("PaoloRossi", x);
+        Assert.AreEqual("PaoloRossi", state);
+        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+    }
+
+    [TestMethod]
+    public async Task AsyncUpdateWorkflow()
+    {
+        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+
+        string state = "", display = "";
+        SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
+
+        office.Register(o => o.DataChangedEvent, () =>
+        {
+            office.PostWithResponse<XModel>(
+                agent => agent.GetRequestAsync,
+                model => { state = model.Name + model.Surname; semaphoreState.Release(); });
+        });
+
+        office.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
+
+        office.Post(agent => agent.UpdateRequestAsync, "Marco");
+
+        var sp1 = await semaphoreState.WaitAsync(Timeout);
+        var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
+
+        Assert.IsTrue(sp1);
+        Assert.IsTrue(sp2);
+        Assert.AreEqual("MarcoRossi", state);
+        Assert.AreEqual("Data has been processed", display);
+        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+    }
+
+    [TestMethod]
+    public async Task AsyncUpdateWorkflowWithTarget()
+    {
+        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+
+        string state = "", display = "";
+        SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
+
+        office.Register(o => o.DataChangedEvent, () =>
+        {
+            office.PostWithResponse<XModel>(
+                agent => agent.GetRequestAsync,
+                model => { state = model.Name + model.Surname; semaphoreState.Release(); });
+        });
+
+        office.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
+
+        office.Post(agentName, agent => agent.UpdateRequestAsync, "Marco");
+
+        var sp1 = await semaphoreState.WaitAsync(Timeout);
+        var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
+
+        Assert.IsTrue(sp1);
+        Assert.IsTrue(sp2);
+        Assert.AreEqual("MarcoRossi", state);
+        Assert.AreEqual("Data has been processed", display);
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 }
