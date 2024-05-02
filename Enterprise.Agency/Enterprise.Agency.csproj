@@ -16,7 +16,12 @@
     <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, application, parallel, concurrent, governance, cloud, performance, threading, queues, jobs, background, long-running, AspNetCore, AspNet, NetCore, MVC, WPF, Razor, Blazor</PackageTags>
+    <PackageTags>
+		muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, web, application,
+		parallel, concurrent, governance, cloud, performance, threading, queue, jobs, background, long-running, AspNetCore,
+		AspNet, NetCore, MVC, WPF, Razor, Blazor, eventsource, network, log, monitoring, reactive, dependency, injection,
+		health, check, hosting
+	</PackageTags>
     <Version>1.0.7</Version>
   </PropertyGroup>
 
