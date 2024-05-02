@@ -120,7 +120,6 @@ public class Agent<TState, THub, IContract> : BackgroundService
                 var returnType = method.ReturnType;
                 var err = $"Inconsistent return type found when agent {Me} processed {message}";
 
-                // TODO: handle return types different than tasks
                 if (returnType == typeof(Task))
                 {
                     if (res is null)
@@ -134,6 +133,13 @@ public class Agent<TState, THub, IContract> : BackgroundService
                     await (Task)res;
                     var result = res.GetType().GetProperty("Result")?.GetValue(res);
                     MessageHub.Queue.Enqueue(new Parcel(sender, senderId, result, message) 
+                        with { Type = nameof(PostingHub.SendResponse), Id = messageId });
+                }
+                else if (returnType != typeof(void))
+                {
+                    if (res is null)
+                        throw new Exception(err);
+                    MessageHub.Queue.Enqueue(new Parcel(sender, senderId, res, message)
                         with { Type = nameof(PostingHub.SendResponse), Id = messageId });
                 }
             })
