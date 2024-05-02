@@ -89,7 +89,7 @@ public class Office<IContract>() : MessageHub<IContract>
     public Office<IContract> ReceiveLogs(Action<string, string, string> action)
     {
         Me = Addresses.Logger;
-        Connection.On(nameof(IHubContract.ReceiveLog), action);
+        Connection.On(PostingHub.ReceiveLog, action);
         return this;
     }
 

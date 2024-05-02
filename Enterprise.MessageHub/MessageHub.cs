@@ -49,8 +49,8 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
 
     public virtual void Dispose()
     {
-        Connection.Remove(nameof(IHubContract.ReceiveMessage));
-        Connection.Remove(nameof(IHubContract.ReceiveResponse));
+        Connection.Remove(PostingHub.ReceiveMessage);
+        Connection.Remove(PostingHub.ReceiveResponse);
         Connection.Remove(nameof(PostingHub.ConnectRequest));        
         Connection.StopAsync();
         Cancellation.Cancel();
@@ -216,7 +216,7 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
 
     public async Task InitializeConnectionAsync(CancellationToken token, Func<string, string, string, string, string?, Task> actionMessageReceivedAsync)
     {
-        Connection.On<string, string, string, string, string?>(nameof(IHubContract.ReceiveMessage),
+        Connection.On<string, string, string, string, string?>(PostingHub.ReceiveMessage,
             async (sender, senderId, message, messageId, package) =>
                 await actionMessageReceivedAsync(sender, senderId, message, messageId, package));
 
@@ -232,7 +232,7 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
                     await Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, Id, senderId, requestId);
             });
 
-        Connection.On<string, string, string, string>(nameof(IHubContract.ReceiveResponse), ActionResponseReceived);
+        Connection.On<string, string, string, string>(PostingHub.ReceiveResponse, ActionResponseReceived);
 
         string getMsg(Exception? exc) => exc is null ? "" : "Exception: " + exc.Message;
 

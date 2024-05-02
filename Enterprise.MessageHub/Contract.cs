@@ -2,10 +2,6 @@
 
 public interface IHubContract
 {  
-    Task ReceiveLog();
-
-    Task LogReceived();
-
     Task CreateRequest();
 
     Task ReadRequest();
@@ -13,10 +9,6 @@ public interface IHubContract
     Task ReadResponse();
 
     Task<DeletionProcess> DeleteRequest();
-
-    Task ReceiveMessage();
-
-    Task ReceiveResponse();
 }
 
 public record DeletionProcess(bool Status);
