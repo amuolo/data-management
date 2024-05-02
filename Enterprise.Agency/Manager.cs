@@ -35,20 +35,20 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 
     protected IDisposable OnConnectRequest()
     {
-        return MessageHub.Connection.On(nameof(PostingHub.ConnectRequest),
+        return MessageHub.Connection.On(PostingHub.ReceiveConnectRequest,
             async (string sender, string senderId, string requestId, string target) =>
             {
                 Func<Task> postAction = target == Me 
                     ? async () => await MessageHub.Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, MessageHub.Id, senderId, requestId) 
                     : () => Task.CompletedTask;
 
-                await RunAgentsDiscoveryAsync(nameof(PostingHub.ConnectRequest), sender, postAction);
+                await RunAgentsDiscoveryAsync(sender, postAction);
             });  
     }
 
-    private async Task RunAgentsDiscoveryAsync(string message, string sender, Func<Task> postAction)
+    private async Task RunAgentsDiscoveryAsync(string sender, Func<Task> postAction)
     {
-        await Job.WithStep($"{message}", async state =>
+        await Job.WithStep($"{PostingHub.ReceiveConnectRequest}", async state =>
         {
             try
             {

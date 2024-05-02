@@ -110,7 +110,7 @@ public class Post : BackgroundService
         var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
         var id = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
 
-        var subscription = connection.On(nameof(PostingHub.ConnectionEstablished) + requestId, 
+        var subscription = connection.On(PostingHub.ReceiveConnectionEstablished + requestId, 
             (string senderId, string messageId) => {
                 if (messageId == requestId)
                 {

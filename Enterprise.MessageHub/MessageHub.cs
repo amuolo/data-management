@@ -51,7 +51,7 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
     {
         Connection.Remove(PostingHub.ReceiveMessage);
         Connection.Remove(PostingHub.ReceiveResponse);
-        Connection.Remove(nameof(PostingHub.ConnectRequest));        
+        Connection.Remove(PostingHub.ReceiveConnectRequest);        
         Connection.StopAsync();
         Cancellation.Cancel();
     }
@@ -225,7 +225,7 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
 
     private async Task FinalizeConnectionAsync(CancellationToken token)
     {
-        Connection.On(nameof(PostingHub.ConnectRequest),
+        Connection.On(PostingHub.ReceiveConnectRequest,
             async (string sender, string senderId, string requestId, string target) =>
             {
                 if (target == Me)

@@ -30,12 +30,12 @@ public class PostingHub : Hub
 
     public async Task ConnectRequest(string sender, string senderId, string requestId, string target)
     {
-        await Clients.All.SendAsync(nameof(ConnectRequest), sender, senderId, requestId, target);
+        await Clients.All.SendAsync(ReceiveConnectRequest, sender, senderId, requestId, target);
     }
 
     public async Task ConnectionEstablished(string sender, string senderId, string receiverId, string requestId)
     {
-        await Clients.Client(receiverId).SendAsync(nameof(ConnectionEstablished) + requestId, senderId, requestId);
+        await Clients.Client(receiverId).SendAsync(ReceiveConnectionEstablished + requestId, senderId, requestId);
     }
 }
 
