@@ -18,7 +18,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
     public Manager(IHubContext<PostingHub> hubContext, Workplace workplace) : base(hubContext, workplace)
     {
         MessageHub.Me = Addresses.Central;
-        Job = Job.Initialize(new Core { Package = null, State = workplace });
+        Job = Job.Initialize(workplace);
     }
 
     protected override async Task ExecuteAsync(CancellationToken token)
@@ -52,7 +52,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
         {
             try
             {
-                Tasks.Enqueue((await MessageHub.AgentsDiscovery(sender, state.State), postAction));
+                Tasks.Enqueue((await MessageHub.AgentsDiscovery(sender, state), postAction));
                 if(OnBoardingProcess.CurrentCount == 0)
                     OnBoardingProcess.Release();
             }
@@ -100,11 +100,11 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 
     protected async Task OffBoardingAsync(CancellationToken token)
     {
-        var state = Job.State.State;
-        var outerTimer = new PeriodicTimer(state.OffBoardingWaitingTime);
-
         while (!token.IsCancellationRequested)
         {
+            var state = Job.State!;
+            var outerTimer = new PeriodicTimer(state.OffBoardingWaitingTime);
+
             try
             {
                 if (state is null || !state.DossierByActor.Any())
