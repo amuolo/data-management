@@ -102,7 +102,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
     {
         while (!token.IsCancellationRequested)
         {
-            var state = Job.State!;
+            var state = (await Job.GetStateAsync())!;
             var outerTimer = new PeriodicTimer(state.OffBoardingWaitingTime);
 
             try

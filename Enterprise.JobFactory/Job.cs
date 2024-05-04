@@ -57,9 +57,12 @@ public record Job<TState>()
 
     public TState? State { get; set; }
 
-    private object? Substitute { get; set; }
-
-    private Task<Job<TState>>? Work { get; set; }
+    public async Task<TState?> GetStateAsync(CancellationToken token = new())
+    {
+        await Semaphore.WaitAsync(token).ConfigureAwait(false);
+        Semaphore.Release();
+        return State;
+    }
 
     public Job<TState> Initialize(TState? state) => this with { State = state };
 
@@ -103,57 +106,57 @@ public record Job<TState>()
         return New<TState, TResult>(this);
     }
 
-    public Task<Job<TState>> Start(CancellationToken token = new())
+    public async Task<Job<TState>> Start(CancellationToken token = new())
     {
-        if (Work is null || Semaphore.CurrentCount == 1)
+        var progress = false;
+        try
         {
-            return Task.Run(async () =>
+            await Semaphore.WaitAsync(token).ConfigureAwait(false);
+
+            if (!Steps.IsEmpty && Configuration.ProgressBarEnable is not null)
             {
-                try
-                {
-                    await Semaphore.WaitAsync(token).ConfigureAwait(false);
+                progress = true;
+                Configuration.ProgressBarEnable(Steps.Count);
+            }
 
-                    if (Configuration.ProgressBarEnable is not null)
-                        Configuration.ProgressBarEnable(Steps.Count);
+            while (!Steps.IsEmpty && !token.IsCancellationRequested)
+            {
+                var ok = Steps.TryDequeue(out var step);
 
-                    while (!Steps.IsEmpty && !token.IsCancellationRequested)
-                    {
-                        var ok = Steps.TryDequeue(out var step);
+                if (!ok) throw new Exception("Issue with job dequeuing");
 
-                        if (!ok) throw new Exception("Issue with job dequeuing");
+                await ExecuteAsync(step.Name, step.Func, step.TOrigin, step.TDestination).ConfigureAwait(false);
 
-                        await ExecuteAsync(step.Name, step.Func, step.TOrigin, step.TDestination).ConfigureAwait(false);
+                foreach (var post in PostActions)
+                    await ExecuteAsync(post.Name, post.Func, typeof(TState), null).ConfigureAwait(false);
 
-                        foreach (var post in PostActions)
-                            await ExecuteAsync(post.Name, post.Func, typeof(TState), null).ConfigureAwait(false);
-
-                        if (Configuration.ProgressBarUpdate is not null) Configuration.ProgressBarUpdate();
-                    }
-                }
-                catch (Exception ex)
-                {
-                    var msg = $"Exception caught when executing '{CurrentStep}': {ex.Message}: {ex.InnerException?.Message?? ""}";
-                    if (Configuration.Logger is not null)
-                        Configuration.Logger.Invoke(msg);
-                    if (Configuration.AsyncLogger is not null)
-                        await Configuration.AsyncLogger.Invoke(msg).ConfigureAwait(false);
-                    if (Configuration.Logger is null && Configuration.AsyncLogger is null)
-                        throw;
-                }
-                finally
-                {
-                    if (Configuration.ProgressBarClose is not null) Configuration.ProgressBarClose();
-                    Work = Task.FromResult(this);
-                    Substitute = null;
-                    Semaphore.Release();      
-                }
-                return this;
-            });
+                if (progress && Configuration.ProgressBarUpdate is not null)
+                    Configuration.ProgressBarUpdate();
+            }
         }
-        return Work;
+        catch (Exception ex)
+        {
+            var msg = $"Exception caught when executing '{CurrentStep}': {ex.Message}: {ex.InnerException?.Message?? ""}";
+            if (Configuration.Logger is not null)
+                Configuration.Logger.Invoke(msg);
+            if (Configuration.AsyncLogger is not null)
+                await Configuration.AsyncLogger.Invoke(msg).ConfigureAwait(false);
+            if (Configuration.Logger is null && Configuration.AsyncLogger is null)
+                throw;
+        }
+        finally
+        {
+            if (progress && Configuration.ProgressBarClose is not null)
+                Configuration.ProgressBarClose();
+            Substitute = null;
+            Semaphore.Release();
+        }
+        return this;
     }
 
     /* Private - Protected */
+
+    protected object? Substitute { get; set; }
 
     SemaphoreSlim Semaphore { get; } = new(1, 1);
 
