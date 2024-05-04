@@ -107,7 +107,7 @@ public record Job<TState>()
     {
         if (Work is null || Semaphore.CurrentCount == 1)
         {
-            Work = Task.Run(async () =>
+            return Task.Run(async () =>
             {
                 try
                 {
@@ -143,17 +143,17 @@ public record Job<TState>()
                 finally
                 {
                     if (Configuration.ProgressBarClose is not null) Configuration.ProgressBarClose();
-                    Semaphore.Release();
+                    Work = Task.FromResult(this);
                     Substitute = null;
+                    Semaphore.Release();      
                 }
-
                 return this;
             });
         }
         return Work;
     }
 
-    /* Private */
+    /* Private - Protected */
 
     SemaphoreSlim Semaphore { get; } = new(1, 1);
 
