@@ -68,19 +68,19 @@ public record Job<TState>()
 
     public Job<TState> OnFinish(string name, Action<TState> onFinish)
     {
-        OnFinishAction = OnFinishAction.Add((name, onFinish));
+        OnFinishAction.Add((name, onFinish));
         return this;
     }
 
     public Job<TState> WithPostAction(string name, Action<TState> action)
     {
-        PostActions = PostActions.Add((name, action));
+        PostActions.Add((name, action));
         return this;
     }
 
     public Job<TState> WithPostAction(string name, Action action)
     {
-        IndependentPostActions = IndependentPostActions.Add((name, action));
+        IndependentPostActions.Add((name, action));
         return this;
     }
 
