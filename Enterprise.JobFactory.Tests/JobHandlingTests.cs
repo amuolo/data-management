@@ -236,4 +236,37 @@ public class TestsJobMachine
         Assert.AreEqual("ab", r.State.Item1?? "");
         Assert.AreEqual("c", r.State.Item2?? "");
     }
+
+    [TestMethod]
+    public async Task PostActionTest()
+    {
+        var x = 0;
+
+        var r = await Job.JobFactory.New()
+            .WithPostAction("pa1", _ => x++)
+            .WithStep($"s1", async _ => { await Task.Delay(5); return ("a", "b"); })
+            .WithStep($"s2", c => { c.Item1 += "b"; return c; })
+            .WithStep($"s3", c => { c.Item2 = "c"; return c; })
+            .Start();
+
+        Assert.AreEqual(0, x);
+        Assert.AreEqual("ab", r.State.Item1?? "");
+        Assert.AreEqual("c", r.State.Item2?? "");
+
+        await r.WithPostAction("pa2", _ => x++)
+               .WithStep($"s4", c => { c.Item1 += "c"; return c; })
+               .WithStep($"s5", c => { c.Item2 += "d"; return c; })
+               .WithStep($"s6", c => c)
+               .Start();
+
+        Assert.AreEqual(3, x);
+        Assert.AreEqual("abc", r.State.Item1?? "");
+        Assert.AreEqual("cd", r.State.Item2?? "");
+    }
+
+    [TestMethod]
+    public async Task IndependentPostActionTest()
+    {
+        
+    }
 }

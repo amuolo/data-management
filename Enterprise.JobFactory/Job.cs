@@ -66,9 +66,28 @@ public record Job<TState>()
 
     public Job<TState> Initialize(TState? state) => this with { State = state };
 
-    public Job<TState> WithPostActions(string name, Action<TState> action) => this with { PostActions = PostActions.Add((name, action)) };
+    public Job<TState> OnFinish(string name, Action<TState> onFinish)
+    {
+        OnFinishAction = OnFinishAction.Add((name, onFinish));
+        return this;
+    }
 
-    public virtual Job<TState> WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
+    public Job<TState> WithPostAction(string name, Action<TState> action)
+    {
+        PostActions = PostActions.Add((name, action));
+        return this;
+    }
+
+    public Job<TState> WithPostAction(string name, Action action)
+    {
+        IndependentPostActions = IndependentPostActions.Add((name, action));
+        return this;
+    }
+
+    public virtual Job<TState> WithOptions(Func<JobConfiguration, JobConfiguration> update)
+    {
+        return this with { Configuration = update(Configuration) };
+    }
 
     public Job<TState> WithStep(string name, Action<TState> step) 
     {
@@ -164,7 +183,11 @@ public record Job<TState>()
 
     protected JobConfiguration Configuration { get; set; } = new();
 
-    protected ImmutableList<(string Name, Delegate Func)> PostActions { get; set; } = ImmutableList<(string, Delegate)>.Empty;
+    protected ImmutableList<(string Name, Delegate Func)> OnFinishAction { get; set; } = [];
+
+    protected ImmutableList<(string Name, Delegate Func)> PostActions { get; set; } = [];
+
+    protected ImmutableList<(string Name, Delegate Func)> IndependentPostActions { get; set; } = [];
 
     protected ConcurrentQueue<(string Name, Delegate Func, Type? TOrigin, Type? TDestination)> Steps { get; set; } = new();
 
@@ -279,9 +302,9 @@ public record Job<TState>()
         => new Job<TResult>() with
         {
             Substitute = job.State is not null ? job.State : job.Substitute,
+            IndependentPostActions = job.IndependentPostActions,
             Configuration = job.Configuration,
             CurrentStep = job.CurrentStep,
-            PostActions = job.PostActions,
             Steps = job.Steps
         };
 }

@@ -20,10 +20,29 @@ public class ThreadSafetyTests
             Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).Start());
         });
 
+        await Task.Delay(100);
         await job.Start();
 
         Assert.AreEqual(+100, job.State?.X);
         Assert.AreEqual(-100, job.State?.Y);
+    }
+
+    [TestMethod]
+    public async Task SimultaneousIncrementsWithGetState()
+    {
+        var job = Job.JobFactory.New()
+            .WithStep("s1", () => new MyTypeX() { X = 0, Y = 0 });
+
+        Enumerable.Range(0, 100).ToList().ForEach(i =>
+        {
+            Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).Start());
+        });
+
+        await Task.Delay(100);
+        var res = await job.GetStateAsync();
+
+        Assert.AreEqual(+100, res?.X);
+        Assert.AreEqual(-100, res?.Y);
     }
 
     [TestMethod]
