@@ -20,7 +20,6 @@ public class ThreadSafetyTests
             Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).Start());
         });
 
-        await Task.Delay(100);
         await job.Start();
 
         Assert.AreEqual(+100, job.State?.X);
