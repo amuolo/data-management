@@ -10,7 +10,7 @@ public class ThreadSafetyTests
     }
 
     [TestMethod]
-    public async Task BasicSimultaneousIncrements()
+    public async Task SimultaneousIncrements()
     {
         var job = Job.JobFactory.New()
             .WithStep("s1", () => new MyTypeX() { X = 0, Y = 0 });
@@ -28,7 +28,7 @@ public class ThreadSafetyTests
     }
 
     [TestMethod]
-    public async Task BasicSimultaneousIncrementsAsync()
+    public async Task SimultaneousIncrementsAsync()
     {
         var job = Job.JobFactory.New()
             .WithStep("s1", async () => { await Task.Delay(100); return new MyTypeX() { X = 0, Y = 0 }; });
@@ -45,7 +45,7 @@ public class ThreadSafetyTests
     }
 
     [TestMethod]
-    public async Task BasicSimultaneousIncrementsAsyncWithPrimitiveType()
+    public async Task SimultaneousIncrementsAsyncWithPrimitiveType()
     {
         var job = Job.JobFactory.New()
             .WithStep("s1", async () => { await Task.Delay(100); return 0; });
@@ -58,5 +58,21 @@ public class ThreadSafetyTests
         await job.Start();
 
         Assert.AreEqual(100, job.State);
+    }
+
+    [TestMethod]
+    public async Task ExtremeSimultaneousIncrementsWithPrimitiveType()
+    {
+        var job = Job.JobFactory.New()
+            .WithStep("s1", async () => { await Task.Delay(100); return 0; });
+
+        Enumerable.Range(0, 1000).ToList().AsParallel().ForAll(i =>
+        {
+            job.WithStep($"x{i}", n => i % 2 == 0 ? n + 1 : n - 1 ).Start();
+        });
+
+        await job.Start();
+
+        Assert.AreEqual(0, job.State);
     }
 }
