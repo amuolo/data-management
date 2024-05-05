@@ -300,5 +300,13 @@ public class TestsJobMachine
         Assert.AreEqual(9, x);
         Assert.AreEqual("23", r.State?.S1?? "");
         Assert.AreEqual("4", r.State?.S2?? "");
+
+        await r.Remove("pa2").WithStep($"s7", c => c).Start();
+
+        Assert.AreEqual(10, x);
+
+        await r.RemoveAllPostActions().WithStep($"s8", c => c).Start();
+
+        Assert.AreEqual(10, x);
     }
 }

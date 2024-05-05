@@ -91,6 +91,13 @@ public record Job<TState>()
         return this;
     }
 
+    public Job<TState> RemoveAllPostActions()
+    {
+        IndependentPostActions.Clear();
+        PostActions.Clear();
+        return this;
+    }
+
     public virtual Job<TState> WithOptions(Func<JobConfiguration, JobConfiguration> update)
     {
         return this with { Configuration = update(Configuration) };
