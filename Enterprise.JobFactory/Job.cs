@@ -1,5 +1,4 @@
 ﻿using System.Collections.Concurrent;
-using System.Collections.Immutable;
 using System.Diagnostics;
 
 namespace Enterprise.Job;
@@ -64,23 +63,31 @@ public record Job<TState>()
         return State;
     }
 
-    public Job<TState> Initialize(TState? state) => this with { State = state };
+    public Job<TState> Initialize(TState? state) => this with { UseSubstitute = false, State = state };
 
     public Job<TState> OnFinish(string name, Action<TState> onFinish)
     {
-        OnFinishAction.Add((name, onFinish));
+        OnFinishAction.TryAdd(name, onFinish);
         return this;
     }
 
     public Job<TState> WithPostAction(string name, Action<TState> action)
     {
-        PostActions.Add((name, action));
+        PostActions.TryAdd(name, action);
         return this;
     }
 
     public Job<TState> WithPostAction(string name, Action action)
     {
-        IndependentPostActions.Add((name, action));
+        IndependentPostActions.TryAdd(name, action);
+        return this;
+    }
+
+    public Job<TState> Remove(string name)
+    {
+        OnFinishAction.TryRemove(name, out var _);
+        IndependentPostActions.TryRemove(name, out _);
+        PostActions.TryRemove(name, out _); 
         return this;
     }
 
@@ -147,7 +154,7 @@ public record Job<TState>()
                 await ExecuteAsync(step.Name, step.Func, step.TOrigin, step.TDestination).ConfigureAwait(false);
 
                 foreach (var post in PostActions)
-                    await ExecuteAsync(post.Name, post.Func, typeof(TState), null).ConfigureAwait(false);
+                    await ExecuteAsync(post.Key, post.Value, typeof(TState), null).ConfigureAwait(false);
 
                 if (progress && Configuration.ProgressBarUpdate is not null)
                     Configuration.ProgressBarUpdate();
@@ -175,6 +182,8 @@ public record Job<TState>()
 
     /* Private - Protected */
 
+    protected bool UseSubstitute { get; set; } = true;
+
     protected object? Substitute { get; set; }
 
     SemaphoreSlim Semaphore { get; } = new(1, 1);
@@ -183,11 +192,11 @@ public record Job<TState>()
 
     protected JobConfiguration Configuration { get; set; } = new();
 
-    protected ImmutableList<(string Name, Delegate Func)> OnFinishAction { get; set; } = [];
+    protected ConcurrentDictionary<string, Delegate> OnFinishAction { get; set; } = [];
 
-    protected ImmutableList<(string Name, Delegate Func)> PostActions { get; set; } = [];
+    protected ConcurrentDictionary<string, Delegate> PostActions { get; set; } = [];
 
-    protected ImmutableList<(string Name, Delegate Func)> IndependentPostActions { get; set; } = [];
+    protected ConcurrentDictionary<string, Delegate> IndependentPostActions { get; set; } = [];
 
     protected ConcurrentQueue<(string Name, Delegate Func, Type? TOrigin, Type? TDestination)> Steps { get; set; } = new();
 
