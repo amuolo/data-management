@@ -93,6 +93,51 @@ public class TestsJobMachine
     }
 
     [TestMethod]
+    public async Task Initialization()
+    {
+        var r = await Job.JobFactory.New<string>()
+            .WithStep($"s1", s => s + 2.ToString())
+            .WithStep($"s2", s => s + 3.ToString())
+            .Start();
+
+        Assert.AreEqual("23", r.State);
+    }
+
+    [TestMethod]
+    public async Task InitializationWithValue()
+    {
+        var r = await Job.JobFactory.New<string>()
+            .Initialize("1")
+            .WithStep($"s1", s => s + 2.ToString())
+            .WithStep($"s2", s => s + 3.ToString())
+            .Start();
+
+        Assert.AreEqual("123", r.State);
+    }
+
+    [TestMethod]
+    public async Task InitializationWithDefault()
+    {
+        var s = "";
+        var r = Job.JobFactory.New<MyTypeA>().WithStep($"s1", a => a with { X = 1 });
+
+        try
+        {
+            await r.Start();
+        }
+        catch (Exception ex)
+        {
+            s = ex.Message;
+        }
+
+        Assert.IsTrue(s.Contains("Object reference not set to an instance of an object."));
+
+        await r.WithStep($"s2", a => new MyTypeA(0,0)).WithStep($"s3", a => a with { X=1 }).Start();
+
+        Assert.AreEqual(new MyTypeA(1,0), r.State);
+    }
+
+    [TestMethod]
     public async Task SelectedChangesOfState()
     {
         var r = await Job.JobFactory.New(2)

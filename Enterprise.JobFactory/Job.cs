@@ -16,7 +16,7 @@ public static class JobFactory
 {
     public static Job New() => new();
 
-    public static Job<TState> New<TState>() where TState : new() => new Job<TState>().Initialize(new TState());
+    public static Job<TState> New<TState>() => new Job<TState>().Initialize(default);
 
     public static Job<TState> New<TState>(TState initialState) => new Job<TState>().Initialize(initialState);
 }
