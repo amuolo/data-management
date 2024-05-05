@@ -354,4 +354,18 @@ public class TestsJobMachine
 
         Assert.AreEqual(10, x);
     }
+
+    [TestMethod]
+    public async Task OnFinishTesting()
+    {
+        var x = 0;
+
+        var r = await Job.JobFactory.New()
+            .WithStep($"s1", _ => 1)
+            .WithStep($"s1", _ => 2)
+            .OnFinish("of1", i => { x = i; })
+            .Start();
+
+        Assert.AreEqual(2, x);
+    }
 }

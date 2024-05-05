@@ -169,6 +169,9 @@ public record Job<TState>()
                 if (progress && Configuration.ProgressBarUpdate is not null)
                     Configuration.ProgressBarUpdate();
             }
+
+            foreach (var onFinish in OnFinishAction)
+                await ExecuteAsync(onFinish.Key, onFinish.Value, typeof(TState), null).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
