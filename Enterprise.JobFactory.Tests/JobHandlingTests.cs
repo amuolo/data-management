@@ -281,7 +281,7 @@ public class TestsJobMachine
         var x = 0;
 
         var r = await Job.JobFactory.New()
-            //.WithPostAction("pa1", () => x++)
+            .WithPostAction("pa1", () => x++)
             .WithStep($"s1", _ => 1)
             .WithStep($"s2", c => (c + 1).ToString())
             .WithStep($"s3", c => new MyTypeC { S1 = c })
@@ -290,15 +290,15 @@ public class TestsJobMachine
         Assert.AreEqual(3, x);
         Assert.AreEqual("2", r.State?.S1?? "");
         Assert.AreEqual("", r.State?.S2?? "");
-        /*
+        
         await r.WithPostAction("pa2", () => x++)
                .WithStep($"s4", c => { c.S1 += "3"; return c; })
                .WithStep($"s5", c => { c.S2 += "4"; return c; })
                .WithStep($"s6", c => c)
                .Start();
 
-        Assert.AreEqual(6, x);
+        Assert.AreEqual(9, x);
         Assert.AreEqual("23", r.State?.S1?? "");
-        Assert.AreEqual("4", r.State?.S2?? "");*/
+        Assert.AreEqual("4", r.State?.S2?? "");
     }
 }

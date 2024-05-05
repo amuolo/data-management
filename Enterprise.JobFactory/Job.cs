@@ -156,6 +156,9 @@ public record Job<TState>()
                 foreach (var post in PostActions)
                     await ExecuteAsync(post.Key, post.Value, typeof(TState), null).ConfigureAwait(false);
 
+                foreach (var post in IndependentPostActions)
+                    await ExecuteAsync(post.Key, post.Value, null, null).ConfigureAwait(false);
+
                 if (progress && Configuration.ProgressBarUpdate is not null)
                     Configuration.ProgressBarUpdate();
             }
@@ -174,7 +177,6 @@ public record Job<TState>()
         {
             if (progress && Configuration.ProgressBarClose is not null)
                 Configuration.ProgressBarClose();
-            Substitute = null;
             Semaphore.Release();
         }
         return this;
@@ -222,15 +224,16 @@ public record Job<TState>()
             else if (TDestination == typeof(TState))
             {
                 State = ((Func<TState>)func)();
-                Substitute = null;
+                UseSubstitute = false;
             }
             else if (TDestination == typeof(Task<TState>))
             {
                 State = await ((Func<Task<TState>>)func)();
-                Substitute = null;
+                UseSubstitute = false;
             }
             else
             {
+                UseSubstitute = true;
                 Substitute = func.DynamicInvoke();
                 if (isGenericTask)
                 {
@@ -245,14 +248,14 @@ public record Job<TState>()
         {
             if (TDestination is null)
             {
-                if (TOrigin == typeof(TState) && Substitute == null)
+                if (TOrigin == typeof(TState) && !UseSubstitute)
                     ((Action<TState>)func)(State);
                 else
                     func.DynamicInvoke(Substitute);
             }
             else if (TDestination == typeof(Task))
             {
-                if (TOrigin == typeof(TState) && Substitute == null)
+                if (TOrigin == typeof(TState) && !UseSubstitute)
                     await ((Func<TState, Task>)func)(State);
                 else
                 {
@@ -264,15 +267,15 @@ public record Job<TState>()
             }
             else if (TDestination == typeof(TState))
             {
-                if (TOrigin == typeof(TState) && Substitute == null)
+                if (TOrigin == typeof(TState) && !UseSubstitute)
                     State = ((Func<TState, TState>)func)(State);
                 else
                     State = (TState?)func.DynamicInvoke(Substitute);
-                Substitute = null;
+                UseSubstitute = false;
             }
             else if (TDestination == typeof(Task<TState>))
             {
-                if (TOrigin == typeof(TState) && Substitute == null)
+                if (TOrigin == typeof(TState) && !UseSubstitute)
                     State = await ((Func<TState, Task<TState>>)func)(State);
                 else
                 {
@@ -281,11 +284,11 @@ public record Job<TState>()
                         throw new Exception(err);
                     State = await r;
                 }
-                Substitute = null;
+                UseSubstitute = false;
             }
             else
             {
-                if (TOrigin == typeof(TState) && Substitute == null)
+                if (TOrigin == typeof(TState) && !UseSubstitute)
                     Substitute = func.DynamicInvoke(State);
                 else
                     Substitute = func.DynamicInvoke(Substitute);
@@ -296,6 +299,7 @@ public record Job<TState>()
                     await (Task)Substitute;
                     Substitute = Substitute.GetType().GetProperty("Result")?.GetValue(Substitute);
                 }
+                UseSubstitute = true;
             }
         }
 
@@ -310,7 +314,7 @@ public record Job<TState>()
     protected static Job<TResult> New<TOrigin, TResult>(Job<TOrigin> job)
         => new Job<TResult>() with
         {
-            Substitute = job.State is not null ? job.State : job.Substitute,
+            Substitute = !job.UseSubstitute ? job.State : job.Substitute,
             IndependentPostActions = job.IndependentPostActions,
             Configuration = job.Configuration,
             CurrentStep = job.CurrentStep,
