@@ -142,11 +142,12 @@ public record Job<TState>()
     public async Task<Job<TState>> Start(CancellationToken token = new())
     {
         var progress = false;
+        var isEmpty = Steps.IsEmpty;
         try
         {
             await Semaphore.WaitAsync(token).ConfigureAwait(false);
 
-            if (!Steps.IsEmpty && Configuration.ProgressBarEnable is not null)
+            if (!isEmpty && Configuration.ProgressBarEnable is not null)
             {
                 progress = true;
                 Configuration.ProgressBarEnable(Steps.Count);
@@ -170,8 +171,11 @@ public record Job<TState>()
                     Configuration.ProgressBarUpdate();
             }
 
-            foreach (var onFinish in OnFinishAction)
-                await ExecuteAsync(onFinish.Key, onFinish.Value, typeof(TState), null).ConfigureAwait(false);
+            if (!isEmpty)
+            {
+                foreach (var onFinish in OnFinishAction)
+                    await ExecuteAsync(onFinish.Key, onFinish.Value, typeof(TState), null).ConfigureAwait(false);
+            }
         }
         catch (Exception ex)
         {

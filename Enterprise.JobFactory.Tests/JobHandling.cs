@@ -1,21 +1,11 @@
 ﻿namespace Enterprise.JobFactory.Tests;
 
 [TestClass]
-public class TestsJobMachine
+public class JobHandling
 {
     List<string> Storage { get; set; } = [];
 
     Action<string> Log => Storage.Add;
-
-    public record MyTypeA(int X, int Y);
-
-    public record MyTypeB(double T, double W);
-
-    public record MyTypeC
-    {
-        public string? S1 { get; set; }
-        public string? S2 { get; set; }
-    }
 
     [TestMethod]
     public async Task SimpleStateManipulations()
@@ -46,50 +36,6 @@ public class TestsJobMachine
 
         Assert.AreEqual(6, r.State);
         Assert.AreEqual(7, Storage.Count);
-    }
-
-    [TestMethod]
-    public async Task SeveralChangesOfStates()
-    {
-        var r = await Job.JobFactory.New()
-            .WithOptions(o => o.WithLogs(Log))
-            .WithStep($"s1", () => 1)
-            .WithStep($"s2", n1 => $"{n1+2}")
-            .WithStep($"s3", n2 => int.Parse(n2) + 6.9)
-            .WithStep($"s4", async n3 => { await Task.Delay(10); return n3; })
-            .WithStep($"s5", async n4 => { await Task.Delay(10); return $"{n4}"; })
-            .WithStep($"s6", n5 => "." + n5)
-            .WithStep($"s7", _ => Task.Delay(10))
-            .WithStep($"s8", async _ => await Task.Delay(10))
-            .Start();
-
-        Assert.AreEqual(".9.9", r.State);
-        Assert.AreEqual(8, Storage.Count);
-    }
-
-    [TestMethod]
-    public async Task TrickyChangesOfState()
-    {
-        var r = await Job.JobFactory.New()
-            .WithOptions(o => o.WithLogs(Log))
-            .WithStep($"s1", () => 2)
-            .WithStep($"s2", n1 => n1 + 0.1)
-            .WithStep($"s3", n2 => (int)Math.Ceiling(n2))
-            .Start();
-
-        Assert.AreEqual(3, r.State);
-        Assert.AreEqual(3, Storage.Count);
-    }
-
-    [TestMethod]
-    public async Task TrickierChangesOfState()
-    {
-        var r = await Job.JobFactory.New()
-            .WithStep($"s1", _ => 2)
-            .WithStep($"s2", r1 => r1.ToString())
-            .Start();
-
-        Assert.AreEqual("2", r.State);
     }
 
     [TestMethod]
@@ -135,19 +81,6 @@ public class TestsJobMachine
         await r.WithStep($"s2", a => new MyTypeA(0,0)).WithStep($"s3", a => a with { X=1 }).Start();
 
         Assert.AreEqual(new MyTypeA(1,0), r.State);
-    }
-
-    [TestMethod]
-    public async Task SelectedChangesOfState()
-    {
-        var r = await Job.JobFactory.New(2)
-            .WithOptions(o => o.WithLogs(Log))
-            .WithStep($"s1", n => n.ToString() + "hello")
-            .WithStep($"s2", n1 => int.Parse(n1.First().ToString()) + 2)
-            .Start();
-
-        Assert.AreEqual(4, r.State);
-        Assert.AreEqual(2, Storage.Count);
     }
 
     [TestMethod]
@@ -236,22 +169,6 @@ public class TestsJobMachine
         Assert.AreEqual(-1, nTot);
         Assert.AreEqual(0, nSteps);
         Assert.AreEqual(-1, nClose);
-    }
-
-    [TestMethod]
-    public async Task ObjectManipulation()
-    {
-        var r = await Job.JobFactory.New()
-            .WithStep($"s1", async () => await Task.Delay(5))
-            .WithStep($"s2", async () => { await Task.Delay(5); return new MyTypeA(1, 1); })
-            .WithStep($"s3", a => a.X)
-            .WithStep($"s4", x => new MyTypeA(x, 2))
-            .WithStep($"s5", x => (double)x.Y)
-            .WithStep($"s6", async y => { await Task.Delay(5); return new MyTypeB(0.19, y); })
-            .WithStep($"s7", b => new MyTypeB(b.W, b.T))
-            .Start();
-
-        Assert.AreEqual(new MyTypeB(2, 0.19), r.State);
     }
 
     [TestMethod]
@@ -363,8 +280,24 @@ public class TestsJobMachine
         var r = await Job.JobFactory.New()
             .WithStep($"s1", _ => 1)
             .WithStep($"s1", _ => 2)
-            .OnFinish("of1", i => { x = i; })
+            .OnFinish("of1", i => { x = x + i; })
             .Start();
+
+        Assert.AreEqual(2, x);
+    }
+
+    [TestMethod]
+    public async Task DoubleOnFinishTesting()
+    {
+        var x = 0;
+
+        var r = await Job.JobFactory.New()
+            .WithStep($"s1", _ => 1)
+            .WithStep($"s1", _ => 2)
+            .OnFinish("of1", i => { x = x + i; })
+            .Start();
+
+        await r.Start();
 
         Assert.AreEqual(2, x);
     }
