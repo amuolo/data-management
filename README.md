@@ -3,7 +3,7 @@
 [![NuGet](https://img.shields.io/nuget/v/muoland.agency.svg?style=flat-square)](https://www.nuget.org/packages/muoland.agency)
 [![Nuget](https://img.shields.io/nuget/dt/muoland.agency)](https://www.nuget.org/packages/muoland.agency)
 
-This library is a robust and versatile solution designed to facilitate system architecture. 
+This library and NuGet package provides a robust and versatile solution designed to facilitate system architecture. 
 Whether you’re building microservices, distributed applications, or event-driven systems, 
 this API provides the tools you need to design, construct, and maintain high-performance, 
 concurrent solutions using the actor concurrency model.

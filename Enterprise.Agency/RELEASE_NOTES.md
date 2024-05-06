@@ -1,3 +1,12 @@
+### 6 May 2024 Release Note v1.1.0 🚀🚀🚀 ###
+
+- new API: register to job on finish events
+- simplify hub contract
+- better test coverage
+- posting hub consistency improved
+- agents state simplified
+- improve job execution mechanism
+
 ### 30 Apr 2024 Release Note v1.0.7 ###
 
 - fix bugs in job state machine and step handling

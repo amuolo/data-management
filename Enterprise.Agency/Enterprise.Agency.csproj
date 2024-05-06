@@ -22,7 +22,7 @@
 		AspNet, NetCore, MVC, WPF, Razor, Blazor, eventsource, network, log, monitoring, reactive, dependency, injection,
 		health, check, hosting
 	</PackageTags>
-    <Version>1.0.7</Version>
+    <Version>1.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -64,10 +64,14 @@
     <Copyright>GNU General Public License v3.0</Copyright>
     <PackageReleaseNotes>
 
-		30 Apr 2024 Release Note v1.0.7 
+		6 May 2024 Release Note v1.1.0 🚀🚀🚀
 
-		- fix bugs in job state machine and step handling
-		- performance optimization with parallel job executions
+		- new API: register to job on finish events
+		- simplify hub contract
+		- better test coverage
+		- posting hub consistency improved
+		- agents state simplified
+		- improve job execution mechanism
 
 		<!-- 🚀 -->
 
