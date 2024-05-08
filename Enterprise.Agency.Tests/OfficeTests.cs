@@ -12,7 +12,7 @@ public class OfficeTests
     [TestMethod]
     public async Task BasicPosting()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
 
         var n1 = 0;
         var semaphore = new SemaphoreSlim(0, 1);
@@ -29,7 +29,7 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingWithResponseAsyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -48,7 +48,7 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingToTargetWithResponseAsyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -67,7 +67,7 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingWithResponseSyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -86,7 +86,7 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingToTargetWithResponseSyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeBodyProblemAsync(Storage);
+        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);

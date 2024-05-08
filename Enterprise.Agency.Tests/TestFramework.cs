@@ -67,7 +67,7 @@ public static class TestFramework
     }
 
     public static async Task<(WebApplication Server, Office<IAgencyContract> Logger, Office<IContractExample1> Office1, Office<IContractExample2> Office2)>
-    SetupThreeBodyProblemAsync(ConcurrentBag<Log> storage, Type[]? agents = null)
+    SetupThreeOfficesAsync(ConcurrentBag<Log> storage, Type[]? agents = null)
     {
         var server = await StartServerAsync(agents);
         var url = server.Urls.First();

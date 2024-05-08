@@ -41,29 +41,38 @@ public class Post : BackgroundService
                     {
                         LogPost(info, "Issue with Outbox dequeuing");
                     }
-                    else if (parcel.Type == nameof(PostingHub.SendMessage))
-                    {
-                        LogPost(info, $"{parcel.Type} {parcel.Message}");
-                        var target = parcel.Target?.ToString();
-                        var targetId = target is null ? null : await ConnectToAsync(connection, me, target, token).ConfigureAwait(false);
-                        if (targetId is null) await ConnectToAsync(connection, me, Addresses.Central, token).ConfigureAwait(false);
-                        var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;      
-                        await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Message, parcel.Id, package).ConfigureAwait(false);
-                        status = true;
-                    }
-                    else if (parcel.Type == nameof(PostingHub.SendResponse))
-                    {
-                        LogPost(info, $"{parcel.Type} {parcel.Message}");
-                        var package = parcel.Item is not null ? JsonConvert.SerializeObject(parcel.Item) : null;
-                        await ConnectToAsync(connection, me, Addresses.Central, token).ConfigureAwait(false);
-                        await connection.SendAsync(parcel.Type, me, id, parcel.TargetId, parcel.Id, package).ConfigureAwait(false);
-                        status = true;
-                    }
                     else if (parcel.Type == nameof(PostingHub.Log))
                     {
                         if(me != Addresses.Logger)
                             await ConnectToAsync(connection, me, Addresses.Logger, token).ConfigureAwait(false);
                         await connection.SendAsync(nameof(PostingHub.Log), me, id, parcel.Message).ConfigureAwait(false);
+                        status = true;
+                    }
+                    else
+                    {
+                        LogPost(info, $"{parcel.Type} {parcel.Message}");
+                        var isResponse = parcel.Type == nameof(PostingHub.SendResponse);
+                        var targetId = parcel.TargetId;
+
+                        if (!isResponse)
+                        {
+                            var target = parcel.Target?.ToString();
+                            targetId = target is null ? null : await ConnectToAsync(connection, me, target, token).ConfigureAwait(false);
+                        }                      
+
+                        var package = parcel.Item is null ? null
+                            : JsonConvert.SerializeObject(parcel.Item, new JsonSerializerSettings
+                            {
+                                Formatting = Formatting.Indented
+                            });
+
+                        await ConnectToAsync(connection, me, Addresses.Central, token).ConfigureAwait(false);
+
+                        if (isResponse)
+                            await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Id, package).ConfigureAwait(false);
+                        else
+                            await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Message, parcel.Id, package).ConfigureAwait(false);
+                        
                         status = true;
                     }
                 }
