@@ -47,7 +47,7 @@ public record Job : Job<Task>
         return New<Task, TResult>(this);
     }
 
-    public override Job WithOptions(Func<JobConfiguration, JobConfiguration> update) => this with { Configuration = update(Configuration) };
+    public override Job WithOptions(Func<JobOptions, JobOptions> update) => this with { Configuration = update(Configuration) };
 }
 
 public record Job<TState>()
@@ -98,7 +98,7 @@ public record Job<TState>()
         return this;
     }
 
-    public virtual Job<TState> WithOptions(Func<JobConfiguration, JobConfiguration> update)
+    public virtual Job<TState> WithOptions(Func<JobOptions, JobOptions> update)
     {
         return this with { Configuration = update(Configuration) };
     }
@@ -206,7 +206,7 @@ public record Job<TState>()
 
     protected string CurrentStep { get; set; } = string.Empty;
 
-    protected JobConfiguration Configuration { get; set; } = new();
+    protected JobOptions Configuration { get; set; } = new();
 
     protected ConcurrentDictionary<string, Delegate> OnFinishAction { get; set; } = [];
 

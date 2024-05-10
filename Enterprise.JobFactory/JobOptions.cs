@@ -1,21 +1,21 @@
 ﻿namespace Enterprise.Job;
 
-public record JobConfiguration()
+public record JobOptions()
 {
     /* Public API */
 
-    public JobConfiguration WithLogs(Action<string> logger) => this with { Logger = logger };
+    public JobOptions WithLogs(Action<string> logger) => this with { Logger = logger };
 
-    public JobConfiguration WithAsyncLogs(Func<string, Task> logger) => this with { AsyncLogger = logger };
+    public JobOptions WithAsyncLogs(Func<string, Task> logger) => this with { AsyncLogger = logger };
 
-    public JobConfiguration ClearLogs()
+    public JobOptions ClearLogs()
         => this with
         {
             Logger = null, 
             AsyncLogger = null
         };
 
-    public JobConfiguration WithProgress(Action<int> enable, Action update, Action close)
+    public JobOptions WithProgress(Action<int> enable, Action update, Action close)
         => this with 
         {
             ProgressBarEnable = enable, 
@@ -23,7 +23,7 @@ public record JobConfiguration()
             ProgressBarClose = close 
         };
 
-    public JobConfiguration ClearProgress()
+    public JobOptions ClearProgress()
         => this with
         {
             ProgressBarEnable = null,
@@ -31,7 +31,7 @@ public record JobConfiguration()
             ProgressBarClose = null,
         };
 
-    public JobConfiguration Clear() => ClearLogs().ClearProgress();
+    public JobOptions Clear() => ClearLogs().ClearProgress();
 
     /* Internal */
 

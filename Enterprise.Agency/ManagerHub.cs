@@ -4,7 +4,7 @@ namespace Enterprise.Agency;
 
 public class ManagerHub : MessageHub<IAgencyContract>
 {
-    public async Task<ManagerResponse> AgentsRegistrationRequest(AgentsDossier dossier, Workplace state)
+    public async Task<ManagerResponse> AgentsRegistrationRequest(AgentsDossier dossier, AgencyCulture state)
     {
         var hired = new List<Curriculum>();
 
@@ -39,7 +39,7 @@ public class ManagerHub : MessageHub<IAgencyContract>
         return new ManagerResponse(true, hired);
     }
 
-    public async Task<ManagerResponse> AgentsDiscovery(string from, Workplace state)
+    public async Task<ManagerResponse> AgentsDiscovery(string from, AgencyCulture state)
     {
         var hired = new List<Curriculum>();
 

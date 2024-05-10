@@ -8,7 +8,6 @@ using System.Reflection;
 namespace Enterprise.Agency;
 
 public class Agent<TState, THub, IContract> : BackgroundService
-    where TState : new()
     where THub : MessageHub<IContract>, new()
     where IContract : class, IHubContract
 {
@@ -17,12 +16,12 @@ public class Agent<TState, THub, IContract> : BackgroundService
     protected bool IsInitialized { get; set; }
     protected string Me => MessageHub.Me;
 
-    protected Job<TState> Job { get; set; } = JobFactory.New<TState>(initialState: new());
+    protected Job<TState> Job { get; set; } = JobFactory.New<TState>();
 
     protected Dictionary<string, MethodInfo> MethodsByName { get; } 
         = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
 
-    public Agent(IHubContext<PostingHub> hubContext, Workplace workplace)
+    public Agent(IHubContext<PostingHub> hubContext, AgencyCulture workplace)
     {
         MessageHub = MessageHub<IContract>.Create<THub>(workplace.Url);
         ServerHub = hubContext;        

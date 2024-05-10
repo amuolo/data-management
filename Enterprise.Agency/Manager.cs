@@ -5,7 +5,7 @@ using System.Collections.Concurrent;
 
 namespace Enterprise.Agency;
 
-public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
+public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
 {
     private Task? OffBoardingService { get; set; }
 
@@ -15,7 +15,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
 
     private ConcurrentQueue<(ManagerResponse Response, Func<Task> PostAction)> Tasks { get; set; } = [];
 
-    public Manager(IHubContext<PostingHub> hubContext, Workplace workplace) : base(hubContext, workplace)
+    public Manager(IHubContext<PostingHub> hubContext, AgencyCulture workplace) : base(hubContext, workplace)
     {
         MessageHub.Me = Addresses.Central;
         Job = Job.Initialize(workplace);
@@ -143,7 +143,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
         }
     }
 
-    private TimeSpan GetNextDecommission(Workplace state)
+    private TimeSpan GetNextDecommission(AgencyCulture state)
     {
         var items = state.DossierByActor.SelectMany(x => x.Value.Select(y => DateTime.Now - y.Time)).OrderBy(x => x).ToArray();
 
@@ -152,7 +152,7 @@ public class Manager : Agent<Workplace, ManagerHub, IAgencyContract>
         return max.TotalSeconds < 0 ? -max : TimeSpan.FromSeconds(1);
     }
 
-    private string[] GetFiredAgents(Workplace state)
+    private string[] GetFiredAgents(AgencyCulture state)
     {
         var agents = state.DossierByActor.SelectMany(x => x.Value)
                                          .OrderBy(x => x.Time)

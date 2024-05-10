@@ -10,21 +10,15 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 
-// TODO: change Workplace to AgencyCulture for v2.0.0
-var workplace = new Workplace("https://localhost:7158") with
-{
-    AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],
-    HireAgentsPeriod = TimeSpan.FromMinutes(30),
-    OnBoardingWaitingTime = TimeSpan.FromSeconds(1),
-    OffBoardingWaitingTime = TimeSpan.FromSeconds(1),
-};
+builder.Services.AddAgencyServices("https://localhost:7158", o => o
+    .WithAgentTypes([typeof(Agent<Model, DataHub, IDataContract>)])
+    .WithHireAgentsPeriod(TimeSpan.FromMinutes(30))
+    .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))
+    .WithOffBoardingWaitingTime(TimeSpan.FromSeconds(1)));
 
-builder.Services.AddHostedService<Manager>()
-                .AddSingleton(workplace);
-
-builder.Services.AddResponseCompression(opts =>
+builder.Services.AddResponseCompression(o =>
 {
-    opts.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
+    o.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(["application/octet-stream"]);
 });
 
 var app = builder.Build();

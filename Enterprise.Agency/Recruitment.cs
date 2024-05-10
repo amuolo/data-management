@@ -8,7 +8,7 @@ namespace Enterprise.Agency;
 
 internal static class Recruitment
 {
-    public static async Task RecruitAsync<IContract>(List<Curriculum> hired, MessageHub<IContract> messageHub, Workplace workplace)
+    public static async Task RecruitAsync<IContract>(List<Curriculum> hired, MessageHub<IContract> messageHub, AgencyCulture workplace)
     where IContract : class, IAgencyContract
     {
         foreach (var agent in hired)
@@ -27,7 +27,7 @@ internal static class Recruitment
     }
 
     // TODO Promote this method to publish actors to different physical locations. 
-    internal static IHost Recruit(Type agent, Workplace workplace)
+    internal static IHost Recruit(Type agent, AgencyCulture workplace)
     {
         var builder = Host.CreateApplicationBuilder();
 
@@ -36,7 +36,7 @@ internal static class Recruitment
         // This is the generic variant of builder.Services.AddHostedService<Agent>()
         builder.Services.TryAddEnumerable(ServiceDescriptor.Singleton(typeof(IHostedService), agent));
 
-        builder.Services.AddSingleton(new Workplace(workplace.Url));
+        builder.Services.AddSingleton(new AgencyCulture(workplace.Url));
 
         var host = builder.Build();
 

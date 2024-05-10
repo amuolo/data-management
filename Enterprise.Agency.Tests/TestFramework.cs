@@ -46,16 +46,11 @@ public static class TestFramework
 
         builder.Services.AddSignalR();
                
-        var workplace = new Workplace(url) with
-        {
-            AgentTypes = agents?? [],
-            HireAgentsPeriod = TimeSpan.FromMinutes(30),
-            OnBoardingWaitingTime = TimeSpan.FromSeconds(1),
-            OffBoardingWaitingTime = TimeSpan.FromSeconds(1),
-        };
-
-        builder.Services.AddHostedService<Manager>()
-                        .AddSingleton(workplace);
+        builder.Services.AddAgencyServices(url, o => o
+            .WithAgentTypes(agents?? [])
+            .WithHireAgentsPeriod(TimeSpan.FromMinutes(30))
+            .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))
+            .WithOffBoardingWaitingTime(TimeSpan.FromSeconds(1)));
 
         var app = builder.Build();
 
