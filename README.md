@@ -80,18 +80,16 @@ This is a typical configuration of the Program:
 
      using Enterprise.Agency;
      using Enterprise.MessageHub;
-
+     .
+     .
+     .
      builder.Services.AddSignalR();
 
-     var workplace = new Workplace("https://localhost:7158") with
-     {
-         AgentTypes = [typeof(Agent<Model, DataHub, IDataContract>)],
-         HireAgentsPeriod = TimeSpan.FromMinutes(30),
-         DecommissionerWaitingTime = TimeSpan.FromSeconds(10),
-     };
-
-     builder.Services.AddHostedService<Manager>()
-                     .AddSingleton(workplace);
+     builder.Services.AddAgencyServices(url, o => o
+         .WithAgentTypes([typeof(Agent<Model, DataHub, IDataContract>)])
+         .WithHireAgentsPeriod(TimeSpan.FromMinutes(30))
+         .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))
+         .WithOffBoardingWaitingTime(TimeSpan.FromSeconds(1)));
 
 Here below is how to configure one office on the WPF client side:
 
