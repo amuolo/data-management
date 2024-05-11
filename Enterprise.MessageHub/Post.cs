@@ -54,17 +54,17 @@ public class Post : BackgroundService
                         var isResponse = parcel.Type == nameof(PostingHub.SendResponse);
                         var targetId = parcel.TargetId;
 
-                        if (!isResponse)
-                        {
-                            var target = parcel.Target?.ToString();
-                            targetId = target is null ? null : await ConnectToAsync(connection, me, target, token).ConfigureAwait(false);
-                        }                      
-
                         var package = parcel.Item is null ? null
                             : JsonConvert.SerializeObject(parcel.Item, new JsonSerializerSettings
                             {
                                 Formatting = Formatting.Indented
                             });
+
+                        if (!isResponse)
+                        {
+                            var target = parcel.Target?.ToString();
+                            targetId = target is null ? null : await ConnectToAsync(connection, me, target, token).ConfigureAwait(false);
+                        }                      
 
                         await ConnectToAsync(connection, me, Addresses.Central, token).ConfigureAwait(false);
 
