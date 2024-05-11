@@ -74,7 +74,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                 {
                     Job = await Job.WithOptions(o => o.WithLogs(MessageHub.LogPost))
                                    .WithStep(nameof(IHubContract.CreateRequest), s => state)
-                                   .Start();
+                                   .StartAsync();
                 }
             }
 
@@ -137,7 +137,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                         with { Type = nameof(PostingHub.SendResponse), Id = messageId });
                 }
             })
-            .Start();
+            .StartAsync();
             return;
         }
     }

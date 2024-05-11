@@ -139,7 +139,7 @@ public record Job<TState>()
         return New<TState, TResult>(this);
     }
 
-    public async Task<Job<TState>> Start(CancellationToken token = new())
+    public async Task<Job<TState>> StartAsync(CancellationToken token = new())
     {
         var progress = false;
         var isEmpty = Steps.IsEmpty;

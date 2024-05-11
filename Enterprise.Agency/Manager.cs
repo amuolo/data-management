@@ -61,7 +61,7 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
                 MessageHub.LogPost(ex.Message);
             }
         })
-        .Start();
+        .StartAsync();
     }
 
     protected async Task OnBoardingAsync(CancellationToken token)

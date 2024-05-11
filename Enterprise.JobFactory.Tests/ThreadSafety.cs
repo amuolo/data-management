@@ -17,11 +17,11 @@ public class ThreadSafety
 
         Enumerable.Range(0, 100).ToList().ForEach(i =>
         {
-            Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).Start());
+            Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).StartAsync());
         });
 
         await Task.Delay(100);
-        await job.Start();
+        await job.StartAsync();
 
         Assert.AreEqual(+100, job.State?.X);
         Assert.AreEqual(-100, job.State?.Y);
@@ -35,7 +35,7 @@ public class ThreadSafety
 
         Enumerable.Range(0, 100).ToList().ForEach(i =>
         {
-            Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).Start());
+            Task.Run(() => job.WithStep($"x{i}", s => { s.X++; s.Y--; }).StartAsync());
         });
 
         await Task.Delay(100);
@@ -53,10 +53,10 @@ public class ThreadSafety
 
         Enumerable.Range(0, 100).ToList().ForEach(i =>
         {
-            Task.Run(() => job.WithStep($"x{i}", async s => { await Task.Delay(1); s.X++; s.Y--; }).Start());
+            Task.Run(() => job.WithStep($"x{i}", async s => { await Task.Delay(1); s.X++; s.Y--; }).StartAsync());
         });
 
-        await job.Start();
+        await job.StartAsync();
 
         Assert.AreEqual(+100, job.State?.X);
         Assert.AreEqual(-100, job.State?.Y);
@@ -70,10 +70,10 @@ public class ThreadSafety
 
         Enumerable.Range(0, 100).ToList().AsParallel().ForAll(i =>
         {
-            job.WithStep($"x{i}", async n => { await Task.Delay(1); return ++n; }).Start();
+            job.WithStep($"x{i}", async n => { await Task.Delay(1); return ++n; }).StartAsync();
         });
 
-        await job.Start();
+        await job.StartAsync();
 
         Assert.AreEqual(100, job.State);
     }
@@ -86,10 +86,10 @@ public class ThreadSafety
 
         Enumerable.Range(0, 1000).ToList().AsParallel().ForAll(i =>
         {
-            job.WithStep($"x{i}", n => i % 2 == 0 ? n + 1 : n - 1 ).Start();
+            job.WithStep($"x{i}", n => i % 2 == 0 ? n + 1 : n - 1 ).StartAsync();
         });
 
-        await job.Start();
+        await job.StartAsync();
 
         Assert.AreEqual(0, job.State);
     }

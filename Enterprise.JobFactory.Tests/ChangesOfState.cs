@@ -20,7 +20,7 @@ public class ChangesOfStateType
             .WithStep($"s6", n5 => "." + n5)
             .WithStep($"s7", _ => Task.Delay(10))
             .WithStep($"s8", async _ => await Task.Delay(10))
-            .Start();
+            .StartAsync();
 
         Assert.AreEqual(".9.9", r.State);
         Assert.AreEqual(8, Storage.Count);
@@ -34,7 +34,7 @@ public class ChangesOfStateType
             .WithStep($"s1", () => 2)
             .WithStep($"s2", n1 => n1 + 0.1)
             .WithStep($"s3", n2 => (int)Math.Ceiling(n2))
-            .Start();
+            .StartAsync();
 
         Assert.AreEqual(3, r.State);
         Assert.AreEqual(3, Storage.Count);
@@ -46,7 +46,7 @@ public class ChangesOfStateType
         var r = await Job.JobFactory.New()
             .WithStep($"s1", _ => 2)
             .WithStep($"s2", r1 => r1.ToString())
-            .Start();
+            .StartAsync();
 
         Assert.AreEqual("2", r.State);
     }
@@ -58,7 +58,7 @@ public class ChangesOfStateType
             .WithOptions(o => o.WithLogs(Log))
             .WithStep($"s1", n => n.ToString() + "hello")
             .WithStep($"s2", n1 => int.Parse(n1.First().ToString()) + 2)
-            .Start();
+            .StartAsync();
 
         Assert.AreEqual(4, r.State);
         Assert.AreEqual(2, Storage.Count);
@@ -75,7 +75,7 @@ public class ChangesOfStateType
             .WithStep($"s5", x => (double)x.Y)
             .WithStep($"s6", async y => { await Task.Delay(5); return new MyTypeB(0.19, y); })
             .WithStep($"s7", b => new MyTypeB(b.W, b.T))
-            .Start();
+            .StartAsync();
 
         Assert.AreEqual(new MyTypeB(2, 0.19), r.State);
     }
@@ -89,13 +89,13 @@ public class ChangesOfStateType
             .WithPostAction("pa1", () => x++)
             .WithStep("s1", a => a + 1)
             .WithStep("s2", a => a + 2)
-            .Start();
+            .StartAsync();
 
         Assert.AreEqual(3, r.State);
         Assert.AreEqual(2, x);
 
-        var rr = await r.WithStep("s3", a => a.ToString()).Start();
-        await r.Start();
+        var rr = await r.WithStep("s3", a => a.ToString()).StartAsync();
+        await r.StartAsync();
 
         Assert.AreEqual("3", rr.State);
         Assert.AreEqual(3, r.State);
