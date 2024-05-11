@@ -85,7 +85,7 @@ This is a typical configuration of the Program:
      .
      builder.Services.AddSignalR();
 
-     builder.Services.AddAgencyServices(url, o => o
+     builder.Services.AddAgencyServices(baseUrl, o => o
          .WithAgentTypes([typeof(Agent<Model, DataHub, IDataContract>)])
          .WithHireAgentsPeriod(TimeSpan.FromMinutes(30))
          .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))
@@ -93,7 +93,7 @@ This is a typical configuration of the Program:
 
 Here below is how to configure one office on the WPF client side:
 
-     var office = Office<IApp>.Create(BaseUrl)
+     var office = Office<IApp>.Create(baseUrl)
                               .Register(agent => agent.DataChangedEvent, DataUpdate)
                               .Register(agent => agent.ShowProgress, ShowProgress)
                               .Register(agent => agent.Display, Logger)
