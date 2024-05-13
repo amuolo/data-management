@@ -6,7 +6,7 @@ using System.Linq.Expressions;
 
 namespace Enterprise.Agency;
 
-public class Office<IContract>() : MessageHub<IContract>
+public class Project<IContract>() : MessageHub<IContract>
     where IContract : class, IAgencyContract
 {
     private List<Curriculum> Agents { get; } = [];
@@ -25,9 +25,9 @@ public class Office<IContract>() : MessageHub<IContract>
         base.Dispose();        
     }
 
-    public static Office<IContract> Create(string baseUrl) => Create<Office<IContract>>(baseUrl);
+    public static Project<IContract> Create(string baseUrl) => Create<Project<IContract>>(baseUrl);
 
-    public Office<IContract> AddAgent<TState, THub, IAgentContract>()
+    public Project<IContract> AddAgent<TState, THub, IAgentContract>()
             where TState : new()
             where THub : MessageHub<IAgentContract>, new()
             where IAgentContract : class, IHubContract
@@ -38,62 +38,62 @@ public class Office<IContract>() : MessageHub<IContract>
         return this;
     }
 
-    public Office<IContract> Register(Expression<Func<IContract, Action>> predicate, Action action) 
+    public Project<IContract> Register(Expression<Func<IContract, Action>> predicate, Action action) 
     { 
         OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); 
         return this; 
     }
 
-    public Office<IContract> Register(Expression<Func<IContract, Func<Task>>> predicate, Action action) 
+    public Project<IContract> Register(Expression<Func<IContract, Func<Task>>> predicate, Action action) 
     { 
         OperationByPredicate.TryAdd(GetMessage(predicate), (null, action)); 
         return this; 
     }
 
-    public Office<IContract> Register<TReceived>(Expression<Func<IContract, Action<TReceived>>> predicate, Action<TReceived> action) 
+    public Project<IContract> Register<TReceived>(Expression<Func<IContract, Action<TReceived>>> predicate, Action<TReceived> action) 
     { 
         OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); 
         return this; 
     }
 
-    public Office<IContract> Register<TReceived>(Expression<Func<IContract, Func<TReceived, Task>>> predicate, Action<TReceived> action) 
+    public Project<IContract> Register<TReceived>(Expression<Func<IContract, Func<TReceived, Task>>> predicate, Action<TReceived> action) 
     { 
         OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action)); 
         return this; 
     }
 
-    public Office<IContract> Register<TResponse>(Expression<Func<IContract, Func<TResponse>>> predicate, Func<TResponse> action)
+    public Project<IContract> Register<TResponse>(Expression<Func<IContract, Func<TResponse>>> predicate, Func<TResponse> action)
     {
         OperationByPredicate.TryAdd(GetMessage(predicate), (null, action));
         return this;
     }
 
-    public Office<IContract> Register<TResponse>(Expression<Func<IContract, Func<Task<TResponse>>>> predicate, Func<Task<TResponse>> action)
+    public Project<IContract> Register<TResponse>(Expression<Func<IContract, Func<Task<TResponse>>>> predicate, Func<Task<TResponse>> action)
     {
         OperationByPredicate.TryAdd(GetMessage(predicate), (null, action));
         return this;
     }
 
-    public Office<IContract> Register<TReceived, TResponse>(Expression<Func<IContract, Func<TReceived, TResponse>>> predicate, Func<TReceived, TResponse> action)
+    public Project<IContract> Register<TReceived, TResponse>(Expression<Func<IContract, Func<TReceived, TResponse>>> predicate, Func<TReceived, TResponse> action)
     {
         OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action));
         return this;
     }
 
-    public Office<IContract> Register<TReceived, TResponse>(Expression<Func<IContract, Func<TReceived, Task<TResponse>>>> predicate, Func<TReceived, Task<TResponse>> action)
+    public Project<IContract> Register<TReceived, TResponse>(Expression<Func<IContract, Func<TReceived, Task<TResponse>>>> predicate, Func<TReceived, Task<TResponse>> action)
     {
         OperationByPredicate.TryAdd(GetMessage(predicate), (typeof(TReceived), action));
         return this;
     }
 
-    public Office<IContract> ReceiveLogs(Action<string, string, string> action)
+    public Project<IContract> ReceiveLogs(Action<string, string, string> action)
     {
         Me = Addresses.Logger;
         Connection.On(PostingHub.ReceiveLog, action);
         return this;
     }
 
-    public Office<IContract> Run()
+    public Project<IContract> Run()
     {
         Builder.Services.AddHostedService<Post>()
                         .AddSingleton(new Equipment(Me, Queue, Connection));
@@ -106,7 +106,7 @@ public class Office<IContract>() : MessageHub<IContract>
 
         PostWithResponse(
             Addresses.Central, 
-            office => office.AgentsRegistrationRequest, 
+            project => project.AgentsRegistrationRequest, 
             new AgentsDossier(Agents, Me),
             (Action<ManagerResponse>)(response =>
             {

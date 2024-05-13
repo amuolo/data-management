@@ -61,49 +61,47 @@ public static class TestFramework
         return app;
     }
 
-    public static async Task<(WebApplication Server, Office<IAgencyContract> Logger, Office<IContractExample1> Office1, Office<IContractExample2> Office2)>
-    SetupThreeOfficesAsync(ConcurrentBag<Log> storage, Type[]? agents = null)
+    public static async Task<(WebApplication Server, Project<IAgencyContract> Logger, Project<IContractExample1> Project1, Project<IContractExample2> Project2)>
+    SetupThreeProjectsAsync(ConcurrentBag<Log> storage, Type[]? agents = null)
     {
         var server = await StartServerAsync(agents);
         var url = server.Urls.First();
 
-        var logger = Office<IAgencyContract>.Create(url)
+        var logger = Project<IAgencyContract>.Create(url)
                         .ReceiveLogs((sender, senderId, message) => storage.Add(new Log(sender, message)))
                         .Run();
 
-        var office1 = Office<IContractExample1>.Create(url)
-                        .Run();
+        var project1 = Project<IContractExample1>.Create(url).Run();
 
-        var office2 = Office<IContractExample2>.Create(url)
-                        .Run();
+        var project2 = Project<IContractExample2>.Create(url).Run();
 
-        await office1.ConnectToAsync(logger.Me);
-        await office1.ConnectToAsync(office2.Me);
+        await project1.ConnectToAsync(logger.Me);
+        await project1.ConnectToAsync(project2.Me);
 
-        await office2.ConnectToAsync(logger.Me);
-        await office2.ConnectToAsync(office1.Me);
+        await project2.ConnectToAsync(logger.Me);
+        await project2.ConnectToAsync(project1.Me);
 
-        return (server, logger, office1, office2);
+        return (server, logger, project1, project2);
     }
 
-    public static async Task<(WebApplication server, Office<IAgencyContract> logger, Office<IContractAgentX> office, string agent)> 
-    SetupLoggerOfficeAgentAsync(ConcurrentBag<Log> storage)
+    public static async Task<(WebApplication server, Project<IAgencyContract> logger, Project<IContractAgentX> project, string agent)> 
+    SetupLoggerProjectAgentAsync(ConcurrentBag<Log> storage)
     {
         var server = await StartServerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
         var url = server.Urls.First();
         var agentName = typeof(XHub).ExtractName();
 
-        var logger = Office<IAgencyContract>.Create(url)
+        var logger = Project<IAgencyContract>.Create(url)
                         .ReceiveLogs((sender, senderId, message) => storage.Add(new Log(sender, message)))
                         .Run();
 
-        var office = Office<IContractAgentX>.Create(url)
+        var project = Project<IContractAgentX>.Create(url)
                         .AddAgent<XModel, XHub, IContractAgentX>()
                         .Run();
 
-        await office.ConnectToAsync(logger.Me);
-        await office.ConnectToAsync(agentName);
+        await project.ConnectToAsync(logger.Me);
+        await project.ConnectToAsync(agentName);
 
-        return (server, logger, office, agentName);
+        return (server, logger, project, agentName);
     }
 }

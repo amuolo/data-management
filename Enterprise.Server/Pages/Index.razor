@@ -32,26 +32,26 @@
 </ul>
 
 @code {
-    private string? ConnectionId => office.Connection?.ConnectionId;
+    private string? ConnectionId => project.Connection?.ConnectionId;
     private CancellationTokenSource TokenSource = new();
     private List<string> messages = new();
     private string? userInput;
     private string? messageInput;
     private string server = nameof(server);
-    Office<IAgencyContract>? office;
+    Project<IAgencyContract>? project;
 
-    public bool IsConnected => office?.Connection?.State == HubConnectionState.Connected;
+    public bool IsConnected => project?.Connection?.State == HubConnectionState.Connected;
 
     protected override async Task OnInitializedAsync()
     {
-        office = Office<IAgencyContract>.Create(NavManager.BaseUri)
-                                        .ReceiveLogs((sender, senderId, message) =>
-                                        {
-                                            var formattedMessage = $"{sender}: {message}";
-                                            messages.Add(formattedMessage);
-                                            InvokeAsync(StateHasChanged);
-                                        })
-                                        .Run();
+        project = Project<IAgencyContract>.Create(NavManager.BaseUri)
+                                          .ReceiveLogs((sender, senderId, message) =>
+                                          {
+                                              var formattedMessage = $"{sender}: {message}";
+                                              messages.Add(formattedMessage);
+                                              InvokeAsync(StateHasChanged);
+                                          })
+                                          .Run();
     }
 
     private async Task Send()
@@ -59,14 +59,14 @@
         var message = messageInput ?? "";
 
         if (userInput is null)
-            office?.Post(message);
+            project?.Post(message);
         else
-            office?.Post($"{userInput} says: {message}");
+            project?.Post($"{userInput} says: {message}");
     }
 
     public async ValueTask DisposeAsync()
     {
-        if (office is not null)
-            office.Dispose();
+        if (project is not null)
+            project.Dispose();
     }
 }

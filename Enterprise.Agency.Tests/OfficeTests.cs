@@ -3,7 +3,7 @@
 namespace Enterprise.Agency.Tests;
 
 [TestClass]
-public class OfficeTests
+public class ProjectTests
 {
     readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
 
@@ -12,14 +12,14 @@ public class OfficeTests
     [TestMethod]
     public async Task BasicPosting()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
+        var (Server, Logger, Project1, Project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
 
         var n1 = 0;
         var semaphore = new SemaphoreSlim(0, 1);
 
-        Office1.Register<int>(o => o.RequestA, n => { n1 += n; semaphore.Release(); });
+        Project1.Register<int>(o => o.RequestA, n => { n1 += n; semaphore.Release(); });
 
-        Office2.Post(o => o.RequestA, 10);
+        Project2.Post(o => o.RequestA, 10);
 
         await semaphore.WaitAsync();
 
@@ -29,15 +29,15 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingWithResponseAsyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
+        var (Server, Logger, Project1, Project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
         var semaphoreState = false;
 
-        Office1.Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; });
+        Project1.Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; });
 
-        Office2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
+        Project2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
@@ -48,15 +48,15 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingToTargetWithResponseAsyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
+        var (Server, Logger, Project1, Project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
         var semaphoreState = false;
 
-        Office1.Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; });
+        Project1.Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; });
 
-        Office2.PostWithResponse<string, string>(Office1.Me, o => o.RequestText, s => { text = s; semaphore.Release(); });
+        Project2.PostWithResponse<string, string>(Project1.Me, o => o.RequestText, s => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
@@ -67,15 +67,15 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingWithResponseSyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
+        var (Server, Logger, Project1, Project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
         var semaphoreState = false;
 
-        Office1.Register(o => o.RequestTextSync, () => "ok");
+        Project1.Register(o => o.RequestTextSync, () => "ok");
 
-        Office2.PostWithResponse<string>(o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
+        Project2.PostWithResponse<string>(o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
@@ -86,15 +86,15 @@ public class OfficeTests
     [TestMethod]
     public async Task PostingToTargetWithResponseSyncRequest()
     {
-        var (Server, Logger, Office1, Office2) = await TestFramework.SetupThreeOfficesAsync(Storage);
+        var (Server, Logger, Project1, Project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
         var semaphoreState = false;
 
-        Office1.Register(o => o.RequestTextSync, () => "ok");
+        Project1.Register(o => o.RequestTextSync, () => "ok");
 
-        Office2.PostWithResponse<string, string>(Office1.Me, o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
+        Project2.PostWithResponse<string, string>(Project1.Me, o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 

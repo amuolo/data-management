@@ -41,11 +41,11 @@ and distributed applications.
 
 ### Agency
 
-> The Agency project is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and offices.
+> The Agency project is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and projects.
 
 Aligned with the actor model, this framework empowers developers to swiftly configure numerous concurrent actors, referred to as *agents*. 
 These agents are not deployed immediately; instead, deployment occurs only when strictly necessary, managed by dedicated *managers*. 
-Additionally, the client front end can configure *offices*, which function as independent actors capable of communicating 
+Additionally, the client front end can configure *projects*, which function as independent actors capable of communicating 
 with other agents seamlessly over the wire.
 
 > Agents are defined uniquely with *name*, *state*, and *contract*.
@@ -91,17 +91,17 @@ This is a typical configuration of the Program:
          .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))
          .WithOffBoardingWaitingTime(TimeSpan.FromSeconds(1)));
 
-Here below is how to configure one office on the WPF client side:
+Here below is how to configure one project on the WPF client side:
 
-     var office = Office<IApp>.Create(baseUrl)
+     var project = Project<IApp>.Create(baseUrl)
                               .Register(agent => agent.DataChangedEvent, DataUpdate)
                               .Register(agent => agent.ShowProgress, ShowProgress)
                               .Register(agent => agent.Display, Logger)
                               .AddAgent<Model, DataHub, IDataContract>().Run();
 
-and here the configuration of a different office with logging capabilities on a different client
+and here the configuration of a different project with logging capabilities on a different client
 
-     var office = Office<IAgencyContract>.Create(NavManager.BaseUri)
+     var project = Project<IAgencyContract>.Create(NavManager.BaseUri)
                                          .ReceiveLogs((sender, senderId, message) =>
                                          {
                                              var formattedMessage = $"{sender}: {message}";
@@ -112,8 +112,8 @@ and here the configuration of a different office with logging capabilities on a 
 
 From the Program configuration we learn there is going to be one agent (actor) deployed when needed. 
 This is a simple data agent owning some 'Model' and performing some operation, e.g. import, update, deletion.
-Moreover, from the API we learn that the first office will be using this agent, that is, the client 
-defining this office will eventually need to access the data Model. 
+Moreover, from the API we learn that the first project will be using this agent, that is, the client 
+defining this project will eventually need to access the data Model. 
 
 Within this framework, the team responsible of architecting the data agent would need to set up 
 both the contract and the hub. While the former defines all possible incoming or outgoing requests
@@ -186,7 +186,7 @@ Clients can subscribe to these messages providing the corresponding handler.
 From the client side the kick off of an Import Request is achievable with the following 
 simple API:
 
-     office.Post(agent => agent.ImportRequest, fileName);
+     project.Post(agent => agent.ImportRequest, fileName);
 
 ---
 

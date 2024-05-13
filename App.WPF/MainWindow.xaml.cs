@@ -21,7 +21,7 @@ public partial class MainWindow : Window
 
     private MainWindowState State { get; set; }
 
-    private Office<IApp> Office { get; }
+    private Project<IApp> Project { get; }
 
     public MainWindow()
     {
@@ -36,7 +36,7 @@ public partial class MainWindow : Window
         var files = dirInfo.GetFiles("*.*", SearchOption.AllDirectories);
         InputFilePicker.ItemsSource = files;
 
-        Office = Office<IApp>.Create(BaseUrl)
+        Project = Project<IApp>.Create(BaseUrl)
                              .Register(agent => agent.DataChangedEvent, DataUpdate)
                              .Register(agent => agent.ShowProgress, ShowProgress)
                              .Register(agent => agent.Display, Logger)
@@ -53,7 +53,7 @@ public partial class MainWindow : Window
 
     private void DataUpdate()
     {
-        Office.PostWithResponse<List<string>>(agent => agent.ReadRequest, Callback);
+        Project.PostWithResponse<List<string>>(agent => agent.ReadRequest, Callback);
 
         void Callback(List<string> data) 
         {
@@ -77,7 +77,7 @@ public partial class MainWindow : Window
 
     private void ImportClick(object sender, RoutedEventArgs e)
     {
-        Office.Post(agent => agent.ImportRequest, GetSelectedFile());
+        Project.Post(agent => agent.ImportRequest, GetSelectedFile());
 
         /* This is the old implementation without actor model
         JobFactory.New().WithOptions(o => o.WithLogs(Logger).WithProgress(progressBar.Enable, progressBar.Update, progressBar.Disable))

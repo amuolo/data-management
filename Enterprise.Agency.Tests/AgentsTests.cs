@@ -14,12 +14,12 @@ public class AgentsTests
     [TestMethod]
     public async Task MessageResponse()
     {
-        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+        var (server, logger, project, agentName) = await TestFramework.SetupLoggerProjectAgentAsync(Storage);
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
-        office.PostWithResponse<XModel>(
+        project.PostWithResponse<XModel>(
             agent => agent.GetRequest,
             model => { state = model.Name + model.Surname; semaphore.Release(); });
 
@@ -33,12 +33,12 @@ public class AgentsTests
     [TestMethod]
     public async Task MessageResponseWithTarget()
     {
-        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+        var (server, logger, project, agentName) = await TestFramework.SetupLoggerProjectAgentAsync(Storage);
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
-        office.PostWithResponse<string, XModel>(
+        project.PostWithResponse<string, XModel>(
             agentName,
             agent => agent.GetRequest,
             model => { state = model.Name + model.Surname; semaphore.Release(); });
@@ -53,12 +53,12 @@ public class AgentsTests
     [TestMethod]
     public async Task AsyncMessageResponse()
     {
-        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+        var (server, logger, project, agentName) = await TestFramework.SetupLoggerProjectAgentAsync(Storage);
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
-        office.PostWithResponse<XModel>(
+        project.PostWithResponse<XModel>(
             agent => agent.GetRequestAsync, 
             model => { state = model.Name + model.Surname; semaphore.Release(); });
 
@@ -72,12 +72,12 @@ public class AgentsTests
     [TestMethod]
     public async Task AsyncMessageResponseWithTarget()
     {
-        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+        var (server, logger, project, agentName) = await TestFramework.SetupLoggerProjectAgentAsync(Storage);
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
-        office.PostWithResponse<string, XModel>(
+        project.PostWithResponse<string, XModel>(
             agentName, 
             agent => agent.GetRequestAsync, 
             model => { state = model.Name + model.Surname; semaphore.Release(); });
@@ -92,21 +92,21 @@ public class AgentsTests
     [TestMethod]
     public async Task AsyncUpdateWorkflow()
     {
-        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+        var (server, logger, project, agentName) = await TestFramework.SetupLoggerProjectAgentAsync(Storage);
 
         string state = "", display = "";
         SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
 
-        office.Register(o => o.DataChangedEvent, () =>
+        project.Register(o => o.DataChangedEvent, () =>
         {
-            office.PostWithResponse<XModel>(
+            project.PostWithResponse<XModel>(
                 agent => agent.GetRequestAsync,
                 model => { state = model.Name + model.Surname; semaphoreState.Release(); });
         });
 
-        office.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
+        project.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
 
-        office.Post(agent => agent.UpdateRequestAsync, "Marco");
+        project.Post(agent => agent.UpdateRequestAsync, "Marco");
 
         var sp1 = await semaphoreState.WaitAsync(Timeout);
         var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
@@ -121,21 +121,21 @@ public class AgentsTests
     [TestMethod]
     public async Task AsyncUpdateWorkflowWithTarget()
     {
-        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+        var (server, logger, project, agentName) = await TestFramework.SetupLoggerProjectAgentAsync(Storage);
 
         string state = "", display = "";
         SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
 
-        office.Register(o => o.DataChangedEvent, () =>
+        project.Register(o => o.DataChangedEvent, () =>
         {
-            office.PostWithResponse<XModel>(
+            project.PostWithResponse<XModel>(
                 agent => agent.GetRequestAsync,
                 model => { state = model.Name + model.Surname; semaphoreState.Release(); });
         });
 
-        office.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
+        project.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
 
-        office.Post(agentName, agent => agent.UpdateRequestAsync, "Marco");
+        project.Post(agentName, agent => agent.UpdateRequestAsync, "Marco");
 
         var sp1 = await semaphoreState.WaitAsync(Timeout);
         var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
@@ -150,21 +150,21 @@ public class AgentsTests
     [TestMethod]
     public async Task UpdateWorkflow()
     {
-        var (server, logger, office, agentName) = await TestFramework.SetupLoggerOfficeAgentAsync(Storage);
+        var (server, logger, project, agentName) = await TestFramework.SetupLoggerProjectAgentAsync(Storage);
 
         string state = "", display = "";
         SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
 
-        office.Register(o => o.DataChangedEvent, () =>
+        project.Register(o => o.DataChangedEvent, () =>
         {
-            office.PostWithResponse<XModel>(
+            project.PostWithResponse<XModel>(
                 agent => agent.GetRequest,
                 model => { state = model.Name + model.Surname; semaphoreState.Release(); });
         });
 
-        office.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
+        project.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });
 
-        office.Post(agent => agent.UpdateRequest, "Marco");
+        project.Post(agent => agent.UpdateRequest, "Marco");
 
         var sp1 = await semaphoreState.WaitAsync(Timeout);
         var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
@@ -176,7 +176,7 @@ public class AgentsTests
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IContractAgentX.Display)) && x.Sender == agentName));
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IContractAgentX.DataChangedEvent)) && x.Sender == agentName));
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IContractAgentX.UpdateRequest)) && x.Sender == office.Me));
+        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IContractAgentX.UpdateRequest)) && x.Sender == project.Me));
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IAgencyContract.AgentsRegistrationRequest)) && x.Sender == Addresses.Central));
     }
 }
