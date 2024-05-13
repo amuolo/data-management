@@ -58,10 +58,35 @@ public class JobHandling
             .StartAsync();
 
         Assert.AreEqual("123", r.State);
+
+        var q = await Job.JobFactory.New("1")            
+            .WithStep($"s1", s => s + 2.ToString())
+            .WithStep($"s2", s => s + 3.ToString())
+            .StartAsync();
+
+        Assert.AreEqual("123", q.State);
     }
 
     [TestMethod]
-    public async Task InitializationMissed()
+    public async Task InitializationWithObject()
+    {
+        var r = await Job.JobFactory.New<MyTypeA>().Initialize(new MyTypeA(1, 1))
+            .WithStep($"s1", a => a with { X = a.X + 1 })
+            .WithStep($"s2", a => a with { Y = a.Y + 1 })
+            .StartAsync();
+
+        Assert.AreEqual(new MyTypeA(2, 2), r.State);
+
+        var q = await Job.JobFactory.New(new MyTypeA(1, 1))
+            .WithStep($"s1", a => a with { X = a.X + 1 })
+            .WithStep($"s2", a => a with { Y = a.Y + 1 })
+            .StartAsync();
+
+        Assert.AreEqual(new MyTypeA(2, 2), q.State);
+    }
+
+    [TestMethod]
+    public async Task InitializationMissedForString()
     {
         var r = await Job.JobFactory.New<string>()
             .WithOptions(o => o.WithLogs(Log))
@@ -73,7 +98,7 @@ public class JobHandling
     }
 
     [TestMethod]
-    public async Task InitializationWithDefault()
+    public async Task InitializationMissedForObject()
     {
         var s = "";
         var r = Job.JobFactory.New<MyTypeA>().WithStep($"s1", a => a with { X = 1 });
@@ -87,7 +112,13 @@ public class JobHandling
             s = ex.Message;
         }
 
+        Assert.AreEqual(null, r.State);
         Assert.IsTrue(s.Contains("Object reference not set to an instance of an object."));
+
+        await r.WithOptions(o => o.WithLogs(Log)).WithStep($"s2", a => a with { X = 2 }).StartAsync();
+
+        Assert.AreEqual(null, r.State);
+        Assert.IsTrue(Storage.First().Contains("Object reference not set to an instance of an object"));
 
         await r.WithStep($"s2", a => new MyTypeA(0,0)).WithStep($"s3", a => a with { X=1 }).StartAsync();
 
