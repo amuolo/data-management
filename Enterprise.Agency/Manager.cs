@@ -107,7 +107,7 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
 
             try
             {
-                if (state is null || !state.DossierByActor.Any())
+                if (state is null || !state.InfoByActor.Any())
                 {
                     await outerTimer.WaitForNextTickAsync(token);
                     continue;
@@ -145,7 +145,7 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
 
     private TimeSpan GetNextDecommission(AgencyCulture state)
     {
-        var items = state.DossierByActor.SelectMany(x => x.Value.Select(y => DateTime.Now - y.Time)).OrderBy(x => x).ToArray();
+        var items = state.InfoByActor.SelectMany(x => x.Value.Select(y => DateTime.Now - y.LastInteraction)).OrderBy(x => x).ToArray();
 
         var max = items.FirstOrDefault() - state.HireAgentsPeriod;
 
@@ -154,10 +154,10 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
 
     private string[] GetFiredAgents(AgencyCulture state)
     {
-        var agents = state.DossierByActor.SelectMany(x => x.Value)
-                                         .OrderBy(x => x.Time)
-                                         .Where(x => (DateTime.Now - x.Time) > state.HireAgentsPeriod)
-                                         .Select(x => x.AgentInfo.Name)
+        var agents = state.InfoByActor.SelectMany(x => x.Value)
+                                         .OrderBy(x => x.LastInteraction)
+                                         .Where(x => (DateTime.Now - x.LastInteraction) > state.HireAgentsPeriod)
+                                         .Select(x => x.Name)
                                          .ToArray();
 
         return agents;

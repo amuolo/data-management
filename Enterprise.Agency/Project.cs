@@ -1,7 +1,9 @@
 ﻿using Enterprise.MessageHub;
+using Enterprise.Utils;
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Newtonsoft.Json;
 using System.Linq.Expressions;
 
 namespace Enterprise.Agency;
@@ -9,7 +11,7 @@ namespace Enterprise.Agency;
 public class Project<IContract>() : MessageHub<IContract>
     where IContract : class, IAgencyContract
 {
-    private List<Curriculum> Agents { get; } = [];
+    private List<AgentInfo> Agents { get; } = [];
 
     private HostApplicationBuilder Builder { get; } = Host.CreateApplicationBuilder();
 
@@ -33,7 +35,7 @@ public class Project<IContract>() : MessageHub<IContract>
             where IAgentContract : class, IHubContract
     {
         var agentType = typeof(Agent<TState, THub, IAgentContract>);
-        var info = new Curriculum(typeof(THub).Name, agentType.AssemblyQualifiedName!);
+        var info = new AgentInfo(agentType.ExtractName(), agentType.AssemblyQualifiedName!, typeof(THub).Name);
         Agents.Add(info);
         return this;
     }
@@ -95,24 +97,19 @@ public class Project<IContract>() : MessageHub<IContract>
 
     public Project<IContract> Run()
     {
+        var equipment = new Equipment(Me, Queue, Connection)
+        {
+            ServiceDiscovery = Agents.Any()? new(true, AgentsDiscoveryAsync()) : new()
+        };
+
         Builder.Services.AddHostedService<Post>()
-                        .AddSingleton(new Equipment(Me, Queue, Connection));
+                        .AddSingleton(equipment);
 
         PostService = Builder.Build();
         
         PostTask = PostService.RunAsync(Cancellation.Token);
         
         ConnectionTask = InitializeConnectionAsync(Cancellation.Token);
-
-        PostWithResponse(
-            Addresses.Central, 
-            project => project.AgentsRegistrationRequest, 
-            new AgentsDossier(Agents, Me),
-            (Action<ManagerResponse>)(response =>
-            {
-                if (!response.Status)
-                    LogPost($"Initial Agents Discovery request failed.");
-            }));
 
         return this;
     }
@@ -127,5 +124,66 @@ public class Project<IContract>() : MessageHub<IContract>
     public async Task ConnectToAsync(string target, CancellationToken cancellation = new())
     {
         await MessageHub.Post.ConnectToAsync(cancellation, Connection, Me, target, null);
+    }
+
+    protected Func<Task> AgentsDiscoveryAsync()
+    {
+        string? target = null;
+
+        return async () =>
+        {
+            if (target is null)
+            {
+                var counter = 0;
+                var requestId = Guid.NewGuid().ToString();
+                var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
+                var id = await MessageHub.Post.EstablishConnectionAsync(Connection, Cancellation.Token).ConfigureAwait(false);
+
+                CallbacksById.TryAdd(requestId, (string responseParcel) =>
+                {
+                    if (responseParcel is not null)
+                    {
+                        var package = JsonConvert.DeserializeObject<ManagerResponse>(responseParcel);
+                        if (package is not null)
+                        {
+                            target = package.ManagerAddress;
+                            timerReconnection.Dispose();
+                        }
+                    }
+                });
+
+                do
+                {
+                    if (++counter % 10 == 0)
+                    {
+                        LogPost($"Struggling to connect to Manager, attempt {++counter}");
+                    }
+
+                    var package = JsonConvert.SerializeObject(new AgentsToHire(Agents, Me), new JsonSerializerSettings
+                    {
+                        Formatting = Formatting.Indented
+                    });
+
+                    await Connection.SendAsync(nameof(PostingHub.SendMessage), 
+                        Me, id, null, nameof(IAgencyContract.AgentsRegistrationRequest), requestId, package).ConfigureAwait(false);
+
+                    await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
+                }
+                while (!Cancellation.Token.IsCancellationRequested && target is null);
+            }
+            else
+            {
+                var cancellation = new CancellationTokenSource();
+                cancellation.CancelAfter(TimeSpans.ActorConnectionAttemptPeriod*50);
+
+                await MessageHub.Post.ConnectToAsync(cancellation.Token, Connection, Me, Addresses.Central, target);
+
+                if (cancellation.IsCancellationRequested)
+                {
+                    target = null;
+                    await AgentsDiscoveryAsync()();
+                }
+            }
+        };
     }
 }

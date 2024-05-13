@@ -1,62 +1,54 @@
 ﻿using Enterprise.MessageHub;
+using Enterprise.Utils;
 
 namespace Enterprise.Agency;
 
 public class ManagerHub : MessageHub<IAgencyContract>
 {
-    public async Task<ManagerResponse> AgentsRegistrationRequest(AgentsDossier dossier, AgencyCulture state)
+    public async Task<ManagerResponse?> AgentsRegistrationRequest(AgentsToHire agentsToHire, AgencyCulture state)
     {
-        var hired = new List<Curriculum>();
+        var hired = new List<AgentInfo>();
+        var validatedRecruits = agentsToHire.Recruits.Where(x => x is not null && state.RegisteredAgents.Contains(x.Name))
+                                                     .Select(x => x with { Active = true, LastInteraction = DateTime.Now }).ToList();
 
-        if (dossier.Agents is not null)
+        if (validatedRecruits.Any())
         {
-            var agents = dossier.Agents.Where(x => x is not null).ToList()!;
-
-            if (state.DossierByActor.TryGetValue(dossier.From, out var archive))
-            {
-                agents.ForEach(agent =>
-                {
-                    if (!archive.Any(x => x.AgentInfo.Name == agent.Name))
-                    {
-                        archive.Add((agent, DateTime.Now, true));
-                        hired.Add(agent);
-                    }
-                });
-            }
+            if (state.InfoByActor.TryGetValue(agentsToHire.From, out var info))
+                hired = validatedRecruits.Where(agent => !info.Any(x => x.Name == agent.Name && x.Active)).ToList();
             else
-            {
-                state.DossierByActor[dossier.From] = agents.Select(x => (x, DateTime.Now, true)).ToList();
-                hired = agents;
-            }
-        }
-        else
-        {
-            LogPost($"dossier agents found null.");
+                hired = validatedRecruits;
+
+            state.InfoByActor[agentsToHire.From] = validatedRecruits;
         }
 
         if (hired.Any())
             await Recruitment.RecruitAsync(hired, this, state);
-        return new ManagerResponse(true, hired);
+
+        if (validatedRecruits.Any())
+            return new ManagerResponse(true, hired, Id);
+
+        return null;
     }
 
     public async Task<ManagerResponse> AgentsDiscovery(string from, AgencyCulture state)
     {
-        var hired = new List<Curriculum>();
+        var hired = new List<AgentInfo>();
 
-        if (state.DossierByActor.TryGetValue(from, out var archive))
+        if (state.InfoByActor.TryGetValue(from, out var info))
         {
-            archive.ForEach(x =>
+            info.ForEach(x =>
             {
                 if (!x.Active)
-                    hired.Add(x.AgentInfo);
+                    hired.Add(x);
+                x.LastInteraction = DateTime.Now;
                 x.Active = true;
-                x.Time = DateTime.Now;
             });
         }
 
         if (hired.Any())
             await Recruitment.RecruitAsync(hired, this, state);
-        return new ManagerResponse(true, hired);
+            
+        return new ManagerResponse(true, hired, Id);
     }
 }
 

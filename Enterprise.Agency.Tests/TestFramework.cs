@@ -39,7 +39,23 @@ public static class TestFramework
         return "https://localhost:" + new Random().Next(1, 9999).ToString();
     }
 
-    public static async Task<WebApplication> StartServerAsync(Type[]? agents)
+    public static async Task<WebApplication> StartServerAsync()
+    {
+        var url = await GetFreeUrlAsync();
+        var builder = WebApplication.CreateBuilder();
+
+        builder.Services.AddSignalR();
+
+        var app = builder.Build();
+
+        app.MapHub<PostingHub>(Addresses.SignalR);
+
+        app.RunAsync(url);
+
+        return app;
+    }
+
+    public static async Task<WebApplication> StartServerWithManagerAsync(Type[]? agents)
     {
         var url = await GetFreeUrlAsync();
         var builder = WebApplication.CreateBuilder();
@@ -62,9 +78,9 @@ public static class TestFramework
     }
 
     public static async Task<(WebApplication Server, Project<IAgencyContract> Logger, Project<IContractExample1> Project1, Project<IContractExample2> Project2)>
-    SetupThreeProjectsAsync(ConcurrentBag<Log> storage, Type[]? agents = null)
+    SetupThreeProjectsAsync(ConcurrentBag<Log> storage)
     {
-        var server = await StartServerAsync(agents);
+        var server = await StartServerAsync();
         var url = server.Urls.First();
 
         var logger = Project<IAgencyContract>.Create(url)
@@ -75,19 +91,19 @@ public static class TestFramework
 
         var project2 = Project<IContractExample2>.Create(url).Run();
 
-        await project1.ConnectToAsync(logger.Me);
-        await project1.ConnectToAsync(project2.Me);
+        //await project1.ConnectToAsync(logger.Me);
+        //await project1.ConnectToAsync(project2.Me);
 
-        await project2.ConnectToAsync(logger.Me);
-        await project2.ConnectToAsync(project1.Me);
+        //await project2.ConnectToAsync(logger.Me);
+        //await project2.ConnectToAsync(project1.Me);
 
         return (server, logger, project1, project2);
     }
 
     public static async Task<(WebApplication server, Project<IAgencyContract> logger, Project<IContractAgentX> project, string agent)> 
-    SetupLoggerProjectAgentAsync(ConcurrentBag<Log> storage)
+    SetupManagerAgentProjectLogger(ConcurrentBag<Log> storage)
     {
-        var server = await StartServerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
+        var server = await StartServerWithManagerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
         var url = server.Urls.First();
         var agentName = typeof(XHub).ExtractName();
 
@@ -99,8 +115,8 @@ public static class TestFramework
                         .AddAgent<XModel, XHub, IContractAgentX>()
                         .Run();
 
-        await project.ConnectToAsync(logger.Me);
-        await project.ConnectToAsync(agentName);
+        //await project.ConnectToAsync(logger.Me);
+        //await project.ConnectToAsync(agentName);
 
         return (server, logger, project, agentName);
     }

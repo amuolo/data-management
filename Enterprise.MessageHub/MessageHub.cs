@@ -23,9 +23,9 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
 
     public ConcurrentDictionary<string, (Type? Type, Delegate Delegate)> OperationByPredicate { get; } = new();
 
-    private MethodInfo[] Predicates { get; } = new[] { typeof(IContract) }.Concat(typeof(IContract).GetInterfaces())
-                                                                          .SelectMany(i => i.GetMethods())
-                                                                          .ToArray();
+    private MethodInfo[] Predicates { get; } = typeof(IContract).GetInterfaces().Concat([typeof(IContract)])
+                                                                .SelectMany(i => i.GetMethods())
+                                                                .ToArray();
 
     public static THub Create<THub> (string baseUrl) where THub : MessageHub<IContract>, new()
     {
@@ -118,25 +118,18 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
         var ok = CallbacksById.TryAdd(parcel.Id, (string responseParcel) =>
         {
             LogPost($"processing response {message} {typeof(TResponse).Name}");
-            try
+            if (responseParcel is null)
             {
-                if (responseParcel is null)
-                {
-                    callback(default);
-                }
+                callback(default);
+            }
+            else
+            {
+                var package = JsonConvert.DeserializeObject<TResponse>(responseParcel);
+                if (package is not null)
+                    callback(package);
                 else
-                {
-                    var package = JsonConvert.DeserializeObject<TResponse>(responseParcel);
-                    if (package is not null)
-                        callback(package);
-                    else
-                        LogPost($"Error: response deserialization failed");
-                }
-            }
-            catch (Exception ex)
-            {
-                LogPost($"Error: Exception thrown: {ex.Message}");
-            }
+                    LogPost($"Error: response deserialization failed");
+            }            
         });
 
         if (!ok)
@@ -204,7 +197,14 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
             return;
         }
 
-        callback(response);
+        try
+        {
+            callback(response);
+        }
+        catch (Exception ex)
+        {
+            LogPost($"Error: exception found while processing response: {ex.Message}");
+        }
         CallbacksById.Remove(messageId, out var value);
     }
 

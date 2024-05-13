@@ -60,13 +60,14 @@ public class Post : BackgroundService
                                 Formatting = Formatting.Indented
                             });
 
+                        if (info.ServiceDiscovery.Active && info.ServiceDiscovery.ConnectAsync is not null)
+                            await info.ServiceDiscovery.ConnectAsync().ConfigureAwait(false);
+
                         if (!isResponse)
                         {
                             var target = parcel.Target?.ToString();
                             targetId = target is null ? null : await ConnectToAsync(token, connection, me, target, null).ConfigureAwait(false);
-                        }                      
-
-                        await ConnectToAsync(token, connection, me, Addresses.Central, null).ConfigureAwait(false);
+                        }
 
                         if (isResponse)
                             await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Id, package).ConfigureAwait(false);
@@ -97,9 +98,18 @@ public class Post : BackgroundService
 
     public static async Task<string> EstablishConnectionAsync(HubConnection connection, CancellationToken token)
     {
+        if (connection is null)
+        {
+            // TODO: add log
+            throw new ArgumentNullException(nameof(EstablishConnectionAsync) + nameof(connection));
+        }
+
+        if (connection.State == HubConnectionState.Disconnected)
+            await connection.StartAsync(token).ConfigureAwait(false);
+
         using (var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod))
         {
-            while ((connection is null || connection.State != HubConnectionState.Connected || connection.ConnectionId is null) && !token.IsCancellationRequested)
+            while ((connection.State != HubConnectionState.Connected || connection.ConnectionId is null) && !token.IsCancellationRequested)
             {
                 await timerReconnection.WaitForNextTickAsync(token).ConfigureAwait(false);
                 // TODO: add log
@@ -113,7 +123,6 @@ public class Post : BackgroundService
     public static async Task<string> ConnectToAsync(CancellationToken token, HubConnection connection, string from, string target, string? targetId)
     {
         var counter = 0;
-        var connected = false;
         var requestId = Guid.NewGuid().ToString();
         var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
         var id = await EstablishConnectionAsync(connection, token).ConfigureAwait(false);
@@ -123,7 +132,6 @@ public class Post : BackgroundService
                 if (messageId == requestId && (targetId is null || targetId == senderId))
                 {
                     targetId = senderId;
-                    connected = true;
                     timerReconnection.Dispose();
                 }
         });
@@ -133,15 +141,15 @@ public class Post : BackgroundService
             if (++counter % 10 == 0)
             {
                 var msg = $"Struggling to connect to {target}, attempt {++counter}";
-                await connection.SendAsync(nameof(PostingHub.Log), from, requestId, msg).ConfigureAwait(false);
+                await connection.SendAsync(nameof(PostingHub.Log), from, id, msg).ConfigureAwait(false);
                 // TODO: add log
             }
             await connection.SendAsync(nameof(PostingHub.ConnectRequest), from, id, requestId, target).ConfigureAwait(false);
             await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
         }
-        while (!token.IsCancellationRequested && !connected);
+        while (!token.IsCancellationRequested && targetId is null);
 
         subscription.Dispose();
-        return targetId;
+        return targetId!;
     }
 }
