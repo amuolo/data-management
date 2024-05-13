@@ -84,7 +84,7 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
                     else
                     {
                         foreach (var agent in task.Response.Hired)
-                            await Post.ConnectToAsync(MessageHub.Connection, MessageHub.Me, agent.Name, default);
+                            await Post.ConnectToAsync(default, MessageHub.Connection, MessageHub.Me, agent.Name, null);
                         task.Response.Hired.Clear();
                         await task.PostAction();
                     }                   

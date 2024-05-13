@@ -44,7 +44,7 @@ public class Post : BackgroundService
                     else if (parcel.Type == nameof(PostingHub.Log))
                     {
                         if(me != Addresses.Logger)
-                            await ConnectToAsync(connection, me, Addresses.Logger, token).ConfigureAwait(false);
+                            await ConnectToAsync(token, connection, me, Addresses.Logger, null).ConfigureAwait(false);
                         await connection.SendAsync(nameof(PostingHub.Log), me, id, parcel.Message).ConfigureAwait(false);
                         status = true;
                     }
@@ -63,10 +63,10 @@ public class Post : BackgroundService
                         if (!isResponse)
                         {
                             var target = parcel.Target?.ToString();
-                            targetId = target is null ? null : await ConnectToAsync(connection, me, target, token).ConfigureAwait(false);
+                            targetId = target is null ? null : await ConnectToAsync(token, connection, me, target, null).ConfigureAwait(false);
                         }                      
 
-                        await ConnectToAsync(connection, me, Addresses.Central, token).ConfigureAwait(false);
+                        await ConnectToAsync(token, connection, me, Addresses.Central, null).ConfigureAwait(false);
 
                         if (isResponse)
                             await connection.SendAsync(parcel.Type, me, id, targetId, parcel.Id, package).ConfigureAwait(false);
@@ -110,10 +110,9 @@ public class Post : BackgroundService
         return connection!.ConnectionId!;
     }
 
-    public static async Task<string> ConnectToAsync(HubConnection connection, string from, string target, CancellationToken token)
+    public static async Task<string> ConnectToAsync(CancellationToken token, HubConnection connection, string from, string target, string? targetId)
     {
         var counter = 0;
-        var targetId = "";
         var connected = false;
         var requestId = Guid.NewGuid().ToString();
         var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
@@ -121,15 +120,11 @@ public class Post : BackgroundService
 
         var subscription = connection.On(PostingHub.ReceiveConnectionEstablished + requestId, 
             (string senderId, string messageId) => {
-                if (messageId == requestId)
+                if (messageId == requestId && (targetId is null || targetId == senderId))
                 {
                     targetId = senderId;
                     connected = true;
                     timerReconnection.Dispose();
-                }
-                else
-                {
-                    throw new Exception("Failing to establish safe connection.");
                 }
         });
 

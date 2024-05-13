@@ -126,6 +126,6 @@ public class Project<IContract>() : MessageHub<IContract>
 
     public async Task ConnectToAsync(string target, CancellationToken cancellation = new())
     {
-        await MessageHub.Post.ConnectToAsync(Connection, Me, target, cancellation);
+        await MessageHub.Post.ConnectToAsync(cancellation, Connection, Me, target, null);
     }
 }
