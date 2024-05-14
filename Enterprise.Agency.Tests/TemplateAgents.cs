@@ -41,3 +41,21 @@ public class XHub : MessageHub<IContractAgentX>
         UpdateRequest(name, model);
     }
 }
+
+public class YHub : MessageHub<IContractAgentY>
+{
+    public YModel CreateRequest()
+    {
+        return new("Bingo", "Bongo");
+    }
+
+    public double ValidateRequestWithDoubleReturn(string a)
+    {
+        return double.TryParse(a, out var res)? res + 0.5 : 0;
+    }
+
+    public YModel ValidateRequestWithObjectReturn(string a, YModel state)
+    {
+        return state with { Name = a };
+    }
+}

@@ -33,7 +33,13 @@ public interface IContractAgentX : IAgencyContract
     /* out */
     Task DataChangedEvent();
 
-    Task ShowProgress(double progress);
-
     Task Display(string message);
+}
+
+public interface IContractAgentY : IAgencyContract
+{
+    /* in */
+    double ValidateRequestWithDoubleReturn(string a);
+
+    YModel ValidateRequestWithObjectReturn(string a);
 }

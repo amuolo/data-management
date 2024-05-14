@@ -83,35 +83,35 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
      *******************/
     public void Post(string message) => Queue.Enqueue(new Parcel(default, default, default, message));
 
-    public void Post(Expression<Func<IContract, Action>> predicate) => Post(default(object), predicate);
-    public void Post(Expression<Func<IContract, Func<Task>>> predicate) => Post(default(object), predicate);
+    public void Post(Expression<Func<IContract, Action>> predicate) => Post(default(IHubAddress), predicate);
+    public void Post(Expression<Func<IContract, Func<Task>>> predicate) => Post(default(IHubAddress), predicate);
 
-    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Action>> predicate) => Queue.Enqueue(new Parcel(address, default, default, GetMessage(predicate)));
-    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Func<Task>>> predicate) => Queue.Enqueue(new Parcel(address, default, default, GetMessage(predicate)));
+    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Action>> predicate) where TAddress : IHubAddress => Queue.Enqueue(new Parcel(address, default, default, GetMessage(predicate)));
+    public void Post<TAddress>(TAddress? address, Expression<Func<IContract, Func<Task>>> predicate) where TAddress : IHubAddress => Queue.Enqueue(new Parcel(address, default, default, GetMessage(predicate)));
 
-    public void Post<TSent>(Expression<Func<IContract, Action<TSent>>> predicate, TSent? package) => Post(default(object), predicate, package);
-    public void Post<TSent>(Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) => Post(default(object), predicate, package);
+    public void Post<TSent>(Expression<Func<IContract, Action<TSent>>> predicate, TSent? package) => Post(default(IHubAddress), predicate, package);
+    public void Post<TSent>(Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) => Post(default(IHubAddress), predicate, package);
 
-    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Action<TSent>>> predicate, TSent? package) => Queue.Enqueue(new Parcel(address, default, package, GetMessage(predicate)));
-    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) => Queue.Enqueue(new Parcel(address, default, package, GetMessage(predicate)));
+    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Action<TSent>>> predicate, TSent? package) where TAddress : IHubAddress => Queue.Enqueue(new Parcel(address, default, package, GetMessage(predicate)));
+    public void Post<TAddress, TSent>(TAddress? address, Expression<Func<IContract, Func<TSent, Task>>> predicate, TSent? package) where TAddress : IHubAddress => Queue.Enqueue(new Parcel(address, default, package, GetMessage(predicate)));
 
     /**********************
        Post with response 
      **********************/
-    public void PostWithResponse<TResponse>(Expression<Func<IContract, Func<TResponse>>> predicate, Action<TResponse> callback) => PostWithResponse(default(object), GetMessage(predicate), default(object), callback);
-    public void PostWithResponse<TResponse>(Expression<Func<IContract, Func<Task<TResponse>>>> predicate, Action<TResponse> callback) => PostWithResponse(default(object), GetMessage(predicate), default(object), callback);
+    public void PostWithResponse<TResponse>(Expression<Func<IContract, Func<TResponse>>> predicate, Action<TResponse> callback) => PostWithResponse(default(IHubAddress), GetMessage(predicate), default(object), callback);
+    public void PostWithResponse<TResponse>(Expression<Func<IContract, Func<Task<TResponse>>>> predicate, Action<TResponse> callback) => PostWithResponse(default(IHubAddress), GetMessage(predicate), default(object), callback);
 
-    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Func<TResponse>>> predicate, Action<TResponse> callback) => PostWithResponse(address, GetMessage(predicate), default(object), callback);
-    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Func<Task<TResponse>>>> predicate, Action<TResponse> callback) => PostWithResponse(address, GetMessage(predicate), default(object), callback);
+    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Func<TResponse>>> predicate, Action<TResponse> callback) where TAddress : IHubAddress => PostWithResponse(address, GetMessage(predicate), default(object), callback);
+    public void PostWithResponse<TAddress, TResponse>(TAddress? address, Expression<Func<IContract, Func<Task<TResponse>>>> predicate, Action<TResponse> callback) where TAddress : IHubAddress => PostWithResponse(address, GetMessage(predicate), default(object), callback);
 
-    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Func<TSent, TResponse>>> predicate, TSent? package, Action<TResponse> callback) => PostWithResponse(default(object), predicate, package, callback);
-    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Func<TSent, Task<TResponse>>>> predicate, TSent? package, Action<TResponse> callback) => PostWithResponse(default(object), predicate, package, callback);
+    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Func<TSent, TResponse>>> predicate, TSent? package, Action<TResponse> callback) => PostWithResponse(default(IHubAddress), predicate, package, callback);
+    public void PostWithResponse<TSent, TResponse>(Expression<Func<IContract, Func<TSent, Task<TResponse>>>> predicate, TSent? package, Action<TResponse> callback) => PostWithResponse(default(IHubAddress), predicate, package, callback);
 
-    public void PostWithResponse<TAddress, TSent, TResponse>(TAddress? address, Expression<Func<IContract, Func<TSent, TResponse>>> predicate, TSent? package, Action<TResponse> callback) => PostWithResponse(address, GetMessage(predicate), package, callback);
-    public void PostWithResponse<TAddress, TSent, TResponse>(TAddress? address, Expression<Func<IContract, Func<TSent, Task<TResponse>>>> predicate, TSent? package, Action<TResponse> callback) => PostWithResponse(address, GetMessage(predicate), package, callback);
+    public void PostWithResponse<TAddress, TSent, TResponse>(TAddress? address, Expression<Func<IContract, Func<TSent, TResponse>>> predicate, TSent? package, Action<TResponse> callback) where TAddress : IHubAddress => PostWithResponse(address, GetMessage(predicate), package, callback);
+    public void PostWithResponse<TAddress, TSent, TResponse>(TAddress? address, Expression<Func<IContract, Func<TSent, Task<TResponse>>>> predicate, TSent? package, Action<TResponse> callback) where TAddress : IHubAddress => PostWithResponse(address, GetMessage(predicate), package, callback);
 
     public void PostWithResponse<TAddress, TSent, TResponse>
-        (TAddress? address, string message, TSent? package, Action<TResponse> callback)
+        (TAddress? address, string message, TSent? package, Action<TResponse> callback) where TAddress : IHubAddress
     {
         var parcel = new Parcel(address, null, package, message);
  

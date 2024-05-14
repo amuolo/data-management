@@ -9,3 +9,6 @@ public interface IHubContract
 
 public record DeletionProcess(bool Status);
 
+
+
+

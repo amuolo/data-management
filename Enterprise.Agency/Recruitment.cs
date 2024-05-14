@@ -52,7 +52,7 @@ internal static class Recruitment
     private static async Task<bool> ConnectToNoviceAsync(HubConnection connection, AgentInfo agent) 
     {
         var cancellation = new CancellationTokenSource();
-        cancellation.CancelAfter(TimeSpans.ActorConnectionAttemptPeriod*50);
+        cancellation.CancelAfter(TimeSpans.ConnectionTimeout);
         
         await Post.ConnectToAsync(cancellation.Token, connection, Addresses.Central, agent.MessageHubName, null);
 

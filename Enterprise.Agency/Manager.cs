@@ -123,7 +123,7 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
                         if (state.Hosts.TryGetValue(agent, out var host))
                         {
                             MessageHub.PostWithResponse(
-                                agent,
+                                new HubAddress(agent),
                                 manager => manager.DeleteRequest,
                                 (Action<DeletionProcess>)(async process =>
                                 {

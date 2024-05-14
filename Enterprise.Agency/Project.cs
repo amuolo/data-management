@@ -30,7 +30,6 @@ public class Project<IContract>() : MessageHub<IContract>
     public static Project<IContract> Create(string baseUrl) => Create<Project<IContract>>(baseUrl);
 
     public Project<IContract> AddAgent<TState, THub, IAgentContract>()
-            where TState : new()
             where THub : MessageHub<IAgentContract>, new()
             where IAgentContract : class, IHubContract
     {
@@ -136,6 +135,8 @@ public class Project<IContract>() : MessageHub<IContract>
             {
                 var counter = 0;
                 var requestId = Guid.NewGuid().ToString();
+                var timeout = new CancellationTokenSource();
+                timeout.CancelAfter(TimeSpans.ConnectionTimeout);
                 var timerReconnection = new PeriodicTimer(TimeSpans.ActorConnectionAttemptPeriod);
                 var id = await MessageHub.Post.EstablishConnectionAsync(Connection, Cancellation.Token).ConfigureAwait(false);
 
@@ -155,9 +156,7 @@ public class Project<IContract>() : MessageHub<IContract>
                 do
                 {
                     if (++counter % 10 == 0)
-                    {
                         LogPost($"Struggling to connect to Manager, attempt {++counter}");
-                    }
 
                     var package = JsonConvert.SerializeObject(new AgentsToHire(Agents, Me), new JsonSerializerSettings
                     {
@@ -169,7 +168,10 @@ public class Project<IContract>() : MessageHub<IContract>
 
                     await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
                 }
-                while (!Cancellation.Token.IsCancellationRequested && target is null);
+                while (!Cancellation.Token.IsCancellationRequested && !timeout.Token.IsCancellationRequested && target is null);
+
+                if (timeout.Token.IsCancellationRequested)
+                    LogPost("Agents Discovery failed: no response from Manager");
             }
             else
             {

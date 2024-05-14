@@ -91,11 +91,9 @@ public static class TestFramework
 
         var project2 = Project<IContractExample2>.Create(url).Run();
 
-        //await project1.ConnectToAsync(logger.Me);
-        //await project1.ConnectToAsync(project2.Me);
-
-        //await project2.ConnectToAsync(logger.Me);
-        //await project2.ConnectToAsync(project1.Me);
+        // Being projects autonomous entities, here we ensure they are both up and running when the test starts
+        await project1.ConnectToAsync(logger.Me);
+        await project1.ConnectToAsync(project2.Me);
 
         return (server, logger, project1, project2);
     }
@@ -115,8 +113,10 @@ public static class TestFramework
                         .AddAgent<XModel, XHub, IContractAgentX>()
                         .Run();
 
-        //await project.ConnectToAsync(logger.Me);
-        //await project.ConnectToAsync(agentName);
+        // While projects are autonomous entities, and here we ensure they are both up and running when the test starts,
+        // agents are managed resources, and we don't have to worry about their life time or readiness as this is 
+        // entirely handled by the Manager service.
+        await project.ConnectToAsync(logger.Me);
 
         return (server, logger, project, agentName);
     }

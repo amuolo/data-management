@@ -63,10 +63,10 @@ public class Post : BackgroundService
                         if (info.ServiceDiscovery.Active && info.ServiceDiscovery.ConnectAsync is not null)
                             await info.ServiceDiscovery.ConnectAsync().ConfigureAwait(false);
 
-                        if (!isResponse)
+                        if (!isResponse && parcel.Target is not null)
                         {
-                            var target = parcel.Target?.ToString();
-                            targetId = target is null ? null : await ConnectToAsync(token, connection, me, target, null).ConfigureAwait(false);
+                            var target = ((HubAddress)parcel.Target).Name;
+                            targetId = await ConnectToAsync(token, connection, me, target, null).ConfigureAwait(false);
                         }
 
                         if (isResponse)
