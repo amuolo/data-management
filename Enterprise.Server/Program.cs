@@ -10,7 +10,7 @@ builder.Services.AddRazorPages();
 builder.Services.AddServerSideBlazor();
 builder.Services.AddSignalR();
 
-builder.Services.AddAgencyServices("https://localhost:7158", o => o
+builder.Services.AddAgencyManager("https://localhost:7158", o => o
     .WithAgentTypes([typeof(Agent<Model, DataHub, IDataContract>)])
     .WithHireAgentsPeriod(TimeSpan.FromMinutes(30))
     .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))

@@ -1,3 +1,27 @@
+### 14 May 2024 Release Note v2.0.0 ###
+
+v2 is here 💛💙💜💚💘
+
+This package is for you! Now released with the more permissive MIT license!
+
+This is a major version update, i.e. the public API is slightly different than v1.
+
+List of changes to the public API: 
+
+- Workplace replaced with Agency Culture
+- Introduced fluent API to configure Agency Services and set options
+- Office replaced with Project to exploit the triad: project-agent-manager
+- Job Start(+Async) method to reflect asynchronism
+- introduced IHubAddress and HubAddress to start working on address configuration
+
+List of other changes: 
+
+- now we support more complex topology with more Managers for scalability
+- Agents Discovery mechanism greatly refactored to support multiple Managers
+- agency culture members safety increased via encapsulation
+- relaxed constraint: agent state must not be default constructible anymore
+- code cleanups and simplifications
+
 ### 6 May 2024 Release Note v1.1.0 🚀🚀🚀 ###
 
 - new API: register to job on finish events

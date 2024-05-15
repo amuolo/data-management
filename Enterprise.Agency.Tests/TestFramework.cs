@@ -62,7 +62,7 @@ public static class TestFramework
 
         builder.Services.AddSignalR();
                
-        builder.Services.AddAgencyServices(url, o => o
+        builder.Services.AddAgencyManager(url, o => o
             .WithAgentTypes(agents?? [])
             .WithHireAgentsPeriod(TimeSpan.FromMinutes(30))
             .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))

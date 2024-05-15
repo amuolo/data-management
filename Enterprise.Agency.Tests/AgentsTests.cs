@@ -233,7 +233,7 @@ public class AgentsTests
         var builder = Host.CreateApplicationBuilder();
 
         builder.Services.AddSignalR();
-        builder.Services.AddAgencyServices(url, o => o.WithAgentTypes([typeof(Agent<YModel, YHub, IContractAgentY>)]));
+        builder.Services.AddAgencyManager(url, o => o.WithAgentTypes([typeof(Agent<YModel, YHub, IContractAgentY>)]));
 
         var app = builder.Build();
         app.RunAsync();

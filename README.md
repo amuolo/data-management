@@ -12,8 +12,11 @@ concurrent solutions using the actor concurrency model.
 ## Table Of Contents
 
   * [Introduction](#introduction)
-  * [Theory](#theory)
-      * [Agency](#agency)
+  * [Agency](#agency)
+      * [Agents](#agents)
+      * [Managers](#managers)
+      * [Projects](#projects)
+  * [Building Blocks](#building-blocks)
       * [Message Hub](#message-hub)
       * [Job Factory](#job-factory)
   * [Getting started](#getting-started)
@@ -37,22 +40,56 @@ and distributed applications.
 > between servers and clients. It allows the exchange of messages and ensures a dynamic and responsible interaction
 > in real-time applications.
 
-## Theory
+## Agency
 
-### Agency
+The Agency project is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and projects.
 
-> The Agency project is the cornerstone of this repo. It provides an easy-to-use API to define agents, managers, and projects.
+### Agents
 
-Aligned with the actor model, this framework empowers developers to swiftly configure numerous concurrent actors, referred to as *agents*. 
-These agents are not deployed immediately; instead, deployment occurs only when strictly necessary, managed by dedicated *managers*. 
-Additionally, the client front end can configure *projects*, which function as independent actors capable of communicating 
-with other agents seamlessly over the wire.
+Aligned with the actor model, this framework empowers developers to swiftly configure numerous concurrent actors, referred to as *Agents*.
+Agents are stateful entities, each one owns a unique and private state, and executes CRUD operations based on the message it receives.
+Communications with other actors is regulated via a contract interface that defines the possible incoming and outgoing messages. 
 
-> Agents are defined uniquely with *name*, *state*, and *contract*.
+> Agents are defined uniquely by their *name*, *state*, and *contract*.
 
-Agents can exchange messages only through their own contract interface. Additionally, agents are stateful entities, 
-owning a specific state and processing CRUD operations when handling the messages they receive. 
-Since messages are handled sequentially, there is no need for a locking mechanism when multiple resources (agents) attempt to access the same resource.
+Since messages are handled sequentially and states are not shared, there is no need for a locking mechanism to avoid that the same 
+resource is accessed simultaneously by multiple resources. Conversely, the operations follow a chain of messages that the various 
+actors continuously send to each other based on the application design. The request-response pattern is supported by this library.
+
+Typically, in a data-driven application, different Agents are usually deployed to administrate different kind of data, 
+e.g. assumptions, parameters, benchmark, business processes, reference and transactional data.
+
+### Managers 
+
+Agents are not deployed immediately when the application starts, instead, deployment occurs only when strictly necessary, 
+namely when an actor needs them and send a message that a group of Agents is capable to handle.
+This process is regulated by dedicated *Managers*.
+
+> Managers are agents themselves and handle the creation and destruction of all other agents.
+
+This library allows you to freely configure any number of Agent and contracts in order segregate different concerns as much as possible
+and truly profit from the decentralized and scalable nature of modern cloud architectures. 
+
+A key feature is the possibility to configure applications with more than one Manager, each one being in control of 
+different subsets of agents. As the number of deployed agents can become quite large, this feature ensures scalability 
+by avoiding that the one Manager becomes the limiting factor of the equation.
+
+### Projects 
+
+Together with Agents and Managers, the third configurable actor is the *Project*. 
+
+> Projects are versatile light-weight actors offering a vast range of interesting features.
+
+While Agents require their own classes and their lifetime is not under your control, Projects are in full control of the developer. 
+Their instantiation and disposal happens fast, so to make them ideal on the client side, e.g. View Model, or Controller. 
+Moreover, they also run with a well-defined contract that rules the messages that a Project can send, and they give the chance
+to subscribe to messages, ensuring a user-defined delegate is invoked every time a given message is received.
+By means of fluent API it is possible to assign any number of Agents to a Project, thus informing the Manager that the communication
+started from that project can result is a new Agent being spawned. 
+Lastly, Projects can also be specialized to handle logs and register every information logged by the decentralized application 
+for auditability.
+
+## Building Blocks
 
 While Message hub is the project storing all structures and APIs to deal with message handling, Job is the dedicated state handler.
 

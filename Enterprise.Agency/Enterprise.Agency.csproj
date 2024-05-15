@@ -9,20 +9,15 @@
     <PackageId>Muoland.Agency</PackageId>
     <Title>Muoland.Agency</Title>
     <Authors>Muoland</Authors>
-    <Description>The Muoland.Agency toolkit empowers developers to create robust scalable web applications with ease. By abstracting complex concurrency models and providing essential APIs, it enables seamless communication between components following the actor model.</Description>
+    <Description>The Muoland.Agency library empowers developers to create robust scalable web applications with ease. By abstracting complex concurrency models and providing essential APIs, it enables seamless communication between components following the actor model.</Description>
     <PackageProjectUrl>https://github.com/amuolo/data-management</PackageProjectUrl>
     <PackageIcon>Assets\img\logox.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <RepositoryUrl>https://github.com/amuolo/data-management</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
-    <PackageTags>
-		muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, web, application,
-		parallel, concurrent, governance, cloud, performance, threading, queue, jobs, background, long-running, AspNetCore,
-		AspNet, NetCore, MVC, WPF, Razor, Blazor, eventsource, network, log, monitoring, reactive, dependency, injection,
-		health, check, hosting
-	</PackageTags>
-    <Version>1.1.0</Version>
+    <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, web, application, parallel, concurrent, governance, cloud, performance, threading, queue, jobs, background, long-running, AspNetCore, AspNet, NetCore, MVC, WPF, Razor, Blazor, eventsource, network, log, monitoring, reactive, dependency, injection, health, check, hosting	</PackageTags>
+    <Version>2.0.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -60,17 +55,30 @@
 
   <PropertyGroup>
     <TargetsForTfmSpecificBuildOutput> $(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
-    <Copyright>GNU General Public License v3.0</Copyright>
+    <Copyright>MIT license</Copyright>
     <PackageReleaseNotes>
 
-		6 May 2024 Release Note v1.1.0 🚀🚀🚀
+		14 May 2024   v2 is here 💛💙💜💚💘
 
-		- new API: register to job on finish events
-		- simplify hub contract
-		- better test coverage
-		- posting hub consistency improved
-		- agents state simplified
-		- improve job execution mechanism
+		This package is for you! Now released with the more permissive MIT license!
+
+		This is a major version update, i.e. the public API is slightly different than v1.
+
+		List of changes to the public API:
+
+		- Workplace replaced with Agency Culture
+		- Introduced fluent API to configure Agency Services and set options
+		- Office replaced with Project to exploit the triad: project-agent-manager
+		- Job Start(+Async) method to reflect asynchronism
+		- introduced IHubAddress and HubAddress to start working on address configuration
+
+		List of other changes:
+
+		- now we support more complex topology with more Managers for scalability
+		- Agents Discovery mechanism greatly refactored to support multiple Managers
+		- agency culture members safety increased via encapsulation
+		- relaxed constraint: agent state must not be default constructible anymore
+		- code cleanups and simplifications
 
 		<!-- 🚀 -->
 
