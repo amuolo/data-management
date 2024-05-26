@@ -9,22 +9,23 @@ namespace Enterprise.Agency;
 
 public class Agent<TState, THub, IContract> : BackgroundService
     where THub : MessageHub<IContract>, new()
-    where IContract : class, IHubContract
+    where IContract : class, IAgencyContract
 {
     protected IHubContext<PostingHub> ServerHub { get; }
     protected THub MessageHub { get; set; }
     protected bool IsInitialized { get; set; }
     protected string Me => MessageHub.Me;
 
-    protected Job<TState> Job { get; set; } = JobFactory.New<TState>();
+    protected Job<TState> Job { get; set; }
 
     protected Dictionary<string, MethodInfo> MethodsByName { get; } 
         = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
 
     public Agent(IHubContext<PostingHub> hubContext, AgencyCulture workplace)
     {
+        ServerHub = hubContext;
         MessageHub = MessageHub<IContract>.Create<THub>(workplace.Url);
-        ServerHub = hubContext;        
+        Job = JobFactory.New<TState>().WithOptions(o => o.WithLogs(MessageHub.LogPost));
     }
 
     public override void Dispose()
@@ -89,23 +90,22 @@ public class Agent<TState, THub, IContract> : BackgroundService
             Dispose();
             return;
         }
-        //else if (message == nameof(IHubContract.ReadRequest))
-        //{
-        //    // TODO: generalizes read request response with agency contract
-        //    // TODO: check whether this mechanism handles read requests in parallel
-        //    await CreateAsync();
-        //    MessageHub.LogPost($"processing {message}");
-        //    MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, nameof(IHubContract.ReadResponse)));
-        //    return;
-        //}
+        else if (message == nameof(IAgencyContract.ReadRequest))
+        {
+            // TODO: check whether this mechanism handles read requests in parallel
+            await CreateAsync();
+            MessageHub.LogPost($"processing {message}");
+            MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, message) 
+                with { Type = nameof(PostingHub.SendResponse), Id = messageId });
+            return;
+        }
         else if (MethodsByName.TryGetValue(message, out var method))
         {
             // TODO: consider re-using the project registration pattern instead of inventing a new one here
             await CreateAsync();
             MessageHub.LogPost($"processing {message}");
 
-            await Job.WithOptions(o => o.WithLogs(MessageHub.LogPost))
-                     .WithStep($"{message}", async state =>
+            await Job.WithStep($"{message}", async state =>
             {
                 var parameters = method.GetParameters().Select(p => p.ParameterType == typeof(TState) ? state :
                                     (package is not null ? JsonConvert.DeserializeObject(package, p.ParameterType) : null)).ToArray();

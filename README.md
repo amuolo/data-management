@@ -139,13 +139,13 @@ Here below is how to configure one project on the WPF client side:
 and here the configuration of a different project with logging capabilities on a different client
 
      var project = Project<IAgencyContract>.Create(NavManager.BaseUri)
-                                         .ReceiveLogs((sender, senderId, message) =>
-                                         {
-                                             var formattedMessage = $"{sender}: {message}";
-                                             messages.Add(formattedMessage);
-                                             InvokeAsync(StateHasChanged);
-                                         })
-                                         .Run();
+                                           .ReceiveLogs((sender, senderId, message) =>
+                                           {
+                                               var formattedMessage = $"{sender}: {message}";
+                                               messages.Add(formattedMessage);
+                                               InvokeAsync(StateHasChanged);
+                                           })
+                                           .Run();
 
 From the Program configuration we learn there is going to be one agent (actor) deployed when needed. 
 This is a simple data agent owning some 'Model' and performing some operation, e.g. import, update, deletion.

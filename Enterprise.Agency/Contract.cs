@@ -5,6 +5,8 @@ namespace Enterprise.Agency;
 public interface IAgencyContract : IHubContract
 {
     Task<ManagerResponse?> AgentsRegistrationRequest(AgentsToHire dossier);
+
+    TState ReadRequest<TState>();
 }
 
 public record AgentsToHire(List<AgentInfo> Recruits, string From);

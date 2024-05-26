@@ -1,6 +1,5 @@
 ﻿using Enterprise.MessageHub;
 using Enterprise.Utils;
-using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System.Collections.Concurrent;
@@ -22,9 +21,9 @@ public class AgentsTests
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
 
-        project.PostWithResponse<XModel>(
+        project.PostWithResponse(
             agent => agent.GetRequest,
-            model => { state = model.Name + model.Surname; semaphore.Release(); });
+            (XModel model) => { state = model.Name + model.Surname; semaphore.Release(); });
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 

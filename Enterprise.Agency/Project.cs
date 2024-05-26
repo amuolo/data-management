@@ -31,7 +31,7 @@ public class Project<IContract>() : MessageHub<IContract>
 
     public Project<IContract> AddAgent<TState, THub, IAgentContract>()
             where THub : MessageHub<IAgentContract>, new()
-            where IAgentContract : class, IHubContract
+            where IAgentContract : class, IAgencyContract
     {
         var agentType = typeof(Agent<TState, THub, IAgentContract>);
         var info = new AgentInfo(agentType.ExtractName(), agentType.AssemblyQualifiedName!, typeof(THub).Name);
