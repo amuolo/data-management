@@ -17,7 +17,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, web, application, parallel, concurrent, governance, cloud, performance, threading, queue, jobs, background, long-running, AspNetCore, AspNet, NetCore, MVC, WPF, Razor, Blazor, eventsource, network, log, monitoring, reactive, dependency, injection, health, check, hosting	</PackageTags>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -58,29 +58,20 @@
     <Copyright>MIT license</Copyright>
     <PackageReleaseNotes>
 
-		14 May 2024   v2 is here 💛💙💜💚💘
+		27 May 2024 Release Note v2.1.0
 
-		This package is for you! Now released with the more permissive MIT license!
+		This version brings in much needed improvements and design improvements
+		in the message handling block. With these changes deployed, it was easy
+		to assemble a more powerful processor capable of responding to Read requests
+		in parallel while the Agent is busy processing Update requests sequentially.
+		This enables greater responsiveness and lower the burden of message queues
+		and Agent workload.
 
-		This is a major version update, i.e. the public API is slightly different than v1.
+		- Parallel Read request processor 🚀
 
-		List of changes to the public API:
-
-		- Workplace replaced with Agency Culture
-		- Introduced fluent API to configure Agency Services and set options
-		- Office replaced with Project to exploit the triad: project-agent-manager
-		- Job Start(+Async) method to reflect asynchronism
-		- introduced IHubAddress and HubAddress to start working on address configuration
-
-		List of other changes:
-
-		- now we support more complex topology with more Managers for scalability
-		- Agents Discovery mechanism greatly refactored to support multiple Managers
-		- agency culture members safety increased via encapsulation
-		- relaxed constraint: agent state must not be default constructible anymore
-		- code cleanups and simplifications
-
-		<!-- 🚀 -->
+		- More robust message handling schema, now capable of discriminating
+		messages based on the method signature and return type as defined
+		in the contract 🌟
 
 	</PackageReleaseNotes>
     <Product>Muoland.Agency</Product>

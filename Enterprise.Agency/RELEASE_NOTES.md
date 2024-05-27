@@ -1,3 +1,19 @@
+### 27 May 2024 Release Note v2.1.0 ###
+
+This version brings in much needed improvements and design improvements 
+in the message handling block. With these changes deployed, it was easy 
+to assemble a more powerful processor capable of responding to Read requests 
+in parallel while the Agent is busy processing Update requests sequentially. 
+This enables greater responsiveness and lower the burden of message queues
+and Agent workload.
+
+- Parallel Read request processor 🚀
+
+- More robust message handling schema, now capable of discriminating 
+  messages based on the method signature and return type as defined
+  in the contract 🌟
+
+
 ### 14 May 2024 Release Note v2.0.0 ###
 
 v2 is here 💛💙💜💚💘

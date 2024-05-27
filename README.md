@@ -54,7 +54,14 @@ Communications with other actors is regulated via a contract interface that defi
 
 Since messages are handled sequentially and states are not shared, there is no need for a locking mechanism to avoid that the same 
 resource is accessed simultaneously by multiple resources. Conversely, the operations follow a chain of messages that the various 
-actors continuously send to each other based on the application design. The request-response pattern is supported by this library.
+actors continuously send to each other based on the application design. 
+Both the request-response and the message stream patterns are supported by this library.
+
+Since v2.1.0, this library enables parallel handling of *Read** requests to enhance responsiveness and reduce the Agents workload. 
+This means that, while *Update* requests are generally processed sequentially, the incoming *Read* request from another actor 
+is not handled by the same queue. Instead, it is resolved immediately and the current state is sent back as a response. 
+Typically, a resource sending *Read* requests also uses to subscribe to *DataChanged* which can be sent when an *Update* request 
+has been fully processed. In this way, the Agency ensures that every actor consumes new data when they become available. 
 
 Typically, in a data-driven application, different Agents are usually deployed to administrate different kind of data, 
 e.g. assumptions, parameters, benchmark, business processes, reference and transactional data.
