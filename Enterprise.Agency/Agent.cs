@@ -115,7 +115,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
             await CreateAsync();
             MessageHub.LogPost($"processing {message}");
 
-            await Job.WithStep($"{message}", async state =>
+            Job.WithStep($"{message}", async state =>
             {
                 var parameters = method.GetParameters().Select(p => p.ParameterType == typeof(TState) ? state :
                                     (package is not null ? JsonConvert.DeserializeObject(package, p.ParameterType) : null)).ToArray();
@@ -149,7 +149,7 @@ public class Agent<TState, THub, IContract> : BackgroundService
                         with { Type = nameof(PostingHub.SendResponse), Id = messageId });
                 }
             })
-            .StartAsync();
+            .Start();
         }
     }
 }

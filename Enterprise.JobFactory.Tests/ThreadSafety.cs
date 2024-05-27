@@ -93,4 +93,21 @@ public class ThreadSafety
 
         Assert.AreEqual(0, job.State);
     }
+
+    [TestMethod]
+    public async Task ExtremeSimultaneousIncrementsWithStart()
+    {
+        var job = Job.JobFactory.New(0);
+        var counter = 0;
+
+        Enumerable.Range(0, 1000).ToList().AsParallel().ForAll(i =>
+        {
+            job.WithStep($"x{i}", n => { Interlocked.Increment(ref counter); return ++n; }).Start();
+        });
+
+        await job.StartAsync();
+
+        Assert.AreEqual(1000, job.State);
+        Assert.AreEqual(1000, counter);
+    }
 }

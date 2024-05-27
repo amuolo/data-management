@@ -40,6 +40,22 @@ public class XHub : MessageHub<IContractAgentX>
         await Task.Delay(10);
         UpdateRequest(name, model);
     }
+
+    public async Task SomeWorkAsync()
+    {
+        await Task.Delay(2000);
+    }
+
+    public async Task SomeWorkAsync(string a)
+    {
+        await Task.Delay(2000);
+    }
+
+    public async Task<int> SomeWorkWithResultAsync(int i)
+    {
+        await Task.Delay(2000);
+        return ++i;
+    }
 }
 
 public class YHub : MessageHub<IContractAgentY>

@@ -155,6 +155,8 @@ public record Job<TState>()
 
             while (!Steps.IsEmpty && !token.IsCancellationRequested)
             {
+                Calculating = true;
+
                 var ok = Steps.TryDequeue(out var step);
 
                 if (!ok) throw new Exception("Issue with job dequeuing");
@@ -171,6 +173,7 @@ public record Job<TState>()
                     Configuration.ProgressBarUpdate();
             }
 
+            Calculating = false;
             if (!isEmpty)
             {
                 foreach (var onFinish in OnFinishAction)
@@ -196,7 +199,16 @@ public record Job<TState>()
         return this;
     }
 
+    public void Start(CancellationToken token = new())
+    {
+        if (Calculating) 
+            return;
+        Task.Run(async () => await StartAsync(token).ConfigureAwait(false));
+    }
+
     /* Private - Protected */
+
+    protected bool Calculating { get; set; } = false;
 
     protected bool UseSubstitute { get; set; } = true;
 

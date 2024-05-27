@@ -48,4 +48,33 @@ public class ReadRequestTests
         Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
+
+    [TestMethod]
+    public async Task ParallelReadRequest()
+    {
+        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+
+        var state = 2;
+        var counter = 0;
+        var semaphore = new SemaphoreSlim(0, 1);
+
+        project.PostWithResponse(
+            new HubAddress(agentName), 
+            agent => agent.SomeWorkWithResultAsync, 
+            state, (int i) => { state = i; semaphore.Release(); });
+
+        Enumerable.Range(0, 100).ToList().AsParallel().ForAll(i =>
+        {
+            project.PostWithResponse(
+                new HubAddress(agentName),
+                agent => agent.ReadRequest<XModel>,
+                (XModel model) => Interlocked.Increment(ref counter));
+        });
+        
+        var semaphoreState = await semaphore.WaitAsync(Timeout);
+
+        Assert.IsTrue(semaphoreState);
+        Assert.IsTrue(counter > 50);
+        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+    }
 }

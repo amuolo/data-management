@@ -30,6 +30,12 @@ public interface IContractAgentX : IAgencyContract
 
     Task UpdateRequestAsync(string name);
 
+    Task SomeWorkAsync();
+
+    Task SomeWorkAsync(string a);
+
+    Task<int> SomeWorkWithResultAsync(int i);
+
     /* out */
     Task DataChangedEvent();
 
