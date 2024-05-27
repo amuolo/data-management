@@ -128,6 +128,8 @@ public class Project<IContract>() : MessageHub<IContract>
     protected Func<Task> AgentsDiscoveryAsync()
     {
         string? target = null;
+        string? agentsRegistrationRequest = typeof(IAgencyContract).GetMethods()
+            .FirstOrDefault(x => x.Name == nameof(IAgencyContract.AgentsRegistrationRequest))?.ToString();
 
         return async () =>
         {
@@ -164,7 +166,7 @@ public class Project<IContract>() : MessageHub<IContract>
                     });
 
                     await Connection.SendAsync(nameof(PostingHub.SendMessage), 
-                        Me, id, null, nameof(IAgencyContract.AgentsRegistrationRequest), requestId, package).ConfigureAwait(false);
+                        Me, id, null, agentsRegistrationRequest, requestId, package).ConfigureAwait(false);
 
                     await timerReconnection.WaitForNextTickAsync().ConfigureAwait(false);
                 }

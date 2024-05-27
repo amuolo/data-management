@@ -101,9 +101,9 @@ public class AgentsTests
 
         project.Register(o => o.DataChangedEvent, () =>
         {
-            project.PostWithResponse<XModel>(
+            project.PostWithResponse(
                 agent => agent.GetRequestAsync,
-                model => { state = model.Name + model.Surname; semaphoreState.Release(); });
+                (XModel model) => { state = model.Name + model.Surname; semaphoreState.Release(); });
         });
 
         project.Register<string>(o => o.Display, msg => { display = msg; semaphoreDisplay.Release(); });

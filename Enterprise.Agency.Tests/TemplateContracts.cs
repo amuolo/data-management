@@ -24,11 +24,11 @@ public interface IContractAgentX : IAgencyContract
     /* in */
     XModel GetRequest();
 
-    XModel GetRequestAsync();
+    Task<XModel> GetRequestAsync();
 
-    void UpdateRequest(string fileName);
+    void UpdateRequest(string name);
 
-    Task UpdateRequestAsync(string fileName);
+    Task UpdateRequestAsync(string name);
 
     /* out */
     Task DataChangedEvent();

@@ -18,11 +18,27 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected Job<TState> Job { get; set; }
 
-    protected Dictionary<string, MethodInfo> MethodsByName { get; } 
-        = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance).ToDictionary(x => x.Name);
+    protected Dictionary<string, MethodInfo> MethodsByName { get; }
+
+    protected MethodInfo CreateMethod { get; }
 
     public Agent(IHubContext<PostingHub> hubContext, AgencyCulture workplace)
     {
+        var stateType = typeof(TState).FullName;
+
+        MethodsByName = typeof(THub).GetMethods(BindingFlags.DeclaredOnly | BindingFlags.Public | BindingFlags.Instance)
+                                    .ToDictionary(x =>
+                                    {
+                                        var name = x.ToString()?? Guid.NewGuid().ToString();
+                                        if (stateType is not null)
+                                            name = name.Replace(", " + stateType + ")", ")")
+                                                       .Replace("(" + stateType + ", ", "(")
+                                                       .Replace("(" + stateType + ")", "()");
+                                        return name;
+                                    });
+
+        CreateMethod = MethodsByName.FirstOrDefault(x => x.Key.Contains(nameof(IHubContract.CreateRequest) + "()")).Value;
+
         ServerHub = hubContext;
         MessageHub = MessageHub<IContract>.Create<THub>(workplace.Url);
         Job = JobFactory.New<TState>().WithOptions(o => o.WithLogs(MessageHub.LogPost));
@@ -46,37 +62,34 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected async Task CreateAsync()
     {
-        if (!IsInitialized)
+        if (!IsInitialized && CreateMethod is not null)
         {
-            if (MethodsByName.TryGetValue(nameof(IHubContract.CreateRequest), out var create))
+            MessageHub.LogPost("Creating myself");
+            TState? state = default;
+            var r = CreateMethod.Invoke(MessageHub, null);
+
+            if (r is null)
             {
-                MessageHub.LogPost("Creating myself");
-                TState? state = default;
-                var r = create.Invoke(MessageHub, null);
+                MessageHub.LogPost($"null state retrieved after creation.");
+            }
+            else if (CreateMethod.ReturnType == typeof(Task<TState>))
+            {
+                state = await (Task<TState>)r;
+            }
+            else if (CreateMethod.ReturnType == typeof(TState))
+            {
+                state = (TState)r;
+            }
+            else
+            {
+                MessageHub.LogPost($"Incorrect Return Type method {nameof(IHubContract.CreateRequest)}");
+            }
 
-                if (r is null)
-                {
-                    MessageHub.LogPost($"null state retrieved after creation.");
-                }
-                else if (create.ReturnType == typeof(Task<TState>))
-                {
-                    state = await (Task<TState>)r;
-                }
-                else if (create.ReturnType == typeof(TState))
-                {
-                    state = (TState)r;
-                }
-                else
-                {
-                    MessageHub.LogPost($"Incorrect Return Type method {nameof(IHubContract.CreateRequest)}");
-                }
-
-                if (state is not null)
-                {
-                    Job = await Job.WithOptions(o => o.WithLogs(MessageHub.LogPost))
-                                   .WithStep(nameof(IHubContract.CreateRequest), s => state)
-                                   .StartAsync();
-                }
+            if (state is not null)
+            {
+                Job = await Job.WithOptions(o => o.WithLogs(MessageHub.LogPost))
+                               .WithStep(nameof(IHubContract.CreateRequest), s => state)
+                               .StartAsync();
             }
 
             IsInitialized = true;
@@ -88,16 +101,13 @@ public class Agent<TState, THub, IContract> : BackgroundService
         if (message == nameof(IHubContract.DeleteRequest) && sender == Addresses.Central)
         {
             Dispose();
-            return;
         }
-        else if (message == nameof(IAgencyContract.ReadRequest))
+        else if (message.Contains(nameof(IAgencyContract.ReadRequest) + "[" + typeof(TState).Name + "]"))
         {
-            // TODO: check whether this mechanism handles read requests in parallel
             await CreateAsync();
             MessageHub.LogPost($"processing {message}");
-            MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, message) 
+            MessageHub.Queue.Enqueue(new Parcel(sender, senderId, Job.State, message)
                 with { Type = nameof(PostingHub.SendResponse), Id = messageId });
-            return;
         }
         else if (MethodsByName.TryGetValue(message, out var method))
         {
@@ -140,7 +150,6 @@ public class Agent<TState, THub, IContract> : BackgroundService
                 }
             })
             .StartAsync();
-            return;
         }
     }
 }

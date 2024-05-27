@@ -7,7 +7,8 @@ using System.Reflection;
 
 namespace Enterprise.MessageHub;
 
-public class MessageHub<IContract> : IDisposable where IContract : class, IHubContract
+public class MessageHub<IContract> : IDisposable 
+    where IContract : class, IHubContract
 {
     protected CancellationTokenSource Cancellation { get; } = new();
 
@@ -56,16 +57,27 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
         Cancellation.Cancel();
     }
 
-    protected string GetMessage<TExpression>(TExpression predicate) where TExpression : Expression
+    protected string GetMessage<TDelegate>(Expression<Func<IContract, TDelegate>> predicate)
     {
-        // TODO: improve this mechanism
-        var msg = Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name + "("))?.Name;
-        if (msg is null)
-        {
-            LogPost($"MessageHub delegate resolution failed for: {predicate}.");
-            return "";
-        }
+        var expr = predicate.Body as UnaryExpression;
+        var method = expr?.Operand as MethodCallExpression;
+        var msg = method?.Object?.ToString() ?? string.Empty;
         return msg;
+
+        // TODO: improve this mechanism
+        //var msg = Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name + "("))?.Name;
+        //((MethodCallExpression)((UnaryExpression)predicate.Body).Operand).ToString()
+        //if (msg is null)
+        //{
+        //    LogPost($"MessageHub delegate resolution failed for: {predicate.ToString()}.");
+        //    return "";
+        //}
+        //return msg;
+    }
+
+    protected string GetMessage<TDelegate>(Func<IContract, TDelegate> predicate)
+    {
+        return "";
     }
 
     /***************
@@ -258,3 +270,4 @@ public class MessageHub<IContract> : IDisposable where IContract : class, IHubCo
         }
     }
 }
+
