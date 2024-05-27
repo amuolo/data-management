@@ -63,16 +63,6 @@ public class MessageHub<IContract> : IDisposable
         var method = expr?.Operand as MethodCallExpression;
         var msg = method?.Object?.ToString() ?? string.Empty;
         return msg;
-
-        // TODO: improve this mechanism
-        //var msg = Predicates.FirstOrDefault(m => predicate.ToString().Contains(m.Name + "("))?.Name;
-        //((MethodCallExpression)((UnaryExpression)predicate.Body).Operand).ToString()
-        //if (msg is null)
-        //{
-        //    LogPost($"MessageHub delegate resolution failed for: {predicate.ToString()}.");
-        //    return "";
-        //}
-        //return msg;
     }
 
     protected string GetMessage<TDelegate>(Func<IContract, TDelegate> predicate)

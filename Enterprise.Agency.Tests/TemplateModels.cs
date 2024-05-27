@@ -1,6 +1,4 @@
-﻿using Enterprise.MessageHub;
-
-namespace Enterprise.Agency.Tests;
+﻿namespace Enterprise.Agency.Tests;
 
 public record Log(string Sender, string Message);
 
