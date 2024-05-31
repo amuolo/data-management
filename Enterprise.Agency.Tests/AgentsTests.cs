@@ -11,12 +11,10 @@ public class AgentsTests
 {
     readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
 
-    ConcurrentBag<Log> Storage { get; set; } = [];
-
     [TestMethod]
     public async Task MessageResponse()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -29,13 +27,13 @@ public class AgentsTests
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task MessageResponseWithTarget()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -49,13 +47,13 @@ public class AgentsTests
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task AsyncMessageResponse()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -68,13 +66,13 @@ public class AgentsTests
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task AsyncMessageResponseWithTarget()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -88,13 +86,13 @@ public class AgentsTests
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task AsyncUpdateWorkflow()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         string state = "", display = "";
         SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
@@ -117,13 +115,13 @@ public class AgentsTests
         Assert.IsTrue(sp2);
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task AsyncUpdateWorkflowWithTarget()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         string state = "", display = "";
         SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
@@ -146,13 +144,13 @@ public class AgentsTests
         Assert.IsTrue(sp2);
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task UpdateWorkflow()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         string state = "", display = "";
         SemaphoreSlim semaphoreState = new(0, 1), semaphoreDisplay = new(0, 1);
@@ -175,16 +173,18 @@ public class AgentsTests
         Assert.IsTrue(sp2);
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IContractAgentX.Display)) && x.Sender == agentName));
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IContractAgentX.DataChangedEvent)) && x.Sender == agentName));
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IContractAgentX.UpdateRequest)) && x.Sender == project.Me));
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IAgencyContract.AgentsRegistrationRequest)) && x.Sender == Addresses.Central));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.Display)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.DataChangedEvent)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.UpdateRequest)) && x.Sender == project.Me));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IAgencyContract.AgentsRegistrationRequest)) && x.Sender == Addresses.Central));
     }
 
     [TestMethod]
     public async Task TwoAgents()
     {
+        var storage = new ConcurrentBag<Log>();
+
         var server = await TestFramework.StartServerWithManagerAsync(
             [typeof(Agent<XModel, XHub, IContractAgentX>), typeof(Agent<YModel, YHub, IContractAgentY>)]);
 
@@ -193,7 +193,7 @@ public class AgentsTests
         var yName = typeof(YHub).ExtractName();
 
         var logger = Project<IContractAgentX>.Create(url)
-                        .ReceiveLogs((sender, senderId, message) => Storage.Add(new Log(sender, message)))
+                        .ReceiveLogs((sender, senderId, message) => storage.Add(new Log(sender, message)))
                         .Run();
 
         var project = Project<IContractAgentY>.Create(url)
@@ -219,13 +219,15 @@ public class AgentsTests
 
         Assert.IsTrue(sp);
         Assert.AreEqual("2.5 Paolo Rossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
     }
 
     [TestMethod]
     public async Task TwoAgentsWithTwoManagers()
     {
+        var storage = new ConcurrentBag<Log>();
+
         var server = await TestFramework.StartServerWithManagerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
         var url = server.Urls.First();
 
@@ -241,7 +243,7 @@ public class AgentsTests
         var yName = typeof(YHub).ExtractName();
 
         var logger = Project<IContractAgentX>.Create(url)
-                        .ReceiveLogs((sender, senderId, message) => Storage.Add(new Log(sender, message)))
+                        .ReceiveLogs((sender, senderId, message) => storage.Add(new Log(sender, message)))
                         .AddAgent<XModel, XHub, IContractAgentX>()
                         .Run();
 
@@ -267,8 +269,8 @@ public class AgentsTests
 
         Assert.IsTrue(sp);
         Assert.AreEqual("2.5 Paolo Rossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
     }
 }
 

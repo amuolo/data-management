@@ -14,14 +14,14 @@ public class ProjectTests
     [TestMethod]
     public async Task BasicPosting()
     {
-        var (Server, Logger, Project1, Project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
 
         var n1 = 0;
         var semaphore = new SemaphoreSlim(0, 1);
 
-        Project1.Register<int>(o => o.RequestA, n => { n1 += n; semaphore.Release(); });
+        project1.Register<int>(o => o.RequestA, n => { n1 += n; semaphore.Release(); });
 
-        Project2.Post(o => o.RequestA, 10);
+        project2.Post(o => o.RequestA, 10);
 
         await semaphore.WaitAsync();
 
@@ -31,7 +31,7 @@ public class ProjectTests
     [TestMethod]
     public async Task PostingWithResponseAsyncRequest()
     {
-        var (server, logger, project1, project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -50,7 +50,7 @@ public class ProjectTests
     [TestMethod]
     public async Task PostingToTargetWithResponseAsyncRequest()
     {
-        var (server, logger, project1, project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -69,7 +69,7 @@ public class ProjectTests
     [TestMethod]
     public async Task PostingWithResponseSyncRequest()
     {
-        var (server, logger, project1, project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -88,7 +88,7 @@ public class ProjectTests
     [TestMethod]
     public async Task PostingToTargetWithResponseSyncRequest()
     {
-        var (server, logger, project1, project2) = await TestFramework.SetupThreeProjectsAsync(Storage);
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
 
         var text = "";
         var semaphore = new SemaphoreSlim(0, 1);

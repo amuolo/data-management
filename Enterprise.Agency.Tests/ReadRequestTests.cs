@@ -8,12 +8,10 @@ public class ReadRequestTests
 {
     readonly TimeSpan Timeout = TimeSpan.FromSeconds(20);
 
-    ConcurrentBag<Log> Storage { get; set; } = [];
-
     [TestMethod]
     public async Task BasicTest()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -26,13 +24,13 @@ public class ReadRequestTests
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task BasicTestWithTarget()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         var state = "";
         var semaphore = new SemaphoreSlim(0, 1);
@@ -46,13 +44,13 @@ public class ReadRequestTests
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 
     [TestMethod]
     public async Task ParallelReadRequest()
     {
-        var (server, logger, project, agentName) = await TestFramework.SetupManagerAgentProjectLogger(Storage);
+        var (server, logger, project, agentName, storage) = await TestFramework.SetupManagerAgentProjectLogger();
 
         var state = 2;
         var counter = 0;
@@ -75,6 +73,6 @@ public class ReadRequestTests
 
         Assert.IsTrue(semaphoreState);
         Assert.IsTrue(counter > 50);
-        Assert.IsTrue(Storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
     }
 }

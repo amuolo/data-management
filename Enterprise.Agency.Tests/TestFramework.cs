@@ -77,11 +77,12 @@ public static class TestFramework
         return app;
     }
 
-    public static async Task<(WebApplication Server, Project<IAgencyContract> Logger, Project<IContractExample1> Project1, Project<IContractExample2> Project2)>
-    SetupThreeProjectsAsync(ConcurrentBag<Log> storage)
+    public static async Task<(WebApplication Server, Project<IAgencyContract> Logger, Project<IContractExample1> Project1, Project<IContractExample2> Project2, ConcurrentBag<Log> storage)>
+    SetupThreeProjectsAsync()
     {
         var server = await StartServerAsync();
         var url = server.Urls.First();
+        var storage = new ConcurrentBag<Log>();
 
         var logger = Project<IAgencyContract>.Create(url)
                         .ReceiveLogs((sender, senderId, message) => storage.Add(new Log(sender, message)))
@@ -95,15 +96,16 @@ public static class TestFramework
         await project1.ConnectToAsync(logger.Me);
         await project1.ConnectToAsync(project2.Me);
 
-        return (server, logger, project1, project2);
+        return (server, logger, project1, project2, storage);
     }
 
-    public static async Task<(WebApplication server, Project<IAgencyContract> logger, Project<IContractAgentX> project, string agent)> 
-    SetupManagerAgentProjectLogger(ConcurrentBag<Log> storage)
+    public static async Task<(WebApplication server, Project<IAgencyContract> logger, Project<IContractAgentX> project, string agent, ConcurrentBag<Log> storage)> 
+    SetupManagerAgentProjectLogger()
     {
         var server = await StartServerWithManagerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
         var url = server.Urls.First();
         var agentName = typeof(XHub).ExtractName();
+        var storage = new ConcurrentBag<Log>();
 
         var logger = Project<IAgencyContract>.Create(url)
                         .ReceiveLogs((sender, senderId, message) => storage.Add(new Log(sender, message)))
@@ -118,6 +120,6 @@ public static class TestFramework
         // entirely handled by the Manager service.
         await project.ConnectToAsync(logger.Me);
 
-        return (server, logger, project, agentName);
+        return (server, logger, project, agentName, storage);
     }
 }
