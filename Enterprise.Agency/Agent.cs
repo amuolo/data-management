@@ -46,7 +46,6 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     public override void Dispose()
     {
-        MessageHub.LogPost($"disposing");
         MessageHub.Dispose();
         base.Dispose();
     }
@@ -98,9 +97,11 @@ public class Agent<TState, THub, IContract> : BackgroundService
 
     protected async Task ActionMessageReceived(string sender, string senderId, string message, string messageId, string? package)
     {
-        if (message == nameof(IHubContract.DeleteRequest) && sender == Addresses.Central)
+        if (message.Contains(nameof(IHubContract.DeleteRequest)) && sender == Addresses.Central)
         {
-            Dispose();
+            MessageHub.LogPost($"processing {message}");
+            MessageHub.Queue.Enqueue(new Parcel(sender, senderId, new DeletionProcess(true), message)
+                with { Type = nameof(PostingHub.SendResponse), Id = messageId });
         }
         else if (message.Contains(nameof(IAgencyContract.ReadRequest) + "[" + typeof(TState).Name + "]"))
         {

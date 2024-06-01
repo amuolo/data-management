@@ -87,7 +87,7 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
                     else
                     {
                         foreach (var agent in task.Response.Hired)
-                            await Post.ConnectToAsync(token, MessageHub.Connection, MessageHub.Me, agent.Name, null);
+                            await Post.ConnectToAsync(token, MessageHub.Connection, MessageHub.Me, agent.MessageHubName, null);
                         task.Response.Hired.Clear();
                         await task.PostAction();
                     }                   
@@ -120,21 +120,25 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
                     await innerTimer.WaitForNextTickAsync(token);
                     if (token.IsCancellationRequested) break;
 
-                    foreach (var agent in GetFiredAgents(state))
+                    foreach (var agentInfo in GetFiredAgents(state))
                     {
-                        if (state.Hosts.TryGetValue(agent, out var host))
+                        if (state.Hosts.TryGetValue(agentInfo.Name, out var host))
                         {
                             MessageHub.PostWithResponse(
-                                new HubAddress(agent),
+                                new HubAddress(agentInfo.MessageHubName),
                                 manager => manager.DeleteRequest,
                                 (Action<DeletionProcess>)(async process =>
                                 {
                                     if (process.Status)
+                                    {
                                         await host.StopAsync();
+                                        state.Hosts.Remove(agentInfo.Name);
+                                        agentInfo.Active = false;
+                                    }
                                 }));
                         }
                         else
-                            MessageHub.LogPost($"Decommissioner failed to fire agent {agent}: not found.");
+                            MessageHub.LogPost($"Decommissioner failed to fire agent {agentInfo.Name}: not found.");
                     }
                 }
             }
@@ -154,13 +158,12 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
         return max.TotalSeconds < 0 ? -max : TimeSpan.FromSeconds(1);
     }
 
-    private string[] GetFiredAgents(AgencyCulture state)
+    private AgentInfo[] GetFiredAgents(AgencyCulture state)
     {
         var agents = state.InfoByActor.SelectMany(x => x.Value)
-                                         .OrderBy(x => x.LastInteraction)
-                                         .Where(x => (DateTime.Now - x.LastInteraction) > state.HireAgentsPeriod)
-                                         .Select(x => x.Name)
-                                         .ToArray();
+                                      .OrderBy(x => x.LastInteraction)
+                                      .Where(x => (DateTime.Now - x.LastInteraction) > state.HireAgentsPeriod)
+                                      .ToArray();
 
         return agents;
     }

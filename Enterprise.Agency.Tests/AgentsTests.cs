@@ -28,6 +28,7 @@ public class AgentsTests
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Count() < 30);
     }
 
     [TestMethod]
@@ -48,6 +49,7 @@ public class AgentsTests
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Count() < 30);
     }
 
     [TestMethod]
@@ -67,6 +69,7 @@ public class AgentsTests
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Count() < 30);
     }
 
     [TestMethod]
@@ -87,6 +90,7 @@ public class AgentsTests
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("PaoloRossi", state);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Count() < 30);
     }
 
     [TestMethod]
@@ -116,6 +120,7 @@ public class AgentsTests
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Count() < 40);
     }
 
     [TestMethod]
@@ -145,6 +150,7 @@ public class AgentsTests
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
+        Assert.IsTrue(storage.Count() < 40);
     }
 
     [TestMethod]
@@ -178,6 +184,7 @@ public class AgentsTests
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.DataChangedEvent)) && x.Sender == agentName));
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.UpdateRequest)) && x.Sender == project.Me));
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IAgencyContract.AgentsRegistrationRequest)) && x.Sender == Addresses.Central));
+        Assert.IsTrue(storage.Count() < 40);
     }
 
     [TestMethod]
@@ -221,6 +228,7 @@ public class AgentsTests
         Assert.AreEqual("2.5 Paolo Rossi", state);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
+        Assert.IsTrue(storage.Count() < 50);
     }
 
     [TestMethod]
@@ -271,6 +279,7 @@ public class AgentsTests
         Assert.AreEqual("2.5 Paolo Rossi", state);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
+        Assert.IsTrue(storage.Count() < 70);
     }
 }
 

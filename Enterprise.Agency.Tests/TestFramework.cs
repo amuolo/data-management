@@ -36,7 +36,7 @@ public static class TestFramework
 
         return url;
         */
-        return "https://localhost:" + new Random().Next(1, 9999).ToString();
+        return "https://localhost:" + new Random().Next(1, 10000).ToString();
     }
 
     public static async Task<WebApplication> StartServerAsync()
@@ -55,7 +55,7 @@ public static class TestFramework
         return app;
     }
 
-    public static async Task<WebApplication> StartServerWithManagerAsync(Type[]? agents)
+    public static async Task<WebApplication> StartServerWithManagerAsync(Type[]? agents, int agentsPeriod = 1800)
     {
         var url = await GetFreeUrlAsync();
         var builder = WebApplication.CreateBuilder();
@@ -64,7 +64,7 @@ public static class TestFramework
                
         builder.Services.AddAgencyManager(url, o => o
             .WithAgentTypes(agents?? [])
-            .WithHireAgentsPeriod(TimeSpan.FromMinutes(30))
+            .WithHireAgentsPeriod(TimeSpan.FromSeconds(agentsPeriod))
             .WithOnBoardingWaitingTime(TimeSpan.FromSeconds(1))
             .WithOffBoardingWaitingTime(TimeSpan.FromSeconds(1)));
 
@@ -100,9 +100,9 @@ public static class TestFramework
     }
 
     public static async Task<(WebApplication server, Project<IAgencyContract> logger, Project<IContractAgentX> project, string agent, ConcurrentBag<Log> storage)> 
-    SetupManagerAgentProjectLogger()
+    SetupManagerAgentProjectLogger(int agentsPeriod = 1800)
     {
-        var server = await StartServerWithManagerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)]);
+        var server = await StartServerWithManagerAsync([typeof(Agent<XModel, XHub, IContractAgentX>)], agentsPeriod);
         var url = server.Urls.First();
         var agentName = typeof(XHub).ExtractName();
         var storage = new ConcurrentBag<Log>();
