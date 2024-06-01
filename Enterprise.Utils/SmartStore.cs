@@ -12,12 +12,17 @@ public class SmartStore<T>
 
     private SemaphoreSlim Semaphore { get; } = new(0, 1);
 
+    private readonly object semaphoreLock = new();
+
     public SmartStore() 
     {
         OnNewItem = () =>
         {
-            if (Semaphore.CurrentCount == 0)
-                Semaphore.Release();
+            lock (semaphoreLock)
+            {
+                if (Semaphore.CurrentCount == 0)
+                    Semaphore.Release();
+            }
         };
     }
 
