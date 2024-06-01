@@ -38,17 +38,20 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
         return MessageHub.Connection.On(PostingHub.ReceiveConnectRequest,
             async (string sender, string senderId, string requestId, string target) =>
             {
-                Func<Task> postAction = target == Me 
-                    ? async () => await MessageHub.Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, MessageHub.Id, senderId, requestId) 
-                    : () => Task.CompletedTask;
+                if (sender != Me)
+                {
+                    Func<Task> postAction = target == Me
+                        ? async () => await MessageHub.Connection.SendAsync(nameof(PostingHub.ConnectionEstablished), Me, MessageHub.Id, senderId, requestId)
+                        : () => Task.CompletedTask;
 
-                await RunAgentsDiscoveryAsync(sender, postAction);
+                    await RunAgentsDiscoveryAsync(sender, postAction);
+                }
             });  
     }
 
     private async Task RunAgentsDiscoveryAsync(string sender, Func<Task> postAction)
     {
-        await Job.WithStep($"{PostingHub.ReceiveConnectRequest}", async state =>
+        await Job.WithStep($"{PostingHub.ReceiveConnectRequest} from {sender}", async state =>
         {
             try
             {
@@ -84,7 +87,7 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
                     else
                     {
                         foreach (var agent in task.Response.Hired)
-                            await Post.ConnectToAsync(default, MessageHub.Connection, MessageHub.Me, agent.Name, null);
+                            await Post.ConnectToAsync(token, MessageHub.Connection, MessageHub.Me, agent.Name, null);
                         task.Response.Hired.Clear();
                         await task.PostAction();
                     }                   
@@ -96,7 +99,6 @@ public class Manager : Agent<AgencyCulture, ManagerHub, IAgencyContract>
             }
         }
     }
-
 
     protected async Task OffBoardingAsync(CancellationToken token)
     {
