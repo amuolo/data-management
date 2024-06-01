@@ -6,15 +6,15 @@ public delegate void CustomEventHandler();
 
 public class SmartStore<T>
 {
-    public event CustomEventHandler? OnNewItem;
+    private event CustomEventHandler OnNewItem;
 
     private ConcurrentQueue<T> Queue { get; } = [];
 
-    public SemaphoreSlim Semaphore { get; } = new(0, 1);
+    private SemaphoreSlim Semaphore { get; } = new(0, 1);
 
     public SmartStore() 
     {
-        OnNewItem += () =>
+        OnNewItem = () =>
         {
             if (Semaphore.CurrentCount == 0)
                 Semaphore.Release();
@@ -22,6 +22,10 @@ public class SmartStore<T>
     }
 
     public bool IsEmpty => Queue.IsEmpty;
+
+    public async Task WaitAsync(CancellationToken token) => await Semaphore.WaitAsync(token);
+
+    public void RegisterOnNew(CustomEventHandler predicate) => OnNewItem += predicate;
 
     public void Enqueue(T item)
     {
