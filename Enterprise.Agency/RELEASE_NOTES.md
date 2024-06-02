@@ -1,3 +1,10 @@
+### 2 Jun 2024 Release Note v2.1.1 ###
+
+- SmartStore improvements and thread safety
+- Agents decommissioning fixed and tested
+- Manager optimization
+
+
 ### 27 May 2024 Release Note v2.1.0 ###
 
 This version brings in much needed improvements and design improvements 
@@ -38,6 +45,7 @@ List of other changes:
 - relaxed constraint: agent state must not be default constructible anymore
 - code cleanups and simplifications
 
+
 ### 6 May 2024 Release Note v1.1.0 🚀🚀🚀 ###
 
 - new API: register to job on finish events
@@ -47,10 +55,12 @@ List of other changes:
 - agents state simplified
 - improve job execution mechanism
 
+
 ### 30 Apr 2024 Release Note v1.0.7 ###
 
 - fix bugs in job state machine and step handling
 - performance optimization with parallel job executions
+
 
 ### 26 Apr 2024 Release Note v1.0.6 🚀 ### 
 
@@ -58,6 +68,7 @@ List of other changes:
 - fix inner agent state
 - Introduce disposability for message hubs
 - Greatly improve test coverage
+
 
 ### 23 Apr 2024 - v1.0.5 ###
 
@@ -67,13 +78,16 @@ List of other changes:
 
 🚀 🚀 🚀
 
+
 ### 21 Apr 2024 - v1.0.4 ###
 
 Better aesthetics and documentation. 🌟
 
+
 ### 21 Apr 2024 - v1.0.3 ###
 
 Several bug fixes and general performance improvements in the job factory engine. 🚀
+
 
 ### 19 Apr 2024 - v1.0.2 ###
 
@@ -82,9 +96,11 @@ This necessitated a revamp of the manager recruitment process
 to sequentially process incoming messages, while guaranteeing
 the safe and automatic initiation of agents. 🚀
 
+
 ### 17 Apr 2024 - v1.0.1 ###
 
 Fix documentation and visualization on nuget.org
+
 
 ### 17 Apr 2024 - v1.0.0 ###
 

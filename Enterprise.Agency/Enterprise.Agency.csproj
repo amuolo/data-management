@@ -17,7 +17,7 @@
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>True</PackageRequireLicenseAcceptance>
     <PackageTags>muoland, actor, model, concurrency, concurrent, actors, distributed, scalable, data, management, web, application, parallel, concurrent, governance, cloud, performance, threading, queue, jobs, background, long-running, AspNetCore, AspNet, NetCore, MVC, WPF, Razor, Blazor, eventsource, network, log, monitoring, reactive, dependency, injection, health, check, hosting	</PackageTags>
-    <Version>2.1.0</Version>
+    <Version>2.1.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
@@ -58,20 +58,11 @@
     <Copyright>MIT license</Copyright>
     <PackageReleaseNotes>
 
-		27 May 2024 Release Note v2.1.0
+		2 Jun 2024 Release Note v2.1.1
 
-		This version brings in much needed improvements and design improvements
-		in the message handling block. With these changes deployed, it was easy
-		to assemble a more powerful processor capable of responding to Read requests
-		in parallel while the Agent is busy processing Update requests sequentially.
-		This enables greater responsiveness and lower the burden of message queues
-		and Agent workload.
-
-		- Parallel Read request processor 🚀
-
-		- More robust message handling schema, now capable of discriminating
-		messages based on the method signature and return type as defined
-		in the contract 🌟
+		- SmartStore improvements and thread safety
+		- Agents decommissioning fixed and tested
+		- Manager optimization
 
 	</PackageReleaseNotes>
     <Product>Muoland.Agency</Product>
