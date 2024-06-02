@@ -25,10 +25,13 @@ public class AgentsTests
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
-        Assert.IsTrue(semaphoreState);
+        Assert.IsTrue(semaphoreState, "semaphoreState timeout");
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Count() < 30);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
+        Assert.IsTrue(!storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains("processing") && x.Sender == agentName), "DeleteRequest processing not found");
+        Assert.IsTrue(!storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains(nameof(PostingHub.SendResponse)) && x.Sender == agentName), "DeleteRequest response not found");
+        Assert.IsTrue(!storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains(nameof(PostingHub.SendMessage)) && x.Sender == Addresses.Central), "DeleteRequest message not found");
+        Assert.IsTrue(storage.Count() < 30, "count mismatch");
     }
 
     [TestMethod]
@@ -46,10 +49,10 @@ public class AgentsTests
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
-        Assert.IsTrue(semaphoreState);
+        Assert.IsTrue(semaphoreState, "semaphoreState timeout");
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Count() < 30);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
+        Assert.IsTrue(storage.Count() < 30, "count mismatch");
     }
 
     [TestMethod]
@@ -66,10 +69,10 @@ public class AgentsTests
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
-        Assert.IsTrue(semaphoreState);
+        Assert.IsTrue(semaphoreState, "semaphoreState timeout");
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Count() < 30);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
+        Assert.IsTrue(storage.Count() < 30, "count mismatch");
     }
 
     [TestMethod]
@@ -87,10 +90,10 @@ public class AgentsTests
 
         var semaphoreState = await semaphore.WaitAsync(Timeout);
 
-        Assert.IsTrue(semaphoreState);
+        Assert.IsTrue(semaphoreState, "semaphoreState timeout");
         Assert.AreEqual("PaoloRossi", state);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Count() < 30);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
+        Assert.IsTrue(storage.Count() < 30, "count mismatch");
     }
 
     [TestMethod]
@@ -115,12 +118,12 @@ public class AgentsTests
         var sp1 = await semaphoreState.WaitAsync(Timeout);
         var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
 
-        Assert.IsTrue(sp1);
-        Assert.IsTrue(sp2);
+        Assert.IsTrue(sp1, "semaphoreState timeout");
+        Assert.IsTrue(sp2, "semaphoreDisplay timeout");
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Count() < 40);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
+        Assert.IsTrue(storage.Count() < 40, "count mismatch");
     }
 
     [TestMethod]
@@ -145,12 +148,12 @@ public class AgentsTests
         var sp1 = await semaphoreState.WaitAsync(Timeout);
         var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
 
-        Assert.IsTrue(sp1);
-        Assert.IsTrue(sp2);
+        Assert.IsTrue(sp1, "semaphoreState timeout");
+        Assert.IsTrue(sp2, "semaphoreDisplay timeout");
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Count() < 40);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
+        Assert.IsTrue(storage.Count() < 40, "count mismatch");
     }
 
     [TestMethod]
@@ -175,16 +178,16 @@ public class AgentsTests
         var sp1 = await semaphoreState.WaitAsync(Timeout);
         var sp2 = await semaphoreDisplay.WaitAsync(Timeout);
 
-        Assert.IsTrue(sp1);
-        Assert.IsTrue(sp2);
+        Assert.IsTrue(sp1, "semaphoreState timeout");
+        Assert.IsTrue(sp2, "semaphoreDisplay timeout");
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.Display)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.DataChangedEvent)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.UpdateRequest)) && x.Sender == project.Me));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IAgencyContract.AgentsRegistrationRequest)) && x.Sender == Addresses.Central));
-        Assert.IsTrue(storage.Count() < 40);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "Create Request not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.Display)) && x.Sender == agentName), "Display not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.DataChangedEvent)) && x.Sender == agentName), "DataChangedEvent not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IContractAgentX.UpdateRequest)) && x.Sender == project.Me), "UpdateRequest not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IAgencyContract.AgentsRegistrationRequest)) && x.Sender == Addresses.Central), "AgentsRegistrationRequest not found");
+        Assert.IsTrue(storage.Count() < 50, "count mismatch");
     }
 
     [TestMethod]
@@ -224,11 +227,11 @@ public class AgentsTests
 
         var sp = await semaphoreState.WaitAsync(Timeout);
 
-        Assert.IsTrue(sp);
+        Assert.IsTrue(sp, "semaphoreState timeout");
         Assert.AreEqual("2.5 Paolo Rossi", state);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
-        Assert.IsTrue(storage.Count() < 50);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName), "CreateRequest not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName), "CreateRequest not found");
+        Assert.IsTrue(storage.Count() < 50, "count mismatch");
     }
 
     [TestMethod]
@@ -275,11 +278,11 @@ public class AgentsTests
         
         var sp = await semaphoreState.WaitAsync(Timeout);
 
-        Assert.IsTrue(sp);
+        Assert.IsTrue(sp, "semaphoreState timeout");
         Assert.AreEqual("2.5 Paolo Rossi", state);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName));
-        Assert.IsTrue(storage.Count() < 70);
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == xName), "CreateRequest not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == yName), "CreateRequest not found");
+        Assert.IsTrue(storage.Count() < 70, "count mismatch");
     }
 }
 

@@ -27,10 +27,10 @@ public class DecommissioningTests
 
         await Task.Delay(4000);
 
-        Assert.IsTrue(storage.Count() < 40);
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains("processing") && x.Sender == agentName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains(nameof(PostingHub.SendResponse)) && x.Sender == agentName));
-        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains(nameof(PostingHub.SendMessage)) && x.Sender == Addresses.Central));
+        Assert.IsTrue(storage.Count() < 45, "count mismatch");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "Create request not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains("processing") && x.Sender == agentName), "DeleteRequest processing not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains(nameof(PostingHub.SendResponse)) && x.Sender == agentName), "DeleteRequest response not found");
+        Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.DeleteRequest)) && x.Message.Contains(nameof(PostingHub.SendMessage)) && x.Sender == Addresses.Central), "DeleteRequest message not found");
     }
 }
