@@ -11,6 +11,10 @@ public interface IContractExample1 : IAgencyContract
 
     Task RequestB(int b);
 
+    Task<string> ProcessParcel(int a);
+
+    string ProcessParcelBis(int a);
+
     /* out */
     Task SomeEvent();
 }

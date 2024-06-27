@@ -19,7 +19,7 @@ public class ProjectTests
         var n1 = 0;
         var semaphore = new SemaphoreSlim(0, 1);
 
-        project1.Register<int>(o => o.RequestA, n => { n1 += n; semaphore.Release(); });
+        project1.Register(o => o.RequestA, (int n) => { n1 += n; semaphore.Release(); });
 
         project2.Post(o => o.RequestA, 10);
 
@@ -39,12 +39,31 @@ public class ProjectTests
 
         project1.Register(o => o.RequestText, async () => { await Task.Delay(10); return "ok"; });
 
-        project2.PostWithResponse<string>(o => o.RequestText, s => { text = s; semaphore.Release(); });
+        project2.PostWithResponse(o => o.RequestText, (string s) => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("ok", text);
+    }
+
+    [TestMethod]
+    public async Task PostingParcelWithResponseAsyncRequest()
+    {
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
+
+        var text = "";
+        var semaphore = new SemaphoreSlim(0, 1);
+        var semaphoreState = false;
+
+        project1.Register(o => o.ProcessParcel, async (int a) => { await Task.Delay(10); return "ok" + a.ToString(); });
+
+        project2.PostWithResponse(o => o.ProcessParcel, 199, (string s) => { text = s; semaphore.Release(); });
+
+        semaphoreState = await semaphore.WaitAsync(Timeout);
+
+        Assert.IsTrue(semaphoreState);
+        Assert.AreEqual("ok199", text);
     }
 
     [TestMethod]
@@ -77,12 +96,31 @@ public class ProjectTests
 
         project1.Register(o => o.RequestTextSync, () => "ok");
 
-        project2.PostWithResponse<string>(o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
+        project2.PostWithResponse(o => o.RequestTextSync, (string s) => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("ok", text);
+    }
+
+    [TestMethod]
+    public async Task PostingParcelWithResponseSyncRequest()
+    {
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
+
+        var text = "";
+        var semaphore = new SemaphoreSlim(0, 1);
+        var semaphoreState = false;
+
+        project1.Register(o => o.ProcessParcelBis, (int i) => "ok" + i.ToString());
+
+        project2.PostWithResponse(o => o.ProcessParcelBis, 200, (string s) => { text = s; semaphore.Release(); });
+
+        semaphoreState = await semaphore.WaitAsync(Timeout);
+
+        Assert.IsTrue(semaphoreState);
+        Assert.AreEqual("ok200", text);
     }
 
     [TestMethod]
@@ -127,7 +165,7 @@ public class ProjectTests
 
         logger.Register(o => o.RequestTextSync, () => "ok");
 
-        project.PostWithResponse<string>(o => o.RequestTextSync, s => { text = s; semaphore.Release(); });
+        project.PostWithResponse(o => o.RequestTextSync, (string s) => { text = s; semaphore.Release(); });
 
         semaphoreState = await semaphore.WaitAsync(Timeout);
 
