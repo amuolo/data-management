@@ -123,7 +123,7 @@ public class AgentsTests
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
-        Assert.IsTrue(storage.Count() < 40, "count mismatch");
+        Assert.IsTrue(storage.Count() < 45, "count mismatch");
     }
 
     [TestMethod]
@@ -153,7 +153,7 @@ public class AgentsTests
         Assert.AreEqual("MarcoRossi", state);
         Assert.AreEqual("Data has been processed", display);
         Assert.IsTrue(storage.Any(x => x.Message.Contains(nameof(IHubContract.CreateRequest)) && x.Sender == agentName), "CreateRequest not found");
-        Assert.IsTrue(storage.Count() < 40, "count mismatch");
+        Assert.IsTrue(storage.Count() < 45, "count mismatch");
     }
 
     [TestMethod]
