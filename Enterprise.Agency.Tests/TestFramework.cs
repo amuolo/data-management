@@ -95,6 +95,8 @@ public static class TestFramework
         // Being projects autonomous entities, here we ensure they are both up and running when the test starts
         await project1.ConnectToAsync(logger.Me);
         await project1.ConnectToAsync(project2.Me);
+        await project2.ConnectToAsync(project1.Me);
+        await project2.ConnectToAsync(logger.Me);
 
         return (server, logger, project1, project2, storage);
     }

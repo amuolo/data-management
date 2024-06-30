@@ -172,6 +172,53 @@ public class ProjectTests
         Assert.IsTrue(semaphoreState);
         Assert.AreEqual("ok", text);
     }
+
+    [TestMethod]
+    public async Task ProjectsUnderIntenseTraffic()
+    {
+        var (server, logger, project1, project2, storage) = await TestFramework.SetupThreeProjectsAsync();
+
+        TimeSpan biggerTimeout = TimeSpan.FromSeconds(40);
+
+        var number = 1000;
+        var semaphores1 = Enumerable.Range(0, number).Select(i => new SemaphoreSlim(0, 1)).ToArray();
+        var semaphores2 = Enumerable.Range(0, number).Select(i => new SemaphoreSlim(0, 1)).ToArray();
+        var semaphoreStates1 = Enumerable.Range(0, number).Select(i => false).ToArray();
+        var semaphoreStates2 = Enumerable.Range(0, number).Select(i => false).ToArray();
+
+        project1.Register(o => o.ProcessParcelBis, (int a) => "ok1-" + a.ToString());
+
+        project2.Register(o => o.ProcessParcel, async (int a) => { await Task.Delay(10); return "ok2-" + a.ToString(); });
+
+        var tasks1 = Enumerable.Range(0, number).AsParallel().Select(i => Task.Run(async () =>
+        {
+            var text = "";
+            var sp = semaphores1[i];
+            project2.PostWithResponse(o => o.ProcessParcelBis, i, (string s) => { text = s; sp.Release(); });
+            semaphoreStates1[i] = await sp.WaitAsync(biggerTimeout);
+            Assert.IsTrue(semaphoreStates1[i], $"series 1 iteration {i} is failing");
+            Assert.AreEqual("ok1-" + i.ToString(), text, $"series 1 iteration {i} returns the following text: {text}");
+        })).ToArray();
+        
+        var tasks2 = Enumerable.Range(0, number).AsParallel().Select(i => Task.Run(async () =>
+        {
+            var text = "";
+            var sp = semaphores2[i];
+            project1.PostWithResponse(o => o.ProcessParcel, i, (string s) => { text = s; sp.Release(); });
+            semaphoreStates2[i] = await sp.WaitAsync(biggerTimeout);
+            Assert.IsTrue(semaphoreStates2[i], $"series 2 iteration {i} is failing");
+            Assert.AreEqual("ok2-" + i.ToString(), text, $"series 2 iteration {i} returns the following text: {text}");
+        })).ToArray();
+        
+        foreach (var task in tasks1)
+            await task;
+
+        foreach (var task in tasks2)
+            await task;
+
+        Assert.IsTrue(semaphoreStates1.All(x => x), $"not every state 1 is positive");
+        Assert.IsTrue(semaphoreStates2.All(x => x), $"not every state 2 is positive");
+    }
 }
 
 
