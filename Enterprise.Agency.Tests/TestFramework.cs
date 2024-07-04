@@ -36,7 +36,7 @@ public static class TestFramework
 
         return url;
         */
-        return "https://localhost:" + new Random().Next(1, 10000).ToString();
+        return "http://localhost:" + new Random().Next(1, 20000).ToString();
     }
 
     public static async Task<WebApplication> StartServerAsync()
